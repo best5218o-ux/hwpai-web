@@ -1,0 +1,44 @@
+{
+  "name": "@rhwp/core",
+  "version": "0.9.0-local.c100",
+  "description": "rhwp 로컬 빌드(변경 추적 숨김 반영, 그림 사각형 가드 포함). 원본 npm 배포본(0.8.7)과 다름",
+  "type": "module",
+  "main": "rhwp.js",
+  "types": "rhwp.d.ts",
+  "files": [
+    "rhwp_bg.wasm",
+    "rhwp.js",
+    "rhwp.d.ts",
+    "rhwp_bg.wasm.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "hwp",
+    "hwpx",
+    "hml",
+    "hancom",
+    "hangul",
+    "한글",
+    "document",
+    "parser",
+    "renderer",
+    "wasm",
+    "webassembly",
+    "rust"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edwardkim/rhwp.git"
+  },
+  "homepage": "https://edwardkim.github.io/rhwp/",
+  "bugs": {
+    "url": "https://github.com/edwardkim/rhwp/issues"
+  },
+  "funding": "https://github.com/sponsors/edwardkim",
+  "license": "MIT",
+  "author": "Edward Kim",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

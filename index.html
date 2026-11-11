@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' blob: 'unsafe-eval' 'wasm-unsafe-eval'; worker-src 'self' blob:; manifest-src 'self'; connect-src 'self' blob: data:; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; font-src 'self'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<title>HWP AI 어댑터 웹판 — HWP를 HWPX로 (브라우저 안에서만)</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2a78d6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HWP AI">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+</head>
+<body>
+<a class="skip" href="#drop">본문으로 건너뛰기</a>
+<header class="top">
+  <div class="brand">
+    <h1>hwpai 웹 <small>HWP → HWPX 변환 · 변환 검증 · 민감정보 확인</small></h1>
+    <p class="sub">한글 프로그램 없이 이 브라우저 안에서 바꿉니다. 서버가 없습니다.</p>
+  </div>
+  <button id="netBadge" class="badge ok" type="button" aria-haspopup="dialog" title="눌러서 네트워크 점검 보기">
+    <span class="dot"></span><span id="netText">네트워크 요청 0건</span>
+  </button>
+</header>
+
+<main>
+  <section class="privacy card" aria-label="개인정보 안내">
+    <strong>파일은 이 브라우저 밖으로 나가지 않습니다.</strong>
+    변환·검증·민감정보 검출은 모두 이 탭 안의 Web Worker(WebAssembly)에서 일어나며, 외부 서버·CDN·AI 모델을 부르지 않습니다.
+    원본은 메모리에서만 처리하고 어디에도 저장하지 않습니다(탭을 닫으면 사라집니다). 이 화면은 인터넷을 끊어도 동작합니다.
+  </section>
+
+  <section id="engine" class="card engine" aria-live="polite">
+    <div class="row"><span id="engineText">엔진 준비 중…</span><span id="engineInfo" class="mut"></span></div>
+    <div class="bar"><i id="engineBar" style="width:0%"></i></div>
+  </section>
+
+  <section id="drop" class="drop" tabindex="0" aria-label="HWP 파일·폴더 끌어놓기 영역">
+    <div class="drop-in">
+      <div class="drop-ico" aria-hidden="true">📂</div>
+      <p class="drop-title">여기에 HWP 파일이나 폴더를 끌어놓으세요</p>
+      <p class="mut">폴더를 통째로 놓으면 하위 폴더까지 찾아 <b>.hwp</b>(와 .hwpx)만 처리합니다. 폴더 구조는 결과 zip 에 그대로 남습니다.</p>
+      <div class="btns">
+        <button id="pickFiles" class="btn primary" type="button">파일 선택</button>
+        <button id="pickDir" class="btn" type="button">폴더 선택</button>
+      </div>
+      <input id="fileInput" type="file" multiple accept=".hwp,.hwpx,.HWP,.HWPX" hidden>
+      <input id="dirInput" type="file" webkitdirectory hidden>
+    </div>
+  </section>
+
+  <details id="opts" class="card opts">
+    <summary>처리 옵션</summary>
+    <div class="grid">
+      <label>동시 처리 수
+        <select id="optJobs"><option>1</option><option>2</option><option>3</option><option>4</option></select>
+        <small class="mut">많을수록 빠르지만 메모리를 더 씁니다(처리 수마다 엔진 하나).</small></label>
+      <label>파일당 시간 한도(초)
+        <input id="optTimeout" type="number" min="10" max="3600" value="120">
+        <small class="mut">넘으면 그 파일만 실패로 두고 일꾼을 새로 띄웁니다.</small></label>
+      <label>민감정보 정책
+        <select id="optPolicy">
+          <option value="review">확인 요청 (기본) — 변환은 하고, AI 노출만 확인 뒤에</option>
+          <option value="pii">차단형 pii — 개인정보 꼴이 있으면 변환하지 않음</option>
+          <option value="pii-strict">차단형 pii-strict — 유선·인터넷 전화도 차단</option>
+          <option value="deny">전부 차단 deny</option>
+        </select></label>
+      <label>열기 암호(암호 문서용)
+        <input id="optPw" type="password" autocomplete="off" placeholder="없으면 비워 두세요">
+        <small class="mut">모든 파일에 같이 시도합니다. 저장하지 않습니다.</small></label>
+      <label class="chk"><input id="optHwpx" type="checkbox"> 이미 HWPX 인 파일도 다시 저장해 검증(정규화)</label>
+      <label class="chk"><input id="optAuto" type="checkbox" checked> 파일을 놓으면 바로 변환 시작</label>
+    </div>
+  </details>
+
+  <section id="summary" class="summary" aria-label="요약"></section>
+
+  <section id="toolbar" class="toolbar" aria-label="작업 도구" hidden>
+    <div class="progress"><div class="bar"><i id="runBar" style="width:0%"></i></div><span id="runText" class="mut"></span></div>
+    <div class="btns">
+      <button id="btnStart" class="btn primary" type="button">변환 시작</button>
+      <button id="btnCancel" class="btn" type="button" hidden>대기 중인 것 취소</button>
+      <button id="btnZip" class="btn primary" type="button" disabled>결과 전체 zip 내려받기</button>
+      <button id="btnZipSel" class="btn" type="button" disabled>선택 항목 zip</button>
+      <button id="btnExport" class="btn" type="button" disabled>Markdown·JSON 내보내기</button>
+      <button id="btnReview" class="btn" type="button" disabled>확인 대기 열기</button>
+      <button id="btnRetry" class="btn" type="button" hidden>실패·격리 다시 시도</button>
+      <button id="btnClear" class="btn ghost" type="button">목록 비우기</button>
+    </div>
+    <div class="filters" role="group" aria-label="필터"></div>
+  </section>
+
+  <section id="listWrap" class="card list" hidden>
+    <table id="list">
+      <thead><tr>
+        <th class="c-sel"><input id="selAll" type="checkbox" aria-label="전체 선택"></th>
+        <th>파일</th><th class="c-size">크기</th><th>변환</th><th>검증 판정</th><th>민감정보</th><th>설명</th><th class="c-act">동작</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </section>
+  <p id="emptyHint" class="mut center">아직 올린 파일이 없습니다. 위 영역에 끌어놓거나 「폴더 선택」을 누르세요.</p>
+
+  <section class="card help">
+    <h2>이 웹 버전이 하는 일과 못 하는 일</h2>
+    <ul>
+      <li><b>하는 일</b> — HWP→HWPX 변환(rhwp 엔진), 원본과 변환본을 독립 판독해 대조한 검증 판정(PASS/WARN/FAIL, 가시 글 기준), 민감정보 검출과 「확인 대기」 화면, Markdown·구조 JSON·RAG 조각 내보내기, 결과 zip(이관대장 CSV·XLSX, 요약, 파일별 검증서 포함). 데스크톱판과 같은 hwpai 본체 코드를 씁니다.</li>
+      <li><b>못 하는 일</b> — 하드디스크 전체 훑기, 폴더 감시(자동 변환), 탐색기 우클릭 메뉴, AI 연결(MCP)·AI 질문. 브라우저 보안상 사용자가 고른 파일만 볼 수 있기 때문입니다. 자세한 비교는 README.md.</li>
+      <li><b>한계</b> — 민감정보 검출은 형식(정규식)·문맥 규칙 기반이라 본문 속 이름·주소 같은 글은 잡지 못합니다. 검증 판정은 「내용이 빠지거나 바뀌지 않았는가」이며 한글에서 보이는 모양(쪽 나눔 등)이 같다는 뜻이 아닙니다.</li>
+    </ul>
+    <p class="mut">변환 엔진 <a href="licenses/rhwp-MIT-LICENSE.txt" target="_blank" rel="noopener">rhwp</a> (MIT, Copyright (c) 2025-2026 Edward Kim) · hwpai (MIT, 김영민) · Pyodide (MPL-2.0) · olefile (BSD). 전체 고지는 <a href="licenses/NOTICE.md" target="_blank" rel="noopener">licenses/NOTICE.md</a>.</p>
+  </section>
+</main>
+
+<dialog id="detail" aria-labelledby="detailTitle"><div class="dlg">
+  <header><h2 id="detailTitle">검증서</h2><button class="btn ghost" id="detailClose" type="button" aria-label="닫기">닫기 ✕</button></header>
+  <div id="detailBody"></div>
+</div></dialog>
+
+<dialog id="netDlg" aria-labelledby="netTitle"><div class="dlg">
+  <header><h2 id="netTitle">네트워크 점검</h2><button class="btn ghost" id="netClose" type="button">닫기 ✕</button></header>
+  <div id="netBody"></div>
+</div></dialog>
+
+<div id="review" class="overlay" hidden role="dialog" aria-modal="true" aria-label="민감정보 확인">
+  <header class="rv-head">
+    <h2>민감정보 확인</h2>
+    <span id="rv-legend" class="legend"></span>
+    <label>확인자 <input id="rv-who" size="10" autocomplete="off"></label>
+    <label><input type="checkbox" id="rv-onlyPend"> 미확인만</label>
+    <select id="rv-kindf" aria-label="종류"><option value="">종류 전체</option></select>
+    <button class="btn" id="rv-bulkNo" type="button" title="이 문서에서 보이는 항목 모두 「아님」">보이는 항목 모두 아님</button>
+    <button class="btn" id="rv-bulkYes" type="button" title="이 문서에서 보이는 항목 모두 「민감정보임」">보이는 항목 모두 민감정보임</button>
+    <label>민감정보 있는 문서는 <select id="rv-policy"><option value="mask">가려서 AI 에 보이기</option><option value="block">AI 에 계속 막기(변환은 허용)</option></select></label>
+    <button class="btn primary" id="rv-save" type="button">저장 (Ctrl+S)</button>
+    <button class="btn" id="rv-export" type="button" title="데스크톱판 sens apply 로 적용할 수 있는 결정 파일">결정 파일 받기</button>
+    <button class="btn" id="rv-import" type="button">결정 파일 불러오기</button>
+    <input id="rv-importFile" type="file" accept=".json,application/json" hidden>
+    <button class="btn ghost" id="rv-close" type="button">닫기 ✕</button>
+    <span id="rv-msg" class="mut" role="status"></span>
+  </header>
+  <div class="rv-main">
+    <nav class="pane" id="rv-docs" aria-label="문서 목록"></nav>
+    <section class="pane" id="rv-view" aria-label="문서 미리보기"><div id="rv-text"></div></section>
+    <aside class="pane" id="rv-items" aria-label="검출 항목"></aside>
+  </div>
+  <p class="mut rv-foot">키보드: j/k 다음·이전 항목 · s 민감정보임 · n 아님 · [ ] 이전·다음 문서 · Ctrl+S 저장. 점선 밑줄 = 업무 연락처 등 「추정 비민감」(기본은 아님, 바꿀 수 있음). 확인 결과는 문서 SHA-256 기준으로 이 브라우저 안에만 두며 값(전화번호 등)은 저장하지 않습니다.</p>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="payload/manifest.js"></script>
+<script src="js/py_bundle.js"></script>
+<script src="js/worker_src.js"></script>
+<script src="js/zip.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/review.js"></script>
+<script src="js/app.js"></script>
+<script src="js/pwa.js"></script>
+</body>
+</html>
