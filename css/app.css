@@ -120,3 +120,5 @@ td .mut{display:block;font-size:12px}
 
 .plain h3{margin:14px 0 6px;font-size:17px}.plain ol,.plain ul{padding-left:22px}.plain li{margin:6px 0;line-height:1.6}
 .cmp{width:100%;border-collapse:collapse}.cmp th,.cmp td{border-bottom:1px solid var(--bd);padding:6px 8px;text-align:left}
+\n.privacy-line{margin:6px 0;font-size:15px}
+.engine.ready{display:none}

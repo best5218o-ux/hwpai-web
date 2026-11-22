@@ -160,7 +160,8 @@ class BatchConverter:
                  jobs: int = 1, password: str | None = None, password_file: str | None = None,
                  verify: bool = True, quarantine_copy: bool = True, include_hwpx: bool = False,
                  retry_failed: bool = False, reverify: bool = False, log=print, on_row=None, gate=None,
-                 only: list | None = None, files: list | None = None, settle=None):
+                 only: list | None = None, files: list | None = None, settle=None, quick_resume: bool = False):
+        self.quick_resume = quick_resume  # 감시용: 크기·수정시각이 지난번과 같으면 지문 계산을 건너뜀
         self.settle = settle  # settle.Settler — 제자리 교체·원본 보관(선택, 기본 없음)
         self.files = files  # 미리 구한 상대경로 목록(전체 변환용) — 없으면 폴더를 훑는다
         self.src = os.path.abspath(src)
@@ -234,9 +235,20 @@ class BatchConverter:
     def process(self, rel: str, ledger: Ledger) -> dict:
         path = os.path.join(self.root, rel)
         t0 = time.perf_counter()
+        try:
+            st = os.stat(path)
+        except OSError:
+            st = None
+        if self.quick_resume and st is not None and not self.reverify:
+            pv = ledger.rows.get(rel)
+            if (pv and pv.get("원본_SHA256") and pv.get("원본_mtime_ns") == st.st_mtime_ns
+                    and str(pv.get("원본_크기")) == str(st.st_size) and self._resume_skip(rel, pv["원본_SHA256"], pv)):
+                return {**pv, "_resumed": True}
         sn = _audit.sniff(path)
         row = {"원본": rel, "원본_크기": sn.get("size", ""), "원본_형식": sn.get("format"),
                "특성": _traits(sn), "처리시각": _now()}
+        if st is not None:
+            row["원본_mtime_ns"] = st.st_mtime_ns
         try:
             row["원본_SHA256"] = sha256_file(path)
         except OSError as e:
@@ -483,7 +495,7 @@ def watch(src: str, outdir: str, interval: float = 30.0, rounds: int | None = No
     n = total_new = 0
     while rounds is None or n < rounds:
         n += 1
-        s = BatchConverter(src, outdir, log=lambda *a, **k: None, **kw).run()
+        s = BatchConverter(src, outdir, log=lambda *a, **k: None, quick_resume=True, **kw).run()
         if auto_purge is not None:  # 선택: 보관 기한이 지난 원본을 매 주기 정리(조건 확인 후에만 삭제)
             pr = auto_purge.purge(dry_run=False)
             if pr["삭제"] or pr["보류"]:

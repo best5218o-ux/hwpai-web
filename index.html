@@ -19,8 +19,8 @@
 <a class="skip" href="#drop">본문으로 건너뛰기</a>
 <header class="top">
   <div class="brand">
-    <h1>hwpai 웹 <small>HWP → HWPX 변환 · 변환 검증 · 민감정보 확인</small></h1>
-    <p class="sub">한글 프로그램 없이 이 브라우저 안에서 바꿉니다. 서버가 없습니다.</p>
+    <h1>hwpai 웹</h1>
+    <p class="sub">한글 없이 HWP를 HWPX로 바꿉니다</p>
     <div class="fsz" role="group" aria-label="글자 크기"><span>글자 크기</span><button type="button" data-z="1.25">크게</button><button type="button" data-z="1.5">더 크게</button><button type="button" data-z="1.8">아주 크게</button></div>
   </div>
   <button id="netBadge" class="badge ok" type="button" aria-haspopup="dialog" title="눌러서 네트워크 점검 보기">
@@ -29,10 +29,7 @@
 </header>
 
 <main>
-  <section class="privacy card" aria-label="개인정보 안내">
-    <strong>내 파일은 밖으로 나가지 않습니다.</strong> 이 화면 안에서만 바꾸고, 인터넷을 끊어도 됩니다. 탭을 닫으면 파일은 사라집니다.
-    <small class="mut">(서버·AI 호출 없음 · 오른쪽 위 「네트워크 요청 0건」을 누르면 직접 확인할 수 있습니다)</small>
-  </section>
+  <p class="privacy-line mut center">내 파일은 밖으로 나가지 않습니다</p>
 
   <section id="engine" class="card engine" aria-live="polite">
     <div class="row"><span id="engineText">엔진 준비 중…</span><span id="engineInfo" class="mut"></span></div>
@@ -42,43 +39,39 @@
   <section id="drop" class="drop" tabindex="0" aria-label="HWP 파일·폴더 끌어놓기 영역">
     <div class="drop-in">
       <div class="drop-ico" aria-hidden="true">📂</div>
-      <p class="drop-title">HWP 파일이나 폴더를 여기에 끌어다 놓으세요</p>
-      <p class="mut">놓으면 바로 바꿉니다. 폴더째 놓아도 됩니다. 끌어놓기가 어려우면 아래 단추를 누르세요.</p>
+      <p class="drop-title">HWP 파일을 여기에 끌어다 놓으세요</p>
       <div class="btns">
         <button id="pickFiles" class="btn primary big" type="button">파일 고르기</button>
         <button id="pickDir" class="btn big" type="button">폴더 고르기</button>
       </div>
-      <div class="btns"><button id="pickRW" class="btn" type="button" hidden title="폴더를 쓰기 허용으로 열어 변환 뒤 원래 자리에 .hwpx 를 두고 원본을 보관 폴더로 옮깁니다(Chrome·Edge 데스크톱)">원래 자리에서 바로 바꾸기(폴더 열기)</button></div>
+      <div class="btns"><button id="pickRW" class="btn" type="button" hidden title="폴더를 쓰기 허용으로 열어 변환 뒤 원래 자리에 .hwpx 를 두고 원본을 보관 폴더로 옮깁니다(Chrome·Edge 데스크톱)">원래 자리에서 바꾸기</button></div>
       <input id="fileInput" type="file" multiple accept=".hwp,.hwpx,.HWP,.HWPX" hidden>
       <input id="dirInput" type="file" webkitdirectory hidden>
     </div>
   </section>
 
   <details id="opts" class="card opts">
-    <summary>설정 (보통은 건드리지 않아도 됩니다)</summary>
+    <summary>⚙ 설정</summary>
     <div class="grid">
-      <label>동시 처리 수
-        <select id="optJobs"><option>1</option><option>2</option><option>3</option><option>4</option></select>
-        <small class="mut">많을수록 빠르지만 메모리를 더 씁니다(처리 수마다 엔진 하나).</small></label>
-      <label>파일당 시간 한도(초)
-        <input id="optTimeout" type="number" min="10" max="3600" value="120">
-        <small class="mut">넘으면 그 파일만 실패로 두고 일꾼을 새로 띄웁니다.</small></label>
-      <label>민감정보 정책
+      <label>동시에 몇 개씩
+        <select id="optJobs"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
+      <label>파일당 최대 시간(초)
+        <input id="optTimeout" type="number" min="10" max="3600" value="120"></label>
+      <label>개인정보 처리
         <select id="optPolicy">
-          <option value="review">확인 요청 (기본) — 변환은 하고, AI 노출만 확인 뒤에</option>
-          <option value="pii">차단형 pii — 개인정보 꼴이 있으면 변환하지 않음</option>
-          <option value="pii-strict">차단형 pii-strict — 유선·인터넷 전화도 차단</option>
-          <option value="deny">전부 차단 deny</option>
+          <option value="review">확인 요청 (기본)</option>
+          <option value="pii">개인정보 있으면 변환 안 함</option>
+          <option value="pii-strict">개인정보 있으면 변환 안 함 (엄격)</option>
+          <option value="deny">모두 변환 안 함</option>
         </select></label>
-      <label>열기 암호(암호 문서용)
-        <input id="optPw" type="password" autocomplete="off" placeholder="없으면 비워 두세요">
-        <small class="mut">모든 파일에 같이 시도합니다. 저장하지 않습니다.</small></label>
-      <label class="chk"><input id="optHwpx" type="checkbox"> 이미 HWPX 인 파일도 다시 저장해 검증(정규화)</label>
-      <label class="chk"><input id="optAuto" type="checkbox" checked> 파일을 놓으면 바로 변환 시작</label>
-      <label id="optKeepWrap" hidden>제자리 교체 — 보관한 원본 삭제 기한
-        <select id="optKeep"><option value="30" selected>30일 뒤 삭제 대상 (기본)</option><option value="90">3개월(90일) 뒤 삭제 대상</option><option value="180">6개월(180일) 뒤 삭제 대상</option><option value="0">지우지 않고 계속 보관</option></select>
+      <label>문서 암호
+        <input id="optPw" type="password" autocomplete="off" placeholder="없으면 비워 두세요"></label>
+      <label class="chk"><input id="optHwpx" type="checkbox"> HWPX 파일도 다시 검증</label>
+      <label class="chk"><input id="optAuto" type="checkbox" checked> 놓으면 바로 변환</label>
+      <label id="optKeepWrap" hidden>원본 보관 기간
+        <select id="optKeep"><option value="30" selected>30일 (기본)</option><option value="90">3개월</option><option value="180">6개월</option><option value="0">계속 보관</option></select>
         <small class="mut">「폴더 열기(제자리 교체용)」로 연 폴더의 변환이 끝나면 「제자리 교체」 단추가 켜집니다. 삭제는 자동이 아니며 「보관 원본 정리」에서 미리보기를 본 뒤 직접 합니다.</small>
-        <button id="btnPurge" class="btn" type="button">보관 원본 정리…</button></label>
+        <button id="btnPurge" class="btn" type="button">보관 원본 정리</button></label>
     </div>
   </details>
 
@@ -87,9 +80,9 @@
   <section id="toolbar" class="toolbar" aria-label="작업 도구" hidden>
     <div class="progress"><div class="bar"><i id="runBar" style="width:0%"></i></div><span id="runText" class="mut"></span></div>
     <div class="btns">
-      <button id="btnStart" class="btn primary" type="button">바꾸기 시작</button>
+      <button id="btnStart" class="btn primary" type="button">변환 시작</button>
       <button id="btnCancel" class="btn" type="button" hidden>대기 중인 것 취소</button>
-      <button id="btnSettle" class="btn" type="button" hidden>원래 자리에서 바꾸기(원본은 보관)</button>
+      <button id="btnSettle" class="btn" type="button" hidden>원래 자리에서 바꾸기</button>
       <button id="btnZip" class="btn primary" type="button" disabled>결과 모두 받기 (zip)</button>
       <button id="btnReview" class="btn" type="button" disabled>개인정보 확인</button>
       <button id="btnRetry" class="btn" type="button" hidden>실패한 것 다시 변환</button>
@@ -97,7 +90,7 @@
     </div>
     <details class="more"><summary>더 보기</summary><div class="btns" style="justify-content:flex-start">
       <button id="btnZipSel" class="btn" type="button" disabled>고른 것만 zip</button>
-      <button id="btnExport" class="btn" type="button" disabled>AI용 글(Markdown·JSON) 내보내기</button>
+      <button id="btnExport" class="btn" type="button" disabled>AI용 글 내보내기</button>
     </div><div class="filters" role="group" aria-label="걸러 보기"></div></details>
   </section>
 
@@ -110,14 +103,12 @@
       <tbody id="rows"></tbody>
     </table>
   </section>
-  <p id="emptyHint" class="mut center">아직 올린 파일이 없습니다. 위에 끌어다 놓거나 「파일 고르기」를 누르세요.</p>
-
-  <details class="card help"><summary><b>이 웹 버전이 하는 일과 못 하는 일</b></summary>
+  
+  <details class="card help"><summary><b>자세한 안내</b></summary>
     <ul>
-      <li><b>하는 일</b> — HWP→HWPX 변환(rhwp 엔진), 원본과 변환본을 독립 판독해 대조한 검증 판정(PASS/WARN/FAIL, 가시 글 기준), 민감정보 검출과 「확인 대기」 화면, Markdown·구조 JSON·RAG 조각 내보내기, 결과 zip(이관대장 CSV·XLSX, 요약, 파일별 검증서 포함). 데스크톱판과 같은 hwpai 본체 코드를 씁니다.</li>
-      <li><b>제자리 교체(선택)</b> — Chrome·Edge 데스크톱에서 「폴더 열기(제자리 교체용)」로 폴더를 쓰기 허용으로 열면, 변환·검증 PASS인 문서만 원래 자리에 .hwpx 를 두고 원본 .hwp 는 고른 보관 폴더로 옮깁니다(보관대장.csv·SHA-256 확인). 휴대폰·다른 브라우저에서는 보이지 않습니다.</li>
-      <li><b>못 하는 일</b> — 하드디스크 전체 훑기, 폴더 감시(자동 변환), 탐색기 우클릭 메뉴, AI 연결(MCP)·AI 질문. 브라우저 보안상 사용자가 고른 파일만 볼 수 있기 때문입니다. 자세한 비교는 README.md.</li>
-      <li><b>한계</b> — 민감정보 검출은 형식(정규식)·문맥 규칙 기반이라 본문 속 이름·주소 같은 글은 잡지 못합니다. 검증 판정은 「내용이 빠지거나 바뀌지 않았는가」이며 한글에서 보이는 모양(쪽 나눔 등)이 같다는 뜻이 아닙니다.</li>
+      <li>HWP를 HWPX로 바꾸고, 원본과 비교해 바뀐 곳이 없는지 확인합니다.</li>
+      <li>이 웹에서는 폴더 감시, AI 연결은 쓸 수 없습니다. 컴퓨터 설치판에서 쓸 수 있습니다.</li>
+      <li>쪽 나눔 같은 모양까지 같다는 뜻은 아닙니다. 내용이 빠지거나 바뀌지 않았는지를 확인합니다.</li>
     </ul>
     <p class="mut">변환 엔진 <a href="licenses/rhwp-MIT-LICENSE.txt" target="_blank" rel="noopener">rhwp</a> (MIT, Copyright (c) 2025-2026 Edward Kim) · hwpai (MIT, 김영민) · Pyodide (MPL-2.0) · olefile (BSD). 전체 고지는 <a href="licenses/NOTICE.md" target="_blank" rel="noopener">licenses/NOTICE.md</a>.</p>
   </details>
@@ -155,7 +146,7 @@
     <section class="pane" id="rv-view" aria-label="문서 미리보기"><div id="rv-text"></div></section>
     <aside class="pane" id="rv-items" aria-label="검출 항목"></aside>
   </div>
-  <p class="mut rv-foot">키보드: j/k 다음·이전 항목 · s 민감정보임 · n 아님 · [ ] 이전·다음 문서 · Ctrl+S 저장. 점선 밑줄 = 업무 연락처 등 「추정 비민감」(기본은 아님, 바꿀 수 있음). 확인 결과는 문서 SHA-256 기준으로 이 브라우저 안에만 두며 값(전화번호 등)은 저장하지 않습니다.</p>
+  <p class="mut rv-foot">j / k : 다음·이전 · s : 개인정보임 · n : 아님 · Ctrl+S : 저장</p>
 </div>
 
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>

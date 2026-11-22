@@ -165,16 +165,16 @@
   function friendlyReason(it) {
     const r = it.row || {}; const t = String(r.판정_이유 || '');
     const map = [
-      [/빈 파일|\(empty\)/, '빈 파일입니다.'], [/\(unknown\)/, 'HWP 문서가 아닙니다(확장자만 .hwp 인 다른 형식이거나 내용이 깨졌습니다).'],
-      [/\(ole-broken\)/, '파일 구조(OLE)가 손상되어 읽을 수 없습니다.'], [/\(ole-not-hwp\)/, 'OLE 문서이지만 HWP 가 아닙니다(다른 오피스 파일).'],
-      [/\(zip-broken\)/, 'HWPX(ZIP) 파일이 손상되었습니다.'], [/\(zip-not-hwpx\)/, 'ZIP 이지만 HWPX 가 아닙니다.'],
-      [/DRM/, 'DRM 문서입니다 — 기관 DRM 을 해제한 뒤 다시 올리세요(변환하지 않음).'],
-      [/열기 암호/, '열기 암호가 걸린 문서입니다 — 「처리 옵션」에 암호를 넣고 「실패·격리 다시 시도」를 누르세요.'],
-      [/시간초과|시간 한도/, '시간 한도를 넘었습니다 — 「처리 옵션」에서 한도를 늘려 다시 시도하세요(아주 큰 문서일 수 있음).'],
-      [/엔진중단|엔진 일꾼|crash/, '변환 엔진이 중단되었습니다(문서가 특이한 구조일 수 있음). 이 파일만 실패로 두고 엔진을 새로 띄웠습니다.'],
-      [/엔진오류/, '변환 엔진이 이 문서를 읽지 못했습니다.'], [/처리 오류/, '처리 중 예상 못 한 오류가 났습니다.'],
-      [/이미 HWPX/, '이미 HWPX 입니다 — 다시 저장해 검증하려면 「처리 옵션」에서 체크하세요.'],
-      [/등급|차단/, '민감정보 정책에 따라 변환하지 않았습니다(처리 옵션의 정책을 「확인 요청」으로 두면 변환합니다).'],
+      [/빈 파일|\(empty\)/, '빈 파일입니다.'], [/\(unknown\)/, 'HWP 문서가 아닙니다.'],
+      [/\(ole-broken\)/, '파일이 손상되어 읽을 수 없습니다.'], [/\(ole-not-hwp\)/, 'HWP 문서가 아닙니다.'],
+      [/\(zip-broken\)/, '파일이 손상되었습니다.'], [/\(zip-not-hwpx\)/, 'HWPX 문서가 아닙니다.'],
+      [/DRM/, 'DRM이 걸린 문서입니다. 해제 후 다시 올리세요.'],
+      [/열기 암호/, '암호가 걸린 문서입니다. 설정에 암호를 넣고 다시 시도하세요.'],
+      [/시간초과|시간 한도/, '너무 오래 걸려 멈췄습니다. 설정에서 시간을 늘려 보세요.'],
+      [/엔진중단|엔진 일꾼|crash/, '이 문서는 변환하지 못했습니다.'],
+      [/엔진오류/, '이 문서는 변환하지 못했습니다.'], [/처리 오류/, '처리 중 오류가 났습니다.'],
+      [/이미 HWPX/, '이미 HWPX 입니다.'],
+      [/등급|차단/, '개인정보 설정에 따라 변환하지 않았습니다.'],
     ];
     for (const [re, m] of map) if (re.test(t)) return m;
     return '';
@@ -316,16 +316,16 @@
     const html = vis.map(it => {
       const r = it.row || {}; const why = friendlyReason(it);
       let reason = r.판정_이유 ? `<span title="${esc(r.판정_이유)}">${esc(String(r.판정_이유).slice(0, 160))}</span>` : '';
-      if (why) reason = `<b>${esc(why)}</b><br><small class="mut">${esc(String(r.판정_이유 || '').slice(0, 160))}</small>`;
-      if (it.status === '변환완료' && !r.판정_이유 && r.판정 === 'PASS') reason = '<span class="mut">글·표·그림이 원본과 같습니다</span>';
-      if (it.settleMsg) reason += `<br><small class="mut">제자리 교체: ${esc(it.settleMsg)}</small>`;
+      if (why) reason = `<b title="${esc(r.판정_이유 || '')}">${esc(why)}</b>`;
+      if (it.status === '변환완료' && !r.판정_이유 && r.판정 === 'PASS') reason = '<span class="mut">원본과 같습니다</span>';
+      if (it.settleMsg) reason += `<br><small class="mut">${esc(it.settleMsg)}</small>`;
       const acts = [];
       if (it.hwpx) acts.push(`<button class="btn sm primary" data-act="dl" data-id="${it.id}" type="button">HWPX 받기</button>`);
       if (it.md) acts.push(`<button class="btn sm" data-act="detail" data-id="${it.id}" type="button">자세히</button>`);
       if (it.status === '변환완료' || it.row && it.row.원본_형식) acts.push(`<button class="btn sm" data-act="exp" data-id="${it.id}" type="button">AI용</button>`);
       return `<tr data-id="${it.id}"><td class="c-sel"><input type="checkbox" data-sel="${it.id}" ${S.selected.has(it.id) ? 'checked' : ''} aria-label="선택"></td>
-<td class="name" data-l="파일">${esc(it.rel)}${r.특성 ? `<small>${esc(r.원본_형식 || '')} ${esc(r.특성)}</small>` : ''}</td>
-<td data-l="결과">${it.status === '변환완료' && it.row && VWORD[it.row.판정] ? verdictTag(it) : statusTag(it)}<small class="mut">${fmtSize(it.size)}</small></td>
+<td class="name" data-l="파일">${esc(it.rel)}</td>
+<td data-l="결과">${it.status === '변환완료' && it.row && VWORD[it.row.판정] ? verdictTag(it) : statusTag(it)}</td>
 <td data-l="개인정보">${sensTag(it)}</td><td class="reason" data-l="설명">${reason}</td><td class="c-act" data-l="동작">${acts.join(' ')}</td></tr>`;
     }).join('');
     tb.innerHTML = html;
@@ -333,7 +333,7 @@
   }
   function renderAll() {
     const has = S.items.length > 0;
-    $('#toolbar').hidden = !has; $('#listWrap').hidden = !has; $('#emptyHint').hidden = has;
+    $('#toolbar').hidden = !has; $('#listWrap').hidden = !has;
     renderSummary(); renderRows();
     const c = counts();
     const doneAny = S.items.some(i => i.hwpx);
@@ -498,30 +498,30 @@
   function explainHtml(it) {
     let x = null; try { x = JSON.parse(it.json || 'null'); } catch (e) { /* */ }
     x = x && x['쉬운설명']; if (!x) return '';
-    const cmp = (x['비교한 것'] || []).map(c => `<tr><td>${esc(c['항목'])}</td><td>${esc(c['원본'])}</td><td>${esc(c['변환본'])}</td><td>${c['결과'] === '같음' ? '✔ 같음' : '✖ 다름'}${c['설명'] ? ' — ' + esc(c['설명']) : ''}</td></tr>`).join('');
     const df = x['다른 부분'] || [];
-    const dh = df.length ? `<h3>어디가 달랐나</h3><ol>${df.map(d => `<li><b>${esc(d['종류'])}</b> · ${esc(d['위치'])}<br>원본: 「${esc(d['원본'])}」<br>변환본: 「${esc(d['변환본'])}」</li>`).join('')}</ol>` : '';
+    const dh = df.length ? `<h3>달라진 곳</h3><ol>${df.slice(0, 8).map(d => `<li><b>${esc(d['종류'])}</b> · ${esc(d['위치'])}<br>원본: 「${esc(d['원본'])}」<br>변환본: 「${esc(d['변환본'])}」</li>`).join('')}</ol>${df.length > 8 ? `<p class="mut">그 밖에 ${df.length - 8}곳</p>` : ''}` : '';
     const wy = x['왜 그런가'] || [];
-    const wh = wy.length ? `<h3>왜 그런가 · 어떻게 하면 되나</h3><ul>${wy.map(c => `<li><b>${esc(c['무엇이'])}</b><br>왜: ${esc(c['왜'])}<br>어떻게: ${esc(c['어떻게'])}</li>`).join('')}</ul>` : '';
+    const wh = wy.length ? `<h3>왜 그런가</h3><ul>${wy.map(c => `<li>${esc(c['왜'])}<br><b>${esc(c['어떻게'])}</b></li>`).join('')}</ul>` : '';
     const fx = (x['AI가_고치려면'] || {})['수정안'] || [];
-    const fh = fx.length ? `<h3>고치려면</h3><p class="mut">AI를 연결하면 이 검증서(.json)만으로 바로 고칠 수 있습니다. 「자동 가능」은 AI가 그대로 실행하는 수정입니다.</p><ol>${fx.map(f => `<li><b>${esc(f['종류'])}</b>${f['자동수정'] ? ' (자동 가능)' : ''} · ${esc(f['위치'])}<br>${esc(f['방법'])}</li>`).join('')}</ol>` : '';
-    return `<div class="plain"><h3>무엇을 비교했나</h3><table class="cmp"><thead><tr><th>항목</th><th>원본</th><th>변환본</th><th>결과</th></tr></thead><tbody>${cmp}</tbody></table>${dh}${wh}${fh}</div>`;
+    const fh = fx.length ? `<h3>AI가 고칠 수 있습니다</h3><p>AI에 이 검증서(.json)를 주면 바로 고쳐서 다시 변환합니다. (${fx.length}곳)</p>` : '';
+    const cmp = (x['비교한 것'] || []).map(c => `<tr><td>${esc(c['항목'])}</td><td>${esc(c['원본'])}</td><td>${esc(c['변환본'])}</td><td>${c['결과'] === '같음' ? '같음' : '다름'}</td></tr>`).join('');
+    return `<div class="plain">${dh}${wh}${fh}<details class="more"><summary>비교한 항목</summary><table class="cmp"><thead><tr><th>항목</th><th>원본</th><th>변환본</th><th>결과</th></tr></thead><tbody>${cmp}</tbody></table></details></div>`;
   }
   function showDetail(it) {
     const r = it.row || {}; const dlg = $('#detail');
     $('#detailTitle').textContent = '자세히 — ' + it.rel;
     const fp = (h) => h ? String(h).slice(0, 8) + '…' + String(h).slice(-4) : '';
-    const V = { PASS: '글·표·그림이 원본과 같습니다. 안심하고 쓰셔도 됩니다.', WARN: '대부분 같지만 일부가 다를 수 있습니다. 중요한 문서는 한글에서 한번 열어 보세요.', FAIL: '변환은 됐지만 원본에 있던 내용이 빠졌습니다. 이 파일은 그대로 쓰지 마세요.' }[r.판정] || '';
+    const V = { PASS: '원본과 같습니다. 그대로 쓰셔도 됩니다.', WARN: '일부가 다를 수 있습니다. 한글에서 한번 열어 보세요.', FAIL: '내용이 빠졌습니다. 그대로 쓰지 마세요.' }[r.판정] || '';
     const same = r.원본_SHA256 && r.변환본_SHA256;
-    const easy = [['결과', r.판정 && VWORD[r.판정] ? VWORD[r.판정][1] : ''], ['쉽게 말하면', V], ['원본 크기', fmtSize(r.원본_크기)], ['바뀐 파일 크기', fmtSize(r.변환본_크기)],
+    const easy = [['결과', r.판정 && VWORD[r.판정] ? VWORD[r.판정][1] : ''], ['설명', V],
       ['개인정보', r.민감정보 ? `${r.민감정보} ${r.민감정보_항목 || ''}` : '']].filter(x => x[1]);
-    const tech = [['원본 형식', r.원본_형식], ['특성', r.특성], ['원본 파일 지문(SHA-256)', r.원본_SHA256], ['변환본 파일 지문(SHA-256)', r.변환본_SHA256],
+    const tech = [['원본 크기', fmtSize(r.원본_크기)], ['변환본 크기', fmtSize(r.변환본_크기)], ['원본 형식', r.원본_형식], ['특성', r.특성], ['원본 파일 지문(SHA-256)', r.원본_SHA256], ['변환본 파일 지문(SHA-256)', r.변환본_SHA256],
       ['엔진', r.엔진 ? `${r.엔진} ${r.엔진_판}` : ''], ['변환 소요', r.변환_소요ms ? r.변환_소요ms + ' ms' : ''], ['검증 점수·판정', r.판정 ? `${r.검증점수} · ${r.판정}` : '']].filter(x => x[1]);
     $('#detailBody').innerHTML = `<dl class="kv big">${easy.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
-${same ? `<p class="fpbox"><b>파일 지문</b> (같은 파일인지 확인하는 번호) — 원본 <code>${esc(fp(r.원본_SHA256))}</code> · 바뀐 파일 <code>${esc(fp(r.변환본_SHA256))}</code> <button class="btn sm" id="dCopy" type="button">전체 번호 복사</button></p>` : ''}
+${same ? `<p class="fpbox"><b>파일 지문</b> 원본 <code>${esc(fp(r.원본_SHA256))}</code> · 바뀐 파일 <code>${esc(fp(r.변환본_SHA256))}</code> <button class="btn sm" id="dCopy" type="button">전체 번호 복사</button></p>` : ''}
 <p class="btns" style="justify-content:flex-start"><button class="btn sm" id="dMd" type="button">검증서(.md) 받기</button> <button class="btn sm" id="dJson" type="button">검증서(.json) 받기</button></p>
 ${explainHtml(it)}
-<details class="more"><summary>자세한 기록 (전문가용)</summary><dl class="kv">${tech.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div>${mdToHtml(String(it.md || '').split('# 자세한 기록 (전문가용)').pop())}</div></details>`;
+<details class="more"><summary>전문가용 기록</summary><dl class="kv">${tech.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div>${mdToHtml(String(it.md || '').split('# 자세한 기록 (전문가용)').pop())}</div></details>`;
     const cp = $('#dCopy'); if (cp) cp.onclick = () => { try { navigator.clipboard.writeText(`원본 ${r.원본_SHA256}\n변환본 ${r.변환본_SHA256}`); cp.textContent = '복사했습니다'; } catch (e) { cp.textContent = '복사 못 함'; } };
     $('#dMd').onclick = () => download(new Blob([it.md || ''], { type: 'text/markdown' }), it.name + '.검증서.md');
     $('#dJson').onclick = () => download(new Blob([it.json || ''], { type: 'application/json' }), it.name + '.검증서.json');
