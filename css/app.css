@@ -122,3 +122,18 @@ td .mut{display:block;font-size:12px}
 .cmp{width:100%;border-collapse:collapse}.cmp th,.cmp td{border-bottom:1px solid var(--bd);padding:6px 8px;text-align:left}
 \n.privacy-line{margin:6px 0;font-size:15px}
 .engine.ready{display:none}
+
+.hint1{font-size:.9em;margin:6px 0 0}
+.rw h2{font-size:1.1em;margin:0 0 6px}
+.rw-lead{margin:0 0 8px}
+.rw-flow{display:grid;gap:8px;margin:8px 0}
+.rw-flow>div{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--bg,#f6f7f9);border-radius:8px;padding:8px 10px}
+.rw-flow em{font-style:normal;font-weight:700}
+.rw-flow .fn{font-family:ui-monospace,Consolas,monospace;padding:2px 8px;border-radius:6px;border:1px solid var(--bd)}
+.rw-flow .fn.new{border-color:#1a7f37;color:#1a7f37;font-weight:700}
+.rw-flow .fn.arc{border-style:dashed}
+.rw-flow small{flex-basis:100%;color:var(--mut,#667)}
+.rw-steps{margin:6px 0 10px;padding-left:20px}
+.settlebar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:#e8f5ec;border:2px solid #1a7f37;border-radius:10px;padding:12px 14px;margin:10px 0}
+.settlebar b{display:block;font-size:1.05em}
+@media (prefers-color-scheme:dark){.settlebar{background:#12301c}}

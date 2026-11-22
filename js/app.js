@@ -358,7 +358,12 @@
     $('#btnReview').textContent = c.wait ? `개인정보 확인 (${c.wait})` : '개인정보 보기';
     $('#btnStart').hidden = !pending().length || !!S.running; $('#btnStart').disabled = !S.ready;
     const canSettle = ST && ST.supported() && S.rootH && !S.running && S.items.some(i => i.fh && i.row && i.row.판정 === 'PASS' && i.hwpx && !i.settled && /\.hwp$/i.test(i.name));
-    $('#btnSettle').hidden = !canSettle;
+    $('#settleBar').hidden = !canSettle;
+    if (canSettle) {
+      const n = S.items.filter(i => i.fh && i.row && i.row.판정 === 'PASS' && i.hwpx && !i.settled && /\.hwp$/i.test(i.name)).length;
+      $('#settleTitle').textContent = `검증 통과 ${n}개 문서를 바꿀 수 있습니다`;
+      $('#settleDesc').textContent = ` 「${S.rootH.name}」 폴더 안에서 .hwp → .hwpx 로 바뀌고, 원본 .hwp 는 「_원본보관」 폴더로 옮겨집니다(삭제 안 함).`;
+    }
     $('#btnCancel').hidden = !S.running;
     $('#btnRetry').hidden = !S.items.some(i => i.status === '변환실패' || i.status === '격리') || !!S.running;
     const chips = [['all', '전체'], ['PASS', '정상 변환'], ['WARN', '확인 필요'], ['bad', '변환 실패'], ['wait', '개인정보 확인 대기'], ['skip', '건너뜀']];
@@ -603,7 +608,7 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
     drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#fileInput').click(); } });
     $('#fileInput').onchange = (e) => { addFiles(Array.from(e.target.files).map(f => ({ file: f, path: f.name })), null); e.target.value = ''; };
     $('#dirInput').onchange = (e) => { addFiles(Array.from(e.target.files).map(f => ({ file: f, path: f.webkitRelativePath || f.name })), null); e.target.value = ''; };
-    if (ST && ST.supported()) { $('#pickRW').hidden = false; $('#optKeepWrap').hidden = false; }
+    if (ST && ST.supported()) { $('#rwCard').hidden = false; $('#optKeepWrap').hidden = false; }
     $('#pickRW').onclick = async () => {
       try {
         const h = await window.showDirectoryPicker({ mode: 'readwrite' });
@@ -615,7 +620,7 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
       const items = S.items.filter(i => i.fh && i.row && i.row.판정 === 'PASS' && i.hwpx && !i.settled && /\.hwp$/i.test(i.name));
       if (!items.length) return;
       const pickArc = $('#optPickArc') && $('#optPickArc').checked;
-      if (!confirm(`제자리 교체: 검증 PASS인 ${items.length}개 문서의 .hwpx 를 원래 자리에 두고, 원본 .hwp 는 ` + (pickArc ? '이어서 고르는 보관 폴더로' : '이 폴더 안의 「_원본보관」 폴더로') + ` 옮깁니다(지워지지 않습니다). 계속할까요?`)) return;
+      if (!confirm(`폴더에 적용: 검증 PASS인 ${items.length}개 문서의 .hwpx 를 원래 자리에 두고, 원본 .hwp 는 ` + (pickArc ? '이어서 고르는 보관 폴더로' : '이 폴더 안의 「_원본보관」 폴더로') + ` 옮깁니다(지워지지 않습니다). 계속할까요?`)) return;
       let archH;
       try { archH = pickArc ? await window.showDirectoryPicker({ mode: 'readwrite' }) : await ST.autoArchive(S.rootH); } catch (e) { if (e.name !== 'AbortError') toast('보관 폴더를 열지 못했습니다: ' + e.message, 7000); return; }
       try {

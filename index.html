@@ -44,10 +44,22 @@
         <button id="pickFiles" class="btn primary big" type="button">파일 고르기</button>
         <button id="pickDir" class="btn big" type="button">폴더 고르기</button>
       </div>
-      <div class="btns"><button id="pickRW" class="btn" type="button" hidden title="폴더를 쓰기 허용으로 열어 변환 뒤 원래 자리에 .hwpx 를 두고 원본을 보관 폴더로 옮깁니다(Chrome·Edge 데스크톱)">원래 자리에서 바꾸기</button></div>
+      <p class="mut center hint1">변환한 파일은 ZIP 하나로 내려받습니다. 원본은 그대로 둡니다.</p>
       <input id="fileInput" type="file" multiple accept=".hwp,.hwpx,.HWP,.HWPX" hidden>
       <input id="dirInput" type="file" webkitdirectory hidden>
     </div>
+  </section>
+
+
+  <section id="rwCard" class="card rw" hidden>
+    <h2>폴더를 그 자리에서 바꾸기 <small class="mut">(Chrome·Edge 데스크톱)</small></h2>
+    <p class="rw-lead">폴더 안 문서를 <b>같은 자리에서</b> HWPX 로 바꿔 두고, 옛 파일은 안전하게 따로 모아 둡니다.</p>
+    <div class="rw-flow" aria-label="바뀌는 모습">
+      <div><span class="fn">보고서.hwp</span><em>→</em><span class="fn new">보고서.hwpx</span><small>같은 폴더, 같은 자리에 생깁니다</small></div>
+      <div><span class="fn">보고서.hwp (원본)</span><em>→</em><span class="fn arc">_원본보관 / 보고서.hwp</span><small>폴더 안 「_원본보관」으로 옮깁니다. 지우지 않습니다</small></div>
+    </div>
+    <ol class="rw-steps"><li><b>바꿀 폴더 고르기</b> — 아래 단추를 누르거나 위 상자에 폴더를 끌어놓고, 「수정 허용」을 누릅니다</li><li>변환이 끝나면 <b>「결과를 폴더에 적용」</b> 띠가 나타납니다. 검증 PASS 문서만 바뀝니다</li></ol>
+    <div class="btns"><button id="pickRW" class="btn primary big" type="button">바꿀 폴더 고르기</button></div>
   </section>
 
   <details id="opts" class="card opts">
@@ -71,19 +83,24 @@
       <label id="optArcWrap" class="chk"><input type="checkbox" id="optPickArc"> 보관 폴더를 직접 고르기(기본: 폴더 안 「_원본보관」 자동)</label>
       <label id="optKeepWrap" hidden>원본 보관 기간
         <select id="optKeep"><option value="30" selected>30일 (기본)</option><option value="90">3개월</option><option value="180">6개월</option><option value="0">계속 보관</option></select>
-        <small class="mut">「폴더 열기(제자리 교체용)」로 연 폴더의 변환이 끝나면 「제자리 교체」 단추가 켜집니다. 삭제는 자동이 아니며 「보관 원본 정리」에서 미리보기를 본 뒤 직접 합니다.</small>
+        <small class="mut">「바꿀 폴더 고르기」로 연 폴더의 변환이 끝나면 「결과를 폴더에 적용」 띠가 나타납니다. 삭제는 자동이 아니며 「보관 원본 정리」에서 미리보기를 본 뒤 직접 합니다.</small>
         <button id="btnPurge" class="btn" type="button">보관 원본 정리</button></label>
     </div>
   </details>
 
   <section id="summary" class="summary" aria-label="요약"></section>
 
+  <section id="settleBar" class="settlebar" hidden>
+    <div><b id="settleTitle">변환이 끝났습니다</b><span id="settleDesc"></span></div>
+    <button id="btnSettle" class="btn primary big" type="button">결과를 폴더에 적용</button>
+  </section>
+
   <section id="toolbar" class="toolbar" aria-label="작업 도구" hidden>
     <div class="progress"><div class="bar"><i id="runBar" style="width:0%"></i></div><span id="runText" class="mut"></span></div>
     <div class="btns">
       <button id="btnStart" class="btn primary" type="button">변환 시작</button>
       <button id="btnCancel" class="btn" type="button" hidden>대기 중인 것 취소</button>
-      <button id="btnSettle" class="btn" type="button" hidden>원래 자리에서 바꾸기</button>
+      
       <button id="btnZip" class="btn primary" type="button" disabled>결과 모두 받기 (zip)</button>
       <button id="btnReview" class="btn" type="button" disabled>개인정보 확인</button>
       <button id="btnRetry" class="btn" type="button" hidden>실패한 것 다시 변환</button>
