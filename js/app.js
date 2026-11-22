@@ -90,6 +90,21 @@
       for (const k of kids) await walkEntry(k, prefix + entry.name + '/', out, skipped);
     }
   }
+  // ---- 폴더 고르기 자동화: 폴더를 끌어놓으면 그 폴더를 바로 쓰기 허용으로 열고(선택창 없음), 보관 폴더는 폴더 안 「_원본보관」을 자동으로 만든다
+  async function useRootHandle(h) {   // 쓰기 허용을 받아 폴더를 훑고 목록에 올린다
+    let perm = await h.queryPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') perm = await h.requestPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') { toast('폴더 쓰기를 허용하지 않아 읽기만 합니다. 제자리 교체를 하려면 허용해 주세요.', 7000); return false; }
+    toast('폴더를 읽는 중…', 20000);
+    const out = []; await ST.walk(h, h.name + '/', out);
+    S.rootH = h; addFiles(out, null); return true;
+  }
+  async function openRWHandle(hps) {   // 끌어놓은 것이 폴더 하나이면 그 폴더를 바로 연다
+    if (!hps.length) return false;
+    const hs = (await Promise.all(hps)).filter(Boolean);
+    if (hs.length !== 1 || hs[0].kind !== 'directory') return false;
+    return await useRootHandle(hs[0]);
+  }
   async function collectFromDrop(dt) {
     // webkitGetAsEntry 는 drop 이벤트 안에서 동기로 불러야 한다(이후엔 null)
     const entries = [];
@@ -562,7 +577,7 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
     const fmt = (r) => `기한 지난 ${r.대상}건 — 삭제 ${r.삭제} · 보류 ${r.보류} · 기한 전 ${r.아직}` + r.내역.slice(0, 30).map(x => `\n  ${x[1]}: ${x[0]}${x[2] ? ' — ' + x[2] : ''}`).join('');
     const ready = () => { $('#pgPv').disabled = !(P.arch && P.root); };
     $('#pgA').onclick = async () => { try { P.arch = await window.showDirectoryPicker({ mode: 'readwrite' }); out('보관 폴더: ' + P.arch.name + (P.root ? ' · 원본 폴더: ' + P.root.name : '')); ready(); } catch (e) { /* 취소 */ } };
-    $('#pgR').onclick = async () => { try { P.root = await window.showDirectoryPicker({ mode: 'readwrite' }); out((P.arch ? '보관 폴더: ' + P.arch.name + ' · ' : '') + '원본 폴더: ' + P.root.name); ready(); } catch (e) { /* 취소 */ } };
+    $('#pgR').onclick = async () => { try { P.root = await window.showDirectoryPicker({ mode: 'readwrite' }); if (!P.arch) { try { P.arch = await P.root.getDirectoryHandle(ST.AUTO_ARC); } catch (e2) { /* 자동 보관 폴더 없음 */ } } out((P.arch ? '보관 폴더: ' + P.arch.name + ' · ' : '') + '원본 폴더: ' + P.root.name); ready(); } catch (e) { /* 취소 */ } };
     $('#pgPv').onclick = async () => { try { const r = await ST.purge(P.arch, P.root, true); out(fmt(r) + (r.삭제 ? '\n\n실제로 지우려면 「기한 지난 원본 삭제 실행」을 누르세요.' : '')); $('#pgGo').hidden = !r.삭제; } catch (e) { out('오류: ' + e.message); $('#pgGo').hidden = true; } };
     $('#pgGo').onclick = async () => {
       if (!confirm('기한이 지난 보관 원본(.hwp)을 지웁니다. 되돌릴 수 없습니다.\n미리보기에서 본 항목만 지워지며 SHA-256 이 어긋난 것은 건너뜁니다. 실행할까요?')) return;
@@ -578,7 +593,9 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
     document.addEventListener('dragleave', (e) => { if (!e.relatedTarget) drop.classList.remove('over'); });
     document.addEventListener('drop', async (e) => {
       if (!e.dataTransfer) return; e.preventDefault(); drop.classList.remove('over');
+      const hps = (ST && ST.supported()) ? Array.from(e.dataTransfer.items || []).filter(it => it.kind === 'file' && it.getAsFileSystemHandle).map(it => it.getAsFileSystemHandle()) : [];   // 동기 구간에서 핸들 요청까지 시작해 둔다
       const c = await collectFromDrop(e.dataTransfer);   // 동기 구간에서 entry 를 먼저 얻는다
+      try { if (await openRWHandle(hps)) return; } catch (err) { console.error(err); }
       try { const r = await resolveDropped(c); addFiles(r.list, r); } catch (err) { toast('끌어놓은 항목을 읽지 못했습니다: ' + err.message, 7000); console.error(err); }
     });
     $('#pickFiles').onclick = () => $('#fileInput').click();
@@ -590,18 +607,17 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
     $('#pickRW').onclick = async () => {
       try {
         const h = await window.showDirectoryPicker({ mode: 'readwrite' });
-        toast('폴더를 읽는 중…', 20000);
-        const out = []; await ST.walk(h, h.name + '/', out);
-        S.rootH = h; addFiles(out, null);
+        await useRootHandle(h);
       } catch (e) { if (e.name !== 'AbortError') toast('폴더를 열지 못했습니다: ' + e.message, 7000); }
     };
     $('#btnSettle').onclick = async () => {
       const keep = +$('#optKeep').value;   // 기본 30일, 0=계속 보관
       const items = S.items.filter(i => i.fh && i.row && i.row.판정 === 'PASS' && i.hwpx && !i.settled && /\.hwp$/i.test(i.name));
       if (!items.length) return;
-      if (!confirm(`제자리 교체: 검증 PASS인 ${items.length}개 문서의 .hwpx 를 원래 자리에 두고, 원본 .hwp 는 이어서 고르는 보관 폴더로 옮깁니다(지워지지 않습니다).\n보관 폴더는 방금 연 원본 폴더 밖의 폴더를 고르세요. 계속할까요?`)) return;
+      const pickArc = $('#optPickArc') && $('#optPickArc').checked;
+      if (!confirm(`제자리 교체: 검증 PASS인 ${items.length}개 문서의 .hwpx 를 원래 자리에 두고, 원본 .hwp 는 ` + (pickArc ? '이어서 고르는 보관 폴더로' : '이 폴더 안의 「_원본보관」 폴더로') + ` 옮깁니다(지워지지 않습니다). 계속할까요?`)) return;
       let archH;
-      try { archH = await window.showDirectoryPicker({ mode: 'readwrite' }); } catch (e) { if (e.name !== 'AbortError') toast('보관 폴더를 열지 못했습니다: ' + e.message, 7000); return; }
+      try { archH = pickArc ? await window.showDirectoryPicker({ mode: 'readwrite' }) : await ST.autoArchive(S.rootH); } catch (e) { if (e.name !== 'AbortError') toast('보관 폴더를 열지 못했습니다: ' + e.message, 7000); return; }
       try {
         const res = await ST.settle(items, S.rootH, archH, keep, (n, t, rel) => { $('#runText').textContent = `제자리 교체 ${n} / ${t} · ${rel}`; });
         let ok = 0; for (const r of res) { r.it.settleMsg = r.msg; if (r.ok) { r.it.settled = true; ok++; } }

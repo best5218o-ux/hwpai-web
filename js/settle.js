@@ -23,7 +23,7 @@
   // 폴더 훑기: HWP·HWPX 파일만 읽고(getFile) 핸들을 함께 돌려준다. 숨김·결과 폴더는 건너뛴다
   async function walk(dh, prefix, out) {
     for await (const [name, h] of dh.entries()) {
-      if (h.kind === 'directory') { if (/^(\.|_검증서$|_격리$)/.test(name)) continue; await walk(h, prefix + name + '/', out); }
+      if (h.kind === 'directory') { if (/^(\.|_검증서$|_격리$|_원본보관$)/.test(name)) continue; await walk(h, prefix + name + '/', out); }
       else if (/\.(hwp|hwpx)$/i.test(name)) out.push({ file: await h.getFile(), path: prefix + name, fh: h, dh });
     }
   }
@@ -71,9 +71,12 @@
     for (let n = 2; ; n++) { const c = `${base} (${n})${ext}`; if (!(await exists(dirH, c))) return c; }
   }
 
+  const AUTO_ARC = '_원본보관';   // 폴더를 따로 고르지 않을 때 원본 폴더 안에 자동으로 만드는 보관 폴더(훑기에서는 건너뜀)
+  async function autoArchive(rootH) { return rootH.getDirectoryHandle(AUTO_ARC, { create: true }); }
   async function checkOutside(rootH, archH) {
-    if (await rootH.isSameEntry(archH) || (await rootH.resolve(archH)) || (await archH.resolve(rootH)))
-      throw new Error('보관 폴더는 원본 폴더 밖이어야 합니다(서로 포함하면 안 됨)');
+    if (await rootH.isSameEntry(archH) || (await archH.resolve(rootH))) throw new Error('보관 폴더는 원본 폴더 밖이어야 합니다(서로 포함하면 안 됨)');
+    const rel = await rootH.resolve(archH);   // 원본 폴더 안에 있으면: 자동 보관 폴더(_원본보관) 바로 그 폴더만 허용
+    if (rel && !(rel.length === 1 && rel[0] === AUTO_ARC)) throw new Error('보관 폴더는 원본 폴더 밖이어야 합니다(서로 포함하면 안 됨)');
   }
 
   /** items: it.rel(루트 기준 상대경로) · it.name · it.fh · it.dh · it.row(원본_SHA256·변환본_SHA256·판정) · it.hwpx.blob
@@ -169,5 +172,5 @@
     return res;
   }
 
-  window.HwpaiSettle = { supported, walk, settle, purge, checkOutside, parseCsv, toCsv, sha };
+  window.HwpaiSettle = { supported, walk, settle, purge, checkOutside, autoArchive, AUTO_ARC, parseCsv, toCsv, sha };
 })();
