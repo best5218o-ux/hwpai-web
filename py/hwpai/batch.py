@@ -371,6 +371,8 @@ class BatchConverter:
         t0 = time.time()
         stats = {"files": len(files), "resumed": 0}
         done = [0]
+        dirty = [False]   # 마지막 중간 저장 뒤 대장에 새로 적힌 줄이 있는가
+        step = max(25, len(files) // 40)  # 문서가 많을수록 중간 저장 간격을 늘린다(매번 전체를 다시 쓰면 문서 수의 제곱에 비례해 느려짐)
 
         def work(rel):
             try:
@@ -398,14 +400,17 @@ class BatchConverter:
             else:
                 row.pop("_total_ms", None)
                 ledger.add(row)
+                dirty[0] = True
             done[0] += 1
             if self.on_row:
                 try:
                     self.on_row(done[0], len(files), row)
                 except Exception:
                     pass
-            if done[0] % 25 == 0 or done[0] == len(files):
-                ledger.write_csv(files)
+            if (done[0] % step == 0 and dirty[0]) or done[0] == len(files):
+                if dirty[0] or done[0] == len(files):
+                    ledger.write_csv(files)
+                dirty[0] = False
                 self.log(f"  {done[0]}/{len(files)} 처리 ({time.time() - t0:.0f}초)")
             return row
 
