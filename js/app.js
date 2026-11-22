@@ -669,6 +669,27 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
     set(+LS.get('hwpai.z.v1', 1.25) || 1.25);
   })();
   initOpts(); wire(); renderAll();
+  // 현장 시연: 주소에 ?demo 가 있을 때만 예제 HWP 를 불러오는 단추를 보인다(같은 출처 정적 파일, 외부 전송 없음)
+  (function () {
+    if (!new URLSearchParams(location.search).has('demo')) return;
+    const SAMPLES = [['s1.hwp', '업무계획.hwp'], ['s2.hwp', '공지문.hwp'], ['s3.hwp', '회의록.hwp'], ['s4.hwp', '개인정보_예시.hwp'], ['s5.hwp', '보도자료_1.hwp'], ['s6.hwp', '보도자료_2.hwp']];
+    const card = $('#demoCard'); card.hidden = false;
+    $('#btnDemo').onclick = async () => {
+      const b = $('#btnDemo'); b.disabled = true; b.textContent = '예제 문서를 불러오는 중…';
+      try {
+        const list = [];
+        for (const [f, name] of SAMPLES) {
+          const r = await fetch('samples/' + f); if (!r.ok) throw new Error(name + ' ' + r.status);
+          list.push({ file: new File([await r.blob()], name, { lastModified: 1763769600000 }), path: '예제문서/' + name });
+        }
+        addFiles(list, null);
+        if (!readOpts().auto) kick();
+        b.textContent = '변환 중 — 아래 표에서 결과를 확인하세요';
+        const lw = $('#listWrap'); if (lw) lw.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (e) { b.disabled = false; b.textContent = '▶ 예제 문서 변환해 보기'; toast('예제 문서를 불러오지 못했습니다: ' + e.message, 7000); }
+    };
+  })();
+
   if (!('WebAssembly' in window) || !window.Worker) { $('#engineText').textContent = '이 브라우저는 WebAssembly 또는 Web Worker 를 지원하지 않습니다. 최신 Chrome·Edge·Firefox·Safari 를 쓰세요.'; }
   else bootPool();
 })();

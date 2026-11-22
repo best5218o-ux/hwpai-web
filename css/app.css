@@ -137,3 +137,6 @@ td .mut{display:block;font-size:12px}
 .settlebar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:#e8f5ec;border:2px solid #1a7f37;border-radius:10px;padding:12px 14px;margin:10px 0}
 .settlebar b{display:block;font-size:1.05em}
 @media (prefers-color-scheme:dark){.settlebar{background:#12301c}}
+
+/* 현장 시연(?demo) */
+.demo{border:3px solid var(--acc);text-align:center}.demo h2{margin:0 0 6px}.demo .btn{margin:14px auto 6px;display:inline-block;font-size:1.25em;padding:.8em 1.6em}.demo .small{font-size:.9em}
