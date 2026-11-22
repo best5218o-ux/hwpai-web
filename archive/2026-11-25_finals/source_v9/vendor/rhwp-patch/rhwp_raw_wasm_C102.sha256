@@ -1,0 +1,1 @@
+20cbb311dcd407592818dfa89432fd6a1ff87fc8c035e3ab9f230b46f2543792  target/wasm32-unknown-unknown/release-test/rhwp.wasm (C102, git 7372edd + 0003 + 0004 patch, cargo build -j1 --target wasm32-unknown-unknown --profile release-test --lib; wasm-bindgen 0.2.127 --target web)

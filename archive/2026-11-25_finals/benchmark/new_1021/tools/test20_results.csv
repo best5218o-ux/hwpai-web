@@ -1,0 +1,261 @@
+﻿도구,파일,상태,초,출력크기,원본SHA12,메시지
+rhwp,00ee595c02fe.hwp,ok,0.68,13420,00ee595c02fe,
+hwpforge,00ee595c02fe.hwp,ok,0.1,12556,00ee595c02fe,
+hwp-convert,00ee595c02fe.hwp,ok,0.34,11473,00ee595c02fe,
+hwpxjs,00ee595c02fe.hwp,ok,0.22,115486,00ee595c02fe,
+jhwpx,00ee595c02fe.hwp,ok,0.27,10311,00ee595c02fe,
+hwpx-js,00ee595c02fe.hwp,fail,0.05,0,00ee595c02fe,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,00ee595c02fe.hwp,ok,1.32,11606,00ee595c02fe,
+h2h_asi,00ee595c02fe.hwp,ok,0.81,12373,00ee595c02fe,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,00ee595c02fe.hwp,ok,0.79,12346,00ee595c02fe,
+h2h_yuson,00ee595c02fe.hwp,ok,0.66,11875,00ee595c02fe,
+kordoc,00ee595c02fe.hwp,ok,1.5,39636,00ee595c02fe,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/00ee595c02fe.hwpx (39,636 바이트)"
+hwpConverter,00ee595c02fe.hwp,ok,2.5,13127,00ee595c02fe,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,011fef7f7c4c.hwp,ok,0.63,14446,011fef7f7c4c,
+hwpforge,011fef7f7c4c.hwp,ok,0.09,13864,011fef7f7c4c,
+hwp-convert,011fef7f7c4c.hwp,ok,0.27,11970,011fef7f7c4c,
+hwpxjs,011fef7f7c4c.hwp,ok,0.21,126481,011fef7f7c4c,
+jhwpx,011fef7f7c4c.hwp,ok,0.26,10823,011fef7f7c4c,
+hwpx-js,011fef7f7c4c.hwp,fail,0.06,0,011fef7f7c4c,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,011fef7f7c4c.hwp,fail,0.29,0,011fef7f7c4c,error: TextOnlySourceIncomplete | conversion.lossPolicy: text-only | conversion.lossless: false | conversion.sourceFormat: hwp5 | conversion.targetFormat: hwpx | conversion.preserved: 관측된 본문 문단 문자열·순서·빈 문단·Unic ... olicy: CRLF와 CR은 공통 생성 정책에 따라 LF 문단 경계로 정규화 | conversion.sourceInventoryComplete: true | conversion.sourceObjectsKnown: true | conversion.warningCount: 0 | conversion.warningDetailsOmitted: 0 | published: false
+h2h_asi,011fef7f7c4c.hwp,ok,0.9,13592,011fef7f7c4c,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,011fef7f7c4c.hwp,ok,0.93,13541,011fef7f7c4c,
+h2h_yuson,011fef7f7c4c.hwp,ok,0.76,13030,011fef7f7c4c,
+kordoc,011fef7f7c4c.hwp,ok,0.69,45890,011fef7f7c4c,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/011fef7f7c4c.hwpx (45,890 바이트)"
+hwpConverter,011fef7f7c4c.hwp,ok,1.63,14314,011fef7f7c4c,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,0339c44994c7.hwp,ok,1.63,301508,0339c44994c7,
+hwpforge,0339c44994c7.hwp,ok,0.12,1173242,0339c44994c7,
+hwp-convert,0339c44994c7.hwp,ok,0.63,271709,0339c44994c7,
+hwpxjs,0339c44994c7.hwp,ok,0.3,1542748,0339c44994c7,
+jhwpx,0339c44994c7.hwp,ok,0.76,269030,0339c44994c7,
+hwpx-js,0339c44994c7.hwp,fail,0.07,0,0339c44994c7,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,0339c44994c7.hwp,fail,0.44,0,0339c44994c7,error: TextOnlySourceIncomplete | conversion.lossPolicy: text-only | conversion.lossless: false | conversion.sourceFormat: hwp5 | conversion.targetFormat: hwpx | conversion.preserved: 관측된 본문 문단 문자열·순서·빈 문단·Unic ... olicy: CRLF와 CR은 공통 생성 정책에 따라 LF 문단 경계로 정규화 | conversion.sourceInventoryComplete: true | conversion.sourceObjectsKnown: true | conversion.warningCount: 0 | conversion.warningDetailsOmitted: 0 | published: false
+h2h_asi,0339c44994c7.hwp,ok,1.08,274915,0339c44994c7,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,0339c44994c7.hwp,ok,1.51,275026,0339c44994c7,
+h2h_yuson,0339c44994c7.hwp,ok,1.41,271923,0339c44994c7,
+kordoc,0339c44994c7.hwp,ok,1.1,338948,0339c44994c7,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/0339c44994c7.hwpx (338,948 바이트)"
+hwpConverter,0339c44994c7.hwp,ok,1.77,276542,0339c44994c7,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,03650ee745f4.hwp,ok,0.94,10452,03650ee745f4,
+hwpforge,03650ee745f4.hwp,ok,0.12,9563,03650ee745f4,
+hwp-convert,03650ee745f4.hwp,ok,0.29,9910,03650ee745f4,
+hwpxjs,03650ee745f4.hwp,ok,0.22,80141,03650ee745f4,
+jhwpx,03650ee745f4.hwp,ok,0.24,8806,03650ee745f4,
+hwpx-js,03650ee745f4.hwp,fail,0.05,0,03650ee745f4,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,03650ee745f4.hwp,ok,3.41,20100,03650ee745f4,
+h2h_asi,03650ee745f4.hwp,ok,0.76,9389,03650ee745f4,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,03650ee745f4.hwp,ok,0.84,9426,03650ee745f4,
+h2h_yuson,03650ee745f4.hwp,ok,0.81,8917,03650ee745f4,
+kordoc,03650ee745f4.hwp,ok,0.84,38264,03650ee745f4,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/03650ee745f4.hwpx (38,264 바이트)"
+hwpConverter,03650ee745f4.hwp,ok,2.1,10163,03650ee745f4,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,03d8aea5947a.hwp,ok,1.74,1227363,03d8aea5947a,
+hwpforge,03d8aea5947a.hwp,ok,0.14,1536277,03d8aea5947a,
+hwp-convert,03d8aea5947a.hwp,ok,0.53,1444970,03d8aea5947a,
+hwpxjs,03d8aea5947a.hwp,ok,0.35,1867474,03d8aea5947a,
+jhwpx,03d8aea5947a.hwp,ok,0.63,1222511,03d8aea5947a,
+hwpx-js,03d8aea5947a.hwp,fail,0.08,0,03d8aea5947a,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,03d8aea5947a.hwp,fail,0.53,0,03d8aea5947a,error: TextOnlySourceIncomplete | conversion.lossPolicy: text-only | conversion.lossless: false | conversion.sourceFormat: hwp5 | conversion.targetFormat: hwpx | conversion.preserved: 관측된 본문 문단 문자열·순서·빈 문단·Unic ... olicy: CRLF와 CR은 공통 생성 정책에 따라 LF 문단 경계로 정규화 | conversion.sourceInventoryComplete: true | conversion.sourceObjectsKnown: true | conversion.warningCount: 0 | conversion.warningDetailsOmitted: 0 | published: false
+h2h_asi,03d8aea5947a.hwp,ok,1.27,1222420,03d8aea5947a,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,03d8aea5947a.hwp,ok,0.99,1222465,03d8aea5947a,
+h2h_yuson,03d8aea5947a.hwp,ok,1.22,1219669,03d8aea5947a,
+kordoc,03d8aea5947a.hwp,ok,0.92,1514008,03d8aea5947a,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/03d8aea5947a.hwpx (1,514,008 바이트)"
+hwpConverter,03d8aea5947a.hwp,ok,2.14,1223708,03d8aea5947a,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,04539d93bccd.hwp,ok,1.29,459111,04539d93bccd,
+hwpforge,04539d93bccd.hwp,ok,0.11,694152,04539d93bccd,
+hwp-convert,04539d93bccd.hwp,ok,0.59,422914,04539d93bccd,
+hwpxjs,04539d93bccd.hwp,ok,0.49,858632,04539d93bccd,
+jhwpx,04539d93bccd.hwp,ok,0.41,418199,04539d93bccd,
+hwpx-js,04539d93bccd.hwp,fail,0.07,0,04539d93bccd,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,04539d93bccd.hwp,ok,5.65,32689,04539d93bccd,
+h2h_asi,04539d93bccd.hwp,ok,1.01,428111,04539d93bccd,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,04539d93bccd.hwp,ok,0.78,428141,04539d93bccd,
+h2h_yuson,04539d93bccd.hwp,ok,0.78,425219,04539d93bccd,
+kordoc,04539d93bccd.hwp,ok,0.84,426005,04539d93bccd,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/04539d93bccd.hwpx (426,005 바이트)"
+hwpConverter,04539d93bccd.hwp,ok,2.12,428902,04539d93bccd,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,06ad06f52a73.hwp,ok,1.17,59330,06ad06f52a73,
+hwpforge,06ad06f52a73.hwp,ok,0.08,120190,06ad06f52a73,
+hwp-convert,06ad06f52a73.hwp,ok,0.28,60098,06ad06f52a73,
+hwpxjs,06ad06f52a73.hwp,ok,0.23,345791,06ad06f52a73,
+jhwpx,06ad06f52a73.hwp,ok,0.34,51657,06ad06f52a73,
+hwpx-js,06ad06f52a73.hwp,fail,0.05,0,06ad06f52a73,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,06ad06f52a73.hwp,ok,4.94,27588,06ad06f52a73,
+h2h_asi,06ad06f52a73.hwp,ok,0.93,55896,06ad06f52a73,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,06ad06f52a73.hwp,ok,1.2,55890,06ad06f52a73,
+h2h_yuson,06ad06f52a73.hwp,ok,1.06,53472,06ad06f52a73,
+kordoc,06ad06f52a73.hwp,ok,0.84,64451,06ad06f52a73,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/06ad06f52a73.hwpx (64,451 바이트)"
+hwpConverter,06ad06f52a73.hwp,ok,1.94,56681,06ad06f52a73,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,075deb276840.hwp,ok,1.29,728896,075deb276840,
+hwpforge,075deb276840.hwp,ok,0.18,2788972,075deb276840,
+hwp-convert,075deb276840.hwp,ok,0.49,852201,075deb276840,
+hwpxjs,075deb276840.hwp,ok,0.4,2942570,075deb276840,
+jhwpx,075deb276840.hwp,ok,0.59,669897,075deb276840,
+hwpx-js,075deb276840.hwp,fail,0.04,0,075deb276840,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,075deb276840.hwp,fail,0.36,0,075deb276840,error: TextOnlySourceIncomplete | conversion.lossPolicy: text-only | conversion.lossless: false | conversion.sourceFormat: hwp5 | conversion.targetFormat: hwpx | conversion.preserved: 관측된 본문 문단 문자열·순서·빈 문단·Unic ... olicy: CRLF와 CR은 공통 생성 정책에 따라 LF 문단 경계로 정규화 | conversion.sourceInventoryComplete: true | conversion.sourceObjectsKnown: true | conversion.warningCount: 0 | conversion.warningDetailsOmitted: 0 | published: false
+h2h_asi,075deb276840.hwp,ok,0.87,675928,075deb276840,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,075deb276840.hwp,ok,1.15,675960,075deb276840,
+h2h_yuson,075deb276840.hwp,ok,1.58,673588,075deb276840,
+kordoc,075deb276840.hwp,ok,1.21,856429,075deb276840,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/075deb276840.hwpx (856,429 바이트)"
+hwpConverter,075deb276840.hwp,ok,2.44,676710,075deb276840,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,09dec690c69c.hwp,ok,0.98,41536,09dec690c69c,
+hwpforge,09dec690c69c.hwp,ok,0.09,40692,09dec690c69c,
+hwp-convert,09dec690c69c.hwp,ok,0.28,40512,09dec690c69c,
+hwpxjs,09dec690c69c.hwp,ok,0.19,141946,09dec690c69c,
+jhwpx,09dec690c69c.hwp,ok,0.28,39214,09dec690c69c,
+hwpx-js,09dec690c69c.hwp,fail,0.07,0,09dec690c69c,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,09dec690c69c.hwp,ok,1.44,13033,09dec690c69c,
+h2h_asi,09dec690c69c.hwp,ok,0.73,40720,09dec690c69c,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,09dec690c69c.hwp,ok,0.89,40748,09dec690c69c,
+h2h_yuson,09dec690c69c.hwp,ok,0.74,40018,09dec690c69c,
+kordoc,09dec690c69c.hwp,ok,0.88,91598,09dec690c69c,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/09dec690c69c.hwpx (91,598 바이트)"
+hwpConverter,09dec690c69c.hwp,ok,1.92,41990,09dec690c69c,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,0ae2bee9ccea.hwp,ok,1.29,1987607,0ae2bee9ccea,
+hwpforge,0ae2bee9ccea.hwp,ok,0.23,11456733,0ae2bee9ccea,
+hwp-convert,0ae2bee9ccea.hwp,ok,1.7,1622856,0ae2bee9ccea,
+hwpxjs,0ae2bee9ccea.hwp,ok,0.66,11692974,0ae2bee9ccea,
+jhwpx,0ae2bee9ccea.hwp,ok,1.25,1618090,0ae2bee9ccea,
+hwpx-js,0ae2bee9ccea.hwp,fail,0.05,0,0ae2bee9ccea,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,0ae2bee9ccea.hwp,ok,5.62,31149,0ae2bee9ccea,
+h2h_asi,0ae2bee9ccea.hwp,ok,1.21,1616833,0ae2bee9ccea,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,0ae2bee9ccea.hwp,ok,1.13,1616749,0ae2bee9ccea,
+h2h_yuson,0ae2bee9ccea.hwp,ok,1.78,1614592,0ae2bee9ccea,
+kordoc,0ae2bee9ccea.hwp,ok,1.85,1733435,0ae2bee9ccea,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/0ae2bee9ccea.hwpx (1,733,435 바이트)"
+hwpConverter,0ae2bee9ccea.hwp,ok,3.01,1617595,0ae2bee9ccea,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,10079ba56e1e.hwp,ok,1.54,92501,10079ba56e1e,
+hwpforge,10079ba56e1e.hwp,ok,0.12,98951,10079ba56e1e,
+hwp-convert,10079ba56e1e.hwp,ok,0.4,97457,10079ba56e1e,
+hwpxjs,10079ba56e1e.hwp,ok,0.3,448006,10079ba56e1e,
+jhwpx,10079ba56e1e.hwp,ok,0.3,86148,10079ba56e1e,
+hwpx-js,10079ba56e1e.hwp,fail,0.05,0,10079ba56e1e,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,10079ba56e1e.hwp,ok,37.68,71011,10079ba56e1e,
+h2h_asi,10079ba56e1e.hwp,ok,1.1,90197,10079ba56e1e,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,10079ba56e1e.hwp,ok,1.01,90354,10079ba56e1e,
+h2h_yuson,10079ba56e1e.hwp,ok,1.0,87034,10079ba56e1e,
+kordoc,10079ba56e1e.hwp,ok,1.23,100079,10079ba56e1e,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/10079ba56e1e.hwpx (100,079 바이트)"
+hwpConverter,10079ba56e1e.hwp,ok,2.45,91296,10079ba56e1e,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,12a5ad30392b.hwp,ok,1.0,231940,12a5ad30392b,
+hwpforge,12a5ad30392b.hwp,ok,0.11,565775,12a5ad30392b,
+hwp-convert,12a5ad30392b.hwp,ok,0.39,247387,12a5ad30392b,
+hwpxjs,12a5ad30392b.hwp,ok,0.33,738179,12a5ad30392b,
+jhwpx,12a5ad30392b.hwp,ok,0.35,211206,12a5ad30392b,
+hwpx-js,12a5ad30392b.hwp,fail,0.05,0,12a5ad30392b,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,12a5ad30392b.hwp,fail,0.44,0,12a5ad30392b,error: TextOnlySourceIncomplete | conversion.lossPolicy: text-only | conversion.lossless: false | conversion.sourceFormat: hwp5 | conversion.targetFormat: hwpx | conversion.preserved: 관측된 본문 문단 문자열·순서·빈 문단·Unic ... olicy: CRLF와 CR은 공통 생성 정책에 따라 LF 문단 경계로 정규화 | conversion.sourceInventoryComplete: true | conversion.sourceObjectsKnown: true | conversion.warningCount: 0 | conversion.warningDetailsOmitted: 0 | published: false
+h2h_asi,12a5ad30392b.hwp,ok,0.98,240196,12a5ad30392b,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,12a5ad30392b.hwp,ok,0.93,240288,12a5ad30392b,
+h2h_yuson,12a5ad30392b.hwp,ok,1.14,238295,12a5ad30392b,
+kordoc,12a5ad30392b.hwp,ok,0.92,250776,12a5ad30392b,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/12a5ad30392b.hwpx (250,776 바이트)"
+hwpConverter,12a5ad30392b.hwp,ok,2.02,241039,12a5ad30392b,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,1be64705aa65.hwp,ok,0.84,223387,1be64705aa65,
+hwpforge,1be64705aa65.hwp,ok,0.13,268008,1be64705aa65,
+hwp-convert,1be64705aa65.hwp,ok,0.42,264822,1be64705aa65,
+hwpxjs,1be64705aa65.hwp,ok,0.2,418943,1be64705aa65,
+jhwpx,1be64705aa65.hwp,ok,0.27,203916,1be64705aa65,
+hwpx-js,1be64705aa65.hwp,fail,0.04,0,1be64705aa65,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,1be64705aa65.hwp,fail,0.35,0,1be64705aa65,error: TextOnlySourceIncomplete | conversion.lossPolicy: text-only | conversion.lossless: false | conversion.sourceFormat: hwp5 | conversion.targetFormat: hwpx | conversion.preserved: 관측된 본문 문단 문자열·순서·빈 문단·Unic ... olicy: CRLF와 CR은 공통 생성 정책에 따라 LF 문단 경계로 정규화 | conversion.sourceInventoryComplete: true | conversion.sourceObjectsKnown: true | conversion.warningCount: 0 | conversion.warningDetailsOmitted: 0 | published: false
+h2h_asi,1be64705aa65.hwp,ok,1.12,208917,1be64705aa65,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,1be64705aa65.hwp,ok,0.85,208909,1be64705aa65,
+h2h_yuson,1be64705aa65.hwp,ok,1.08,208015,1be64705aa65,
+kordoc,1be64705aa65.hwp,ok,0.72,270143,1be64705aa65,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/1be64705aa65.hwpx (270,143 바이트)"
+hwpConverter,1be64705aa65.hwp,ok,1.92,209679,1be64705aa65,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,2d141e7e8c9f.hwp,ok,0.93,107009,2d141e7e8c9f,
+hwpforge,2d141e7e8c9f.hwp,ok,0.12,112297,2d141e7e8c9f,
+hwp-convert,2d141e7e8c9f.hwp,ok,0.45,111414,2d141e7e8c9f,
+hwpxjs,2d141e7e8c9f.hwp,ok,0.27,256016,2d141e7e8c9f,
+jhwpx,2d141e7e8c9f.hwp,ok,0.37,101010,2d141e7e8c9f,
+hwpx-js,2d141e7e8c9f.hwp,fail,0.06,0,2d141e7e8c9f,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,2d141e7e8c9f.hwp,ok,2.31,15581,2d141e7e8c9f,
+h2h_asi,2d141e7e8c9f.hwp,ok,0.97,104388,2d141e7e8c9f,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,2d141e7e8c9f.hwp,ok,1.17,104425,2d141e7e8c9f,
+h2h_yuson,2d141e7e8c9f.hwp,ok,1.06,102960,2d141e7e8c9f,
+kordoc,2d141e7e8c9f.hwp,ok,0.69,166412,2d141e7e8c9f,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/2d141e7e8c9f.hwpx (166,412 바이트)"
+hwpConverter,2d141e7e8c9f.hwp,ok,2.28,105670,2d141e7e8c9f,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,35c715135448.hwp,ok,1.16,773297,35c715135448,
+hwpforge,35c715135448.hwp,ok,0.11,884917,35c715135448,
+hwp-convert,35c715135448.hwp,ok,0.43,857015,35c715135448,
+hwpxjs,35c715135448.hwp,ok,0.31,1069319,35c715135448,
+jhwpx,35c715135448.hwp,ok,0.4,699909,35c715135448,
+hwpx-js,35c715135448.hwp,fail,0.04,0,35c715135448,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,35c715135448.hwp,fail,0.32,0,35c715135448,error: TextOnlySourceIncomplete | conversion.lossPolicy: text-only | conversion.lossless: false | conversion.sourceFormat: hwp5 | conversion.targetFormat: hwpx | conversion.preserved: 관측된 본문 문단 문자열·순서·빈 문단·Unic ... olicy: CRLF와 CR은 공통 생성 정책에 따라 LF 문단 경계로 정규화 | conversion.sourceInventoryComplete: true | conversion.sourceObjectsKnown: true | conversion.warningCount: 0 | conversion.warningDetailsOmitted: 0 | published: false
+h2h_asi,35c715135448.hwp,ok,1.3,710949,35c715135448,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,35c715135448.hwp,ok,1.12,711031,35c715135448,
+h2h_yuson,35c715135448.hwp,ok,0.95,708791,35c715135448,
+kordoc,35c715135448.hwp,ok,1.02,916425,35c715135448,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/35c715135448.hwpx (916,425 바이트)"
+hwpConverter,35c715135448.hwp,ok,2.12,712300,35c715135448,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,4521cde0679c.hwp,ok,1.21,93130,4521cde0679c,
+hwpforge,4521cde0679c.hwp,ok,0.11,112246,4521cde0679c,
+hwp-convert,4521cde0679c.hwp,ok,0.34,111055,4521cde0679c,
+hwpxjs,4521cde0679c.hwp,ok,0.34,245570,4521cde0679c,
+jhwpx,4521cde0679c.hwp,ok,0.34,90350,4521cde0679c,
+hwpx-js,4521cde0679c.hwp,fail,0.12,0,4521cde0679c,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,4521cde0679c.hwp,ok,2.52,16823,4521cde0679c,
+h2h_asi,4521cde0679c.hwp,ok,0.94,93031,4521cde0679c,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,4521cde0679c.hwp,ok,0.75,93052,4521cde0679c,
+h2h_yuson,4521cde0679c.hwp,ok,1.02,92085,4521cde0679c,
+kordoc,4521cde0679c.hwp,ok,0.75,156532,4521cde0679c,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/4521cde0679c.hwpx (156,532 바이트)"
+hwpConverter,4521cde0679c.hwp,ok,1.67,94297,4521cde0679c,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,57016638e064.hwp,ok,3.64,1157431,57016638e064,
+hwpforge,57016638e064.hwp,ok,0.22,3337901,57016638e064,
+hwp-convert,57016638e064.hwp,ok,0.84,1175115,57016638e064,
+hwpxjs,57016638e064.hwp,ok,0.52,4468749,57016638e064,
+jhwpx,57016638e064.hwp,ok,0.83,1038495,57016638e064,
+hwpx-js,57016638e064.hwp,fail,0.08,0,57016638e064,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,57016638e064.hwp,fail,0.79,0,57016638e064,error: TextOnlySourceIncomplete | conversion.lossPolicy: text-only | conversion.lossless: false | conversion.sourceFormat: hwp5 | conversion.targetFormat: hwpx | conversion.preserved: 관측된 본문 문단 문자열·순서·빈 문단·Unic ... olicy: CRLF와 CR은 공통 생성 정책에 따라 LF 문단 경계로 정규화 | conversion.sourceInventoryComplete: true | conversion.sourceObjectsKnown: true | conversion.warningCount: 0 | conversion.warningDetailsOmitted: 0 | published: false
+h2h_asi,57016638e064.hwp,ok,2.08,1077407,57016638e064,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,57016638e064.hwp,ok,1.0,1077941,57016638e064,
+h2h_yuson,57016638e064.hwp,ok,2.07,1065421,57016638e064,
+kordoc,57016638e064.hwp,ok,1.28,1218006,57016638e064,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/57016638e064.hwpx (1,218,006 바이트)"
+hwpConverter,57016638e064.hwp,ok,3.38,1078907,57016638e064,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,68bc8eff277e.hwp,ok,1.69,1041711,68bc8eff277e,
+hwpforge,68bc8eff277e.hwp,ok,0.16,1077105,68bc8eff277e,
+hwp-convert,68bc8eff277e.hwp,ok,0.48,1076866,68bc8eff277e,
+hwpxjs,68bc8eff277e.hwp,ok,0.34,1260186,68bc8eff277e,
+jhwpx,68bc8eff277e.hwp,ok,0.54,1037088,68bc8eff277e,
+hwpx-js,68bc8eff277e.hwp,fail,0.05,0,68bc8eff277e,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,68bc8eff277e.hwp,ok,4.3,25887,68bc8eff277e,
+h2h_asi,68bc8eff277e.hwp,ok,1.48,1040573,68bc8eff277e,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,68bc8eff277e.hwp,ok,1.19,1040566,68bc8eff277e,
+h2h_yuson,68bc8eff277e.hwp,ok,1.36,1039130,68bc8eff277e,
+kordoc,68bc8eff277e.hwp,ok,0.84,1138850,68bc8eff277e,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/68bc8eff277e.hwpx (1,138,850 바이트)"
+hwpConverter,68bc8eff277e.hwp,ok,2.35,1041892,68bc8eff277e,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,8d76ca728323.hwp,ok,1.8,101281,8d76ca728323,
+hwpforge,8d76ca728323.hwp,ok,0.12,479837,8d76ca728323,
+hwp-convert,8d76ca728323.hwp,ok,0.37,91377,8d76ca728323,
+hwpxjs,8d76ca728323.hwp,ok,0.3,703992,8d76ca728323,
+jhwpx,8d76ca728323.hwp,ok,0.4,87176,8d76ca728323,
+hwpx-js,8d76ca728323.hwp,fail,0.06,0,8d76ca728323,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,8d76ca728323.hwp,ok,6.78,34580,8d76ca728323,
+h2h_asi,8d76ca728323.hwp,ok,1.16,91149,8d76ca728323,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+h2h_kossembly,8d76ca728323.hwp,ok,1.17,91124,8d76ca728323,
+h2h_yuson,8d76ca728323.hwp,ok,0.89,89119,8d76ca728323,
+kordoc,8d76ca728323.hwp,ok,0.78,196106,8d76ca728323,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/8d76ca728323.hwpx (196,106 바이트)"
+hwpConverter,8d76ca728323.hwp,ok,2.29,91920,8d76ca728323,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl. ... c.cluster.local -Djdk.http.auth.tunneling.disabledSchemes= -Djdk.http.auth.proxying.disabledSchemes=
+rhwp,b871798e2a08.hwp,ok,1.32,1377152,b871798e2a08,
+hwpforge,b871798e2a08.hwp,ok,0.16,2515456,b871798e2a08,
+hwp-convert,b871798e2a08.hwp,ok,1.0,1245173,b871798e2a08,
+hwpxjs,b871798e2a08.hwp,ok,0.57,2787303,b871798e2a08,
+jhwpx,b871798e2a08.hwp,ok,0.91,1238672,b871798e2a08,
+hwpx-js,b871798e2a08.hwp,fail,0.11,0,b871798e2a08,"/dev/shm/bcn/npm/node_modules/hwpx-js/dist/index.cjs:1403 |     throw new HWPXError(""Invalid OLE magic number""); |     ^ |  | HWPXError: Invalid OLE magic number |     at parseOle (/dev/shm/bcn/npm/node_modules ... /modules/cjs/loader:1309:12) |     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5) |  | Node.js v22.23.4"
+ohah_textonly,b871798e2a08.hwp,fail,0.53,0,b871798e2a08,error: TextOnlySourceIncomplete | conversion.lossPolicy: text-only | conversion.lossless: false | conversion.sourceFormat: hwp5 | conversion.targetFormat: hwpx | conversion.preserved: 관측된 본문 문단 문자열·순서·빈 문단·Unic ... olicy: CRLF와 CR은 공통 생성 정책에 따라 LF 문단 경계로 정규화 | conversion.sourceInventoryComplete: true | conversion.sourceObjectsKnown: true | conversion.warningCount: 0 | conversion.warningDetailsOmitted: 0 | published: false
+h2h_asi,b871798e2a08.hwp,fail,0.7,0,b871798e2a08,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39037 -Dhttp.nonProxyHosts=localhos ... st.convert(ForSectionXMLFileList.java:23) | 	at kr.dogfoot.hwp2hwpx.Hwp2Hwpx.convert(Hwp2Hwpx.java:36) | 	at kr.dogfoot.hwp2hwpx.Hwp2Hwpx.toHWPX(Hwp2Hwpx.java:19) | 	at Hwp2HwpxCli.main(Hwp2HwpxCli.java:10)
+h2h_kossembly,b871798e2a08.hwp,fail,1.19,0,b871798e2a08,FAIL | b871798e2a08.hwp: Conversion failed: Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.p ... onvert(ForSectionXMLFileList.java:23) | 	at kr.dogfoot.hwp2hwpx.Hwp2Hwpx.convert(Hwp2Hwpx.java:36) | 	at kr.dogfoot.hwp2hwpx.Hwp2Hwpx.toHWPX(Hwp2Hwpx.java:19) | 	at kr.dogfoot.hwp2hwpx.CLI.main(CLI.java:40)
+h2h_yuson,b871798e2a08.hwp,ok,1.41,1280971,b871798e2a08,
+kordoc,b871798e2a08.hwp,ok,1.34,1322610,b871798e2a08,"[kordoc] 서식 그대로 변환: /dev/shm/bcn/out20/kordoc/b871798e2a08.hwpx (1,322,610 바이트)"
+hwpConverter,b871798e2a08.hwp,fail,1.46,0,b871798e2a08,Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=39037 -Dhttp.nonProxyHosts=localhos ... ) | 	at kr.n.nframe.HwpConverter.convertHwpToHwpx(HwpConverter.java:60) | 	at kr.n.nframe.HwpConverter.main(HwpConverter.java:1482) | 	at kr.n.nframe.newfeature.HwpConverterCli.main(HwpConverterCli.java:74)
+ahwp,00ee595c02fe.hwp,ok,0.02,12423,00ee595c02fe,"보존 경고: metadata_value_removed (Metadata, Removed, 2 item(s)) | 변환 완료: /dev/shm/bcn/t20/00ee595c02fe.hwp → /dev/shm/bcn/out20b/ahwp/00ee595c02fe.hwpx"
+ahwp,011fef7f7c4c.hwp,ok,0.01,12688,011fef7f7c4c,"보존 경고: metadata_value_removed (Metadata, Removed, 4 item(s)) | 변환 완료: /dev/shm/bcn/t20/011fef7f7c4c.hwp → /dev/shm/bcn/out20b/ahwp/011fef7f7c4c.hwpx"
+ahwp,0339c44994c7.hwp,ok,0.05,275749,0339c44994c7,"보존 경고: control_removed (Control, Removed, 1 item(s)) | 보존 경고: metadata_value_removed (Metadata, Removed, 1 item(s)) | 변환 완료: /dev/shm/bcn/t20/0339c44994c7.hwp → /dev/shm/bcn/out20b/ahwp/0339c44994c7.hwpx"
+ahwp,03650ee745f4.hwp,ok,0.01,10012,03650ee745f4,"보존 경고: metadata_value_removed (Metadata, Removed, 2 item(s)) | 변환 완료: /dev/shm/bcn/t20/03650ee745f4.hwp → /dev/shm/bcn/out20b/ahwp/03650ee745f4.hwpx"
+ahwp,03d8aea5947a.hwp,ok,0.08,1221386,03d8aea5947a,"보존 경고: control_removed (Control, Removed, 1 item(s)) | 보존 경고: metadata_value_removed (Metadata, Removed, 1 item(s)) | 변환 완료: /dev/shm/bcn/t20/03d8aea5947a.hwp → /dev/shm/bcn/out20b/ahwp/03d8aea5947a.hwpx"
+ahwp,04539d93bccd.hwp,ok,0.04,427534,04539d93bccd,"보존 경고: metadata_value_removed (Metadata, Removed, 2 item(s)) | 변환 완료: /dev/shm/bcn/t20/04539d93bccd.hwp → /dev/shm/bcn/out20b/ahwp/04539d93bccd.hwpx"
+ahwp,06ad06f52a73.hwp,ok,0.02,55047,06ad06f52a73,"보존 경고: metadata_value_removed (Metadata, Removed, 2 item(s)) | 변환 완료: /dev/shm/bcn/t20/06ad06f52a73.hwp → /dev/shm/bcn/out20b/ahwp/06ad06f52a73.hwpx"
+ahwp,075deb276840.hwp,ok,0.06,675755,075deb276840,"보존 경고: control_removed (Control, Removed, 1 item(s)) | 보존 경고: metadata_value_removed (Metadata, Remove ... le, 4 item(s)) | 변환 완료: /dev/shm/bcn/t20/075deb276840.hwp → /dev/shm/bcn/out20b/ahwp/075deb276840.hwpx"
+ahwp,09dec690c69c.hwp,ok,0.01,40969,09dec690c69c,"보존 경고: metadata_value_removed (Metadata, Removed, 1 item(s)) | 변환 완료: /dev/shm/bcn/t20/09dec690c69c.hwp → /dev/shm/bcn/out20b/ahwp/09dec690c69c.hwpx"
+ahwp,0ae2bee9ccea.hwp,ok,0.2,1625001,0ae2bee9ccea,"보존 경고: control_removed (Control, Removed, 1 item(s)) | 보존 경고: metadata_value_removed (Metadata, Removed, 2 item(s)) | 변환 완료: /dev/shm/bcn/t20/0ae2bee9ccea.hwp → /dev/shm/bcn/out20b/ahwp/0ae2bee9ccea.hwpx"
+ahwp,10079ba56e1e.hwp,ok,0.03,90661,10079ba56e1e,"보존 경고: metadata_value_removed (Metadata, Removed, 4 item(s)) | 변환 완료: /dev/shm/bcn/t20/10079ba56e1e.hwp → /dev/shm/bcn/out20b/ahwp/10079ba56e1e.hwpx"
+ahwp,12a5ad30392b.hwp,ok,0.03,258339,12a5ad30392b,"보존 경고: binary_asset_removed (BinaryAsset, Removed, 1 item(s)) | 보존 경고: control_removed (Control, Remov ... ed, 2 item(s)) | 변환 완료: /dev/shm/bcn/t20/12a5ad30392b.hwp → /dev/shm/bcn/out20b/ahwp/12a5ad30392b.hwpx"
+ahwp,1be64705aa65.hwp,ok,0.02,206474,1be64705aa65,"보존 경고: metadata_value_removed (Metadata, Removed, 2 item(s)) | 변환 완료: /dev/shm/bcn/t20/1be64705aa65.hwp → /dev/shm/bcn/out20b/ahwp/1be64705aa65.hwpx"
+ahwp,2d141e7e8c9f.hwp,ok,0.01,103759,2d141e7e8c9f,"보존 경고: metadata_value_removed (Metadata, Removed, 1 item(s)) | 변환 완료: /dev/shm/bcn/t20/2d141e7e8c9f.hwp → /dev/shm/bcn/out20b/ahwp/2d141e7e8c9f.hwpx"
+ahwp,35c715135448.hwp,ok,0.05,705716,35c715135448,"보존 경고: control_removed (Control, Removed, 6 item(s)) | 보존 경고: metadata_value_removed (Metadata, Removed, 1 item(s)) | 변환 완료: /dev/shm/bcn/t20/35c715135448.hwp → /dev/shm/bcn/out20b/ahwp/35c715135448.hwpx"
+ahwp,4521cde0679c.hwp,ok,0.01,92915,4521cde0679c,"보존 경고: metadata_value_removed (Metadata, Removed, 1 item(s)) | 변환 완료: /dev/shm/bcn/t20/4521cde0679c.hwp → /dev/shm/bcn/out20b/ahwp/4521cde0679c.hwpx"
+ahwp,57016638e064.hwp,ok,0.11,958433,57016638e064,"보존 경고: binary_asset_removed (BinaryAsset, Removed, 1 item(s)) | 보존 경고: control_removed (Control, Remov ... e, 17 item(s)) | 변환 완료: /dev/shm/bcn/t20/57016638e064.hwp → /dev/shm/bcn/out20b/ahwp/57016638e064.hwpx"
+ahwp,68bc8eff277e.hwp,ok,0.06,1040171,68bc8eff277e,"보존 경고: metadata_value_removed (Metadata, Removed, 1 item(s)) | 변환 완료: /dev/shm/bcn/t20/68bc8eff277e.hwp → /dev/shm/bcn/out20b/ahwp/68bc8eff277e.hwpx"
+ahwp,8d76ca728323.hwp,ok,0.02,89949,8d76ca728323,"보존 경고: control_removed (Control, Removed, 1 item(s)) | 보존 경고: metadata_value_removed (Metadata, Removed, 2 item(s)) | 변환 완료: /dev/shm/bcn/t20/8d76ca728323.hwp → /dev/shm/bcn/out20b/ahwp/8d76ca728323.hwpx"
+ahwp,b871798e2a08.hwp,ok,0.1,1282606,b871798e2a08,"보존 경고: metadata_value_removed (Metadata, Removed, 2 item(s)) | 변환 완료: /dev/shm/bcn/t20/b871798e2a08.hwp → /dev/shm/bcn/out20b/ahwp/b871798e2a08.hwpx"

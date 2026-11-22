@@ -1,0 +1,45 @@
+HWP AI 어댑터(hwpai) — 한글 없이 HWP를 HWPX로 바꾸고 변환 결과를 검증하며, AI가 바로 읽고 쓰는 어댑터
+Copyright (c) 2026 김영민
+hwpai 자체 코드(app/hwpai, 실행 .bat, docs, tests, sample_data)는 MIT 라이선스로 배포한다(LICENSE).
+
+======================================================================
+1. 동봉한 제3자 구성요소 — 휴대용 폴더에 실제로 들어 있는 것
+======================================================================
+
+[1] rhwp 변환 엔진 — 소스에서 빌드한 WebAssembly 판 (app/vendor/rhwp-core, 판 표기 0.9.0-local)
+    출처     https://github.com/edwardkim/rhwp  (Edward Kim)
+    빌드 소스 저장소 커밋 c9095c5f67632e6721e800ccc7fb43ea49d26682 (2026-11-08, Cargo.toml version 0.9.0)
+    라이선스 MIT License — Copyright (c) 2025-2026 Edward Kim
+             원문: app/vendor/rhwp-core/LICENSE (= licenses/rhwp-MIT-LICENSE.txt)
+    hwpai 가 바꾼 것(소스 4개 파일, 96줄 추가·1줄 삭제, 로컬 커밋 39fd66e05·7372eddda — 원 저장소에 올리지 않음):
+             src/serializer/hwpx/context.rs · section.rs · shape.rs, src/parser/control/shape.rs
+             - 이미지로 채운 단순 사각형을 한글이 그리는 그림 개체(hp:pic)로 저장
+             - 글상자·캡션이 있는 사각형은 글을 잃지 않도록 그대로 둠(가드)
+             - 묶음(그룹) 개체 안의 OLE 를 사각형이 아니라 OLE 개체로 읽음(C100)
+             변경 추적으로 지운 글은 엔진이 HWPX에 넣지 않는다(rhwp 소스 동작). hwpai 뒤처리(app/hwpai/tracked.py, C95)가
+             원본의 변경 추적 이력을 한컴 표기(deleteBegin/End·insertBegin/End)로 HWPX 에 다시 싣는다.
+    빌드     cargo build --profile release-test --target wasm32-unknown-unknown (opt-level 2, codegen-units 64 — 빌드 기계 메모리 한도 때문) + wasm-bindgen --target web → rhwp.js · rhwp_bg.wasm · rhwp.d.ts · rhwp_bg.wasm.d.ts · package.json · LICENSE
+    포함 의존성 rhwp_bg.wasm 은 rhwp 의 Rust 의존 크레이트를 정적으로 포함한다.
+             licenses/rhwp-rust-deps.csv(Cargo.lock 기준 375개, crates.io 조회), licenses/rhwp-THIRD_PARTY_LICENSES.md(rhwp 원문).
+             모두 허용형(MIT·Apache-2.0·BSD·Zlib·ISC 등)이거나 허용형 선택지를 가진다.
+    쓰는 곳  HWP→HWPX 변환만. app/hwpai/engines/rhwp_worker.mjs 가 호출한다.
+             원본 판독·변환 검증(검증서)·이관대장·게이트·AI 연결은 hwpai 자체 코드이고 rhwp 코드를 옮겨 쓰지 않았다.
+
+[2] Python 3.12.10 embeddable (Windows x64)   python/        PSF License (python/LICENSE.txt)
+    공식 배포 파일에 들어 있는 OpenSSL(libcrypto-3·libssl-3, Apache-2.0), libffi(MIT), SQLite(공개 도메인),
+    vcruntime140·vcruntime140_1(Microsoft Visual C++ 런타임 — Python 공식 embed 배포본에 들어 있는 재배포 허용 파일)
+    고지는 python/LICENSE.txt 에 있다. 바꾸지 않았다.
+[3] Node.js 22.23.4 (Windows x64)             node/node.exe  MIT License 등 (node/LICENSE). 바꾸지 않았다.
+[4] olefile 0.47                              python/Lib/site-packages  BSD 계열 (olefile-0.47.dist-info/LICENSE.txt)
+[5] cryptography 50.0.2                       python/Lib/site-packages  Apache-2.0 OR BSD-3-Clause (dist-info/licenses)
+[6] cffi 2.1.1 · pycparser 3.12               python/Lib/site-packages  MIT-0 · BSD-3-Clause (dist-info/licenses)
+    [2]~[6] 내려받은 파일과 SHA256: licenses/portable-provenance.txt
+
+======================================================================
+2. 참고만 하고 포함하지 않은 것
+======================================================================
+- pyhwp(GNU AGPL v3): 정확도 비교 평가에서 외부 명령으로만 실행해 결과를 비교했다. 코드·바이너리 미포함, import 하지 않음.
+- 한글 문서 파일 형식 5.0 공개 문서(한컴): hwpai/hwp5.py 레코드 해석 근거.
+- 시험에 쓴 공개 문서(보도자료·rhwp 저장소 시험 문서)는 배포물에 넣지 않는다.
+
+재배포를 제한하는 구성요소(GPL·AGPL 등): 없음. 근거는 THIRD_PARTY_LICENSES.md.

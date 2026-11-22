@@ -1,0 +1,198 @@
+diff --git a/src/diagnostics/ir_field_sweep.rs b/src/diagnostics/ir_field_sweep.rs
+index 73e938d4d..6385aaacc 100644
+--- a/src/diagnostics/ir_field_sweep.rs
++++ b/src/diagnostics/ir_field_sweep.rs
+@@ -953,6 +953,7 @@ fn sweep_table(base: &str, a: &Table, b: &Table, out: &mut DivergenceCollector)
+         outer_margin_bottom,
+         raw_ctrl_data,
+         raw_ctrl_seal: _,
++        source_geometry: _,
+         raw_table_record_attr,
+         raw_table_record_extra,
+         layout_page_break_cache: _,
+diff --git a/src/document_core/commands/document.rs b/src/document_core/commands/document.rs
+index 30208a0a4..23de064a8 100644
+--- a/src/document_core/commands/document.rs
++++ b/src/document_core/commands/document.rs
+@@ -263,6 +263,23 @@ impl DocumentCore {
+         // line_seg 를 소비하기 전에 물리적으로 불가능한 과다 line_seg 배열을 제거한다.
+         Self::drop_corrupt_oversized_linesegs(&mut document);
+ 
++        // hwpai 로컬 보완(결선 4차 F1): 조판용 보정이 표 기하를 고치기 전에 HWP5 선언값을 찍어 둔다.
++        // HWPX 내보내기(`hwpx_document_for_export`)가 편집되지 않은 구역에서 이 값을 다시 쓴다.
++        if matches!(source_format, crate::parser::FileFormat::Hwp) {
++            for section in &mut document.sections {
++                let capture = |node: &mut crate::model::identity::walk::Node<'_>| {
++                    if let crate::model::identity::walk::Node::Control(Control::Table(table)) = node {
++                        table.capture_source_geometry();
++                    }
++                    Ok(())
++                };
++                crate::model::identity::walk::walk(&mut section.paragraphs, capture)?;
++                for master in &mut section.section_def.master_pages {
++                    crate::model::identity::walk::walk(&mut master.paragraphs, capture)?;
++                }
++            }
++        }
++
+         // 저장 줄을 재조판하기 전에 물리 셀 프레임을 공통 모델에 복구한다.
+         // 이미 닫힌 표와 입증되지 않은 후보는 원본 폭을 유지한다.
+         let rounding_hu = px_to_hwpunit(0.5, DEFAULT_DPI) as u32;
+@@ -3173,6 +3190,7 @@ impl DocumentCore {
+         {
+             let mut doc = self.document.clone();
+             grown_table_heights::apply_grown_table_heights(&mut doc, &grown_tables);
++            Self::apply_hwp5_source_table_geometry(&mut doc);
+             self.write_page_starts(&mut doc, &page_starts);
+             if let Some((_, value)) = doc
+                 .hwpx_aux_entries
+@@ -3226,6 +3244,28 @@ impl DocumentCore {
+         serialized.map_err(|e| HwpError::RenderError(e.to_string()))
+     }
+ 
++    /// hwpai 로컬 보완(결선 4차 F1): 편집되지 않은 HWP5 구역의 표를 원본 선언 기하로 되돌린다.
++    /// 로드 중 조판 보정(칸 프레임 폭 복구)과 넘친 표 높이 반영은 화면 조판용이다. 한글 2024 의
++    /// HWP→HWPX 저장은 표 sz·칸 cellSz 를 원본 선언값 그대로 옮긴다. 편집된 구역(raw_stream 소실)은
++    /// 지금 모델 값을 그대로 쓴다.
++    fn apply_hwp5_source_table_geometry(doc: &mut crate::model::document::Document) {
++        for section in &mut doc.sections {
++            if section.raw_provenance.is_none() || section.raw_stream.is_none() {
++                continue;
++            }
++            let apply = |node: &mut crate::model::identity::walk::Node<'_>| {
++                if let crate::model::identity::walk::Node::Control(Control::Table(table)) = node {
++                    table.apply_source_geometry();
++                }
++                Ok(())
++            };
++            let _ = crate::model::identity::walk::walk(&mut section.paragraphs, apply);
++            for master in &mut section.section_def.master_pages {
++                let _ = crate::model::identity::walk::walk(&mut master.paragraphs, apply);
++            }
++        }
++    }
++
+     /// HWP3 계보 마커를 export 사본에 심는다(중복 방지).
+     fn push_hwp3_origin_marker(doc: &mut crate::model::document::Document) {
+         if !doc
+diff --git a/src/document_core/commands/object_ops/table.rs b/src/document_core/commands/object_ops/table.rs
+index 2b3c5b9fa..de6e69341 100644
+--- a/src/document_core/commands/object_ops/table.rs
++++ b/src/document_core/commands/object_ops/table.rs
+@@ -693,6 +693,7 @@ impl DocumentCore {
+             outer_margin_bottom: 283,
+             raw_ctrl_data,
+             raw_ctrl_seal: None,
++            source_geometry: None,
+             raw_table_record_attr: options.repeat_header.map_or(0x00000006, |repeat| {
+                 // 새 표도 HWP5 저장기의 raw TABLE 레코드 우선 계약을 지킨다.
+                 2 | (u32::from(repeat) << 2) // HWPX CELL (HWP5 RowBreak) + repeatHeader
+@@ -1085,6 +1086,7 @@ impl DocumentCore {
+             outer_margin_bottom: outer_margin,
+             raw_ctrl_data,
+             raw_ctrl_seal: None,
++            source_geometry: None,
+             raw_table_record_attr: 0x04000006,
+             // [#3570] 한컴은 TABLE 레코드를 zone 개수까지만 쓴다 — 여분 2바이트 없음.
+             raw_table_record_extra: Vec::new(),
+diff --git a/src/document_core/html_table_import.rs b/src/document_core/html_table_import.rs
+index 5987eff1f..cca65163f 100644
+--- a/src/document_core/html_table_import.rs
++++ b/src/document_core/html_table_import.rs
+@@ -641,6 +641,7 @@ impl DocumentCore {
+             outer_margin_bottom: outer_margin,
+             raw_ctrl_data,
+             raw_ctrl_seal: None,
++            source_geometry: None,
+             raw_table_record_attr: tbl_rec_attr,
+             raw_table_record_extra: vec![0u8; 2], // 표준 추가 2바이트
+             layout_page_break_cache: Default::default(),
+diff --git a/src/model/table.rs b/src/model/table.rs
+index 98ad0a84f..5844c9c35 100644
+--- a/src/model/table.rs
++++ b/src/model/table.rs
+@@ -92,6 +92,72 @@ pub struct Table {
+     /// 셀 구성·글 방향을 바꾸면 [`Table::invalidate_layout_page_break`] 로 비운다.
+     #[serde(skip)]
+     pub layout_page_break_cache: LayoutPageBreakCache,
++    /// hwpai 로컬 보완(결선 4차 F1): HWP5 원본에 선언된 표 기하(표 sz, 칸 cellSz) 사본.
++    /// 로드 직후, 조판용 보정(`restore_stored_cell_frame_widths`·넘친 표 높이 등)이 모델을
++    /// 고치기 전에 찍는다. HWPX 내보내기는 편집되지 않은 구역에서 이 값을 다시 쓴다 —
++    /// 한글 2024 는 HWP→HWPX 저장에서 선언값을 그대로 옮기기 때문이다(보류 표본 532건 실측:
++    /// 표 높이 2,212/2,216, 칸 폭 47,783/48,664 가 원본 선언값과 같음).
++    #[serde(skip)]
++    pub source_geometry: Option<Box<TableSourceGeometry>>,
++}
++
++/// hwpai 로컬 보완(결선 4차 F1): [`Table::source_geometry`] 의 내용.
++#[derive(Debug, Clone, Default, PartialEq)]
++pub struct TableSourceGeometry {
++    pub width: HwpUnit,
++    pub height: HwpUnit,
++    /// 칸 순서대로 (row, col, row_span, col_span, width, height)
++    pub cells: Vec<(u16, u16, u16, u16, HwpUnit, HwpUnit)>,
++}
++
++impl Table {
++    /// hwpai 로컬 보완(결선 4차 F1): 지금 모델의 선언 기하를 원본 사본으로 찍는다.
++    pub(crate) fn capture_source_geometry(&mut self) {
++        let cells = self
++            .cells
++            .iter()
++            .map(|c| (c.row, c.col, c.row_span, c.col_span, c.width, c.height))
++            .collect();
++        self.source_geometry = Some(Box::new(TableSourceGeometry {
++            width: self.common.width,
++            height: self.common.height,
++            cells,
++        }));
++    }
++
++    /// hwpai 로컬 보완(결선 4차 F1): 칸 구성(위치·병합)이 사본과 같을 때만 선언 기하를 되돌린다.
++    /// 원본 값이 0 이거나 부호 있는 값으로 음수(손상·미기록)이면 그 값은 되돌리지 않는다 —
++    /// 한글도 그런 값은 고쳐 저장한다(보류 표본: 칸 높이 0→2448, 폭 3161653531→40780).
++    pub(crate) fn apply_source_geometry(&mut self) {
++        let Some(src) = self.source_geometry.as_deref() else {
++            return;
++        };
++        let sane = |v: HwpUnit| v > 0 && v <= i32::MAX as u32;
++        if src.cells.len() != self.cells.len()
++            || src
++                .cells
++                .iter()
++                .zip(&self.cells)
++                .any(|(s, c)| (s.0, s.1, s.2, s.3) != (c.row, c.col, c.row_span, c.col_span))
++        {
++            return;
++        }
++        let src = src.clone();
++        for (s, c) in src.cells.iter().zip(self.cells.iter_mut()) {
++            if sane(s.4) {
++                c.width = s.4;
++            }
++            if sane(s.5) {
++                c.height = s.5;
++            }
++        }
++        if sane(src.width) {
++            self.common.width = src.width;
++        }
++        if sane(src.height) {
++            self.common.height = src.height;
++        }
++    }
+ }
+ 
+ /// [#8470] 세로쓰기 칸 유무 캐시. 큰 표(5만 칸)에서 조판이 칸마다 나눔 방식을 물어
+diff --git a/src/scaffold/builder.rs b/src/scaffold/builder.rs
+index 9a43a586f..3baa14290 100644
+--- a/src/scaffold/builder.rs
++++ b/src/scaffold/builder.rs
+@@ -468,6 +468,7 @@ fn build_table_paragraph(
+         outer_margin_bottom: outer_margin,
+         raw_ctrl_data,
+         raw_ctrl_seal: None,
++        source_geometry: None,
+         raw_table_record_attr: 0x0000_0006, // bits 0-1 = 2(나눔, 행 단위 = HWPX CELL), bit2 = repeat_header
+         raw_table_record_extra: Vec::new(),
+         layout_page_break_cache: Default::default(),

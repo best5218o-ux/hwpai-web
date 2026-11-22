@@ -1,0 +1,16 @@
+휴대용 폴더에 넣은 외부 배포물과 지문
+
+python-3.12.10-embed-amd64.zip  sha256=4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3  출처=https://www.python.org/ftp/python/3.12.10/
+cffi-2.1.1-cp312-cp312-win_amd64.whl  sha256=f53e442b08449d42821fa4a4fba000095af9f62742a500f978a9f557ec44339a  출처=PyPI
+cryptography-50.0.2-cp311-abi3-win_amd64.whl  sha256=7afa5a6602a9f29af1f3a2965f831bae7c9d5d597b7cbb716d41ab3b7d89879c  출처=PyPI
+olefile-0.47-py2.py3-none-any.whl  sha256=543c7da2a7adadf21214938bb79c83ea12b473a4b6ee4ad4bf854e7715e13d1f  출처=PyPI
+pycparser-3.12-py3-none-any.whl  sha256=a076f3f489b39b43ed13563a1dafe42447445bec2e294154ec5c57fcdda4c85e  출처=PyPI
+node-v22.23.4-win-x64.zip  sha256=cbc74b5e0982c9dbb41525fd8fb5dcd32fbee237863f7829072f4639a1ce5f20(SHASUMS256 일치)  출처=https://nodejs.org/dist/v22.23.4/
+
+rhwp 소스 빌드 (app/vendor/rhwp-core, 판 표기 0.9.0-local.c102 — 현재 동봉판)
+  C102 소스   rhwp 커밋 7372edd + vendor/rhwp-patch/0003-…patch + 0004-…patch (결선보완_오류수정_기록.md 「C101·C102 빌드」 참조). 아래 c9095c5·96줄 수정은 최초 제출판(C100) 기록
+  소스        https://github.com/edwardkim/rhwp  커밋 c9095c5f67632e6721e800ccc7fb43ea49d26682 (2026-11-08, Cargo.toml version 0.9.0)
+  hwpai 수정  src/serializer/hwpx/context.rs · section.rs · shape.rs, src/parser/control/shape.rs (96줄 추가·1줄 삭제, 「[hwpai]」 주석) — THIRD_PARTY_LICENSES.md 1-1
+  산출물      rhwp_bg.wasm  sha256=1f58b0439ed64dffc669f8a45a6ad4a0d2ceecbe2d9c84052ceb227c9b9fb788  (C102 동봉판. 최초 제출판 C100 은 58cda4b4…)
+              rhwp.js       sha256=02dcb4a17782f65814129c7971c81c05237e93e67327b205cfdb00b3a3ac0568
+  npm 배포본 0.8.7 은 변경 추적으로 지운 글을 HWPX에 넣어(1,000건 시험 0195) 제출 빌드에서 뺐다.

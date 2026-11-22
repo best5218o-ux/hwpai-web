@@ -1,0 +1,376 @@
+﻿crate,version,source,license(crates.io API 조회)
+adler2,2.0.1,registry,0BSD OR MIT OR Apache-2.0
+aead,0.6.1,registry,MIT OR Apache-2.0
+aes,0.9.3,registry,MIT OR Apache-2.0
+aho-corasick,1.1.5,registry,Unlicense OR MIT
+allocator-api2,0.2.21,registry,MIT OR Apache-2.0
+android_system_properties,0.1.6,registry,MIT OR Apache-2.0
+argon2,0.6.0,registry,MIT OR Apache-2.0
+arrayref,0.3.9,registry,BSD-2-Clause
+arrayvec,0.7.8,registry,MIT OR Apache-2.0
+ash,0.38.0+1.3.281,registry,MIT OR Apache-2.0
+async-trait,0.1.92,registry,MIT OR Apache-2.0
+autocfg,1.5.1,registry,Apache-2.0 OR MIT
+base64,0.22.1,registry,MIT OR Apache-2.0
+base64,0.23.1,registry,MIT OR Apache-2.0
+base64ct,1.8.3,registry,Apache-2.0 OR MIT
+bindgen,0.72.1,registry,BSD-3-Clause
+bit-set,0.8.0,registry,Apache-2.0 OR MIT
+bit-set,0.9.1,registry,Apache-2.0 OR MIT
+bit-vec,0.8.0,registry,Apache-2.0 OR MIT
+bit-vec,0.9.1,registry,Apache-2.0 OR MIT
+bitflags,1.3.2,registry,MIT/Apache-2.0
+bitflags,2.13.1,registry,MIT OR Apache-2.0
+blake2,0.11.0,registry,MIT OR Apache-2.0
+blake3,1.8.7,registry,CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception
+block-buffer,0.12.1,registry,MIT OR Apache-2.0
+block-padding,0.4.2,registry,MIT OR Apache-2.0
+block2,0.6.2,registry,MIT
+bumpalo,3.20.3,registry,MIT OR Apache-2.0
+bytemuck,1.25.2,registry,Zlib OR Apache-2.0 OR MIT
+bytemuck_derive,1.12.0,registry,Zlib OR Apache-2.0 OR MIT
+byteorder,1.5.0,registry,Unlicense OR MIT
+byteorder-lite,0.1.0,registry,Unlicense OR MIT
+cast,0.3.0,registry,MIT OR Apache-2.0
+cbc,0.2.1,registry,MIT OR Apache-2.0
+cc,1.4.3,registry,MIT OR Apache-2.0
+cexpr,0.6.0,registry,Apache-2.0/MIT
+cfb,0.15.0,registry,MIT
+cfg-if,1.0.4,registry,MIT OR Apache-2.0
+cfg_aliases,0.2.2,registry,MIT
+chacha20,0.10.1,registry,MIT OR Apache-2.0
+chacha20poly1305,0.11.0,registry,Apache-2.0 OR MIT
+cipher,0.5.2,registry,MIT OR Apache-2.0
+clang-sys,1.9.1,registry,Apache-2.0
+cmov,0.5.4,registry,Apache-2.0 OR MIT
+codepage,0.1.3,registry,Apache-2.0 OR MIT
+codespan-reporting,0.13.1,registry,Apache-2.0
+color,0.3.3,registry,Apache-2.0 OR MIT
+color_quant,1.1.0,registry,MIT
+console_error_panic_hook,0.1.7,registry,Apache-2.0/MIT
+const-oid,0.10.2,registry,Apache-2.0 OR MIT
+constant_time_eq,0.4.2,registry,CC0-1.0 OR MIT-0 OR Apache-2.0
+core_detect,1.0.0,registry,MIT/Apache-2.0
+core_maths,0.1.1,registry,MIT
+cpubits,0.1.1,registry,MIT OR Apache-2.0
+cpufeatures,0.3.0,registry,MIT OR Apache-2.0
+crc32fast,1.5.2,registry,MIT OR Apache-2.0
+crunchy,0.2.4,registry,MIT
+crypto-common,0.2.2,registry,MIT OR Apache-2.0
+ctutils,0.4.2,registry,Apache-2.0 OR MIT
+curve25519-dalek,5.0.0,registry,BSD-3-Clause
+curve25519-dalek-derive,0.1.1,registry,MIT/Apache-2.0
+data-url,0.3.2,registry,MIT OR Apache-2.0
+der,0.8.1,registry,Apache-2.0 OR MIT
+des,0.9.0,registry,MIT OR Apache-2.0
+digest,0.11.3,registry,MIT OR Apache-2.0
+dispatch2,0.3.1,registry,Zlib OR Apache-2.0 OR MIT
+dlib,0.5.3,registry,MIT
+document-features,0.2.12,registry,MIT OR Apache-2.0
+ed25519,3.0.0,registry,Apache-2.0 OR MIT
+ed25519-dalek,3.0.0,registry,BSD-3-Clause
+either,1.17.0,registry,MIT OR Apache-2.0
+embedded-io,0.7.1,registry,MIT OR Apache-2.0
+encoding_rs,0.8.42,registry,(Apache-2.0 OR MIT) AND BSD-3-Clause
+equivalent,1.0.2,registry,Apache-2.0 OR MIT
+errno,0.3.14,registry,MIT OR Apache-2.0
+euclid,0.22.14,registry,MIT OR Apache-2.0
+fastrand,2.5.0,registry,Apache-2.0 OR MIT
+fax,0.2.7,registry,MIT
+fdeflate,0.3.7,registry,MIT OR Apache-2.0
+fiat-crypto,0.3.0,registry,MIT OR Apache-2.0 OR BSD-1-Clause
+filetime,0.2.29,registry,MIT/Apache-2.0
+find-msvc-tools,0.1.11,registry,MIT OR Apache-2.0
+flate2,1.1.10,registry,MIT OR Apache-2.0
+float-cmp,0.9.0,registry,MIT
+fnv,1.0.7,registry,Apache-2.0 / MIT
+foldhash,0.1.5,registry,Zlib
+foldhash,0.2.0,registry,Zlib
+font-types,0.11.3,registry,MIT OR Apache-2.0
+font-types,0.12.5,registry,MIT OR Apache-2.0
+fontconfig-parser,0.5.8,registry,MIT
+fontdb,0.23.0,registry,MIT
+fontdb,0.24.0,registry,MIT
+futures-core,0.3.34,registry,MIT OR Apache-2.0
+futures-intrusive,0.5.0,registry,MIT OR Apache-2.0
+futures-task,0.3.34,registry,MIT OR Apache-2.0
+futures-util,0.3.34,registry,MIT OR Apache-2.0
+getrandom,0.3.4,registry,MIT OR Apache-2.0
+getrandom,0.4.3,registry,MIT OR Apache-2.0
+gif,0.13.3,registry,MIT OR Apache-2.0
+gif,0.14.2,registry,MIT OR Apache-2.0
+gl_generator,0.14.0,registry,Apache-2.0
+glob,0.3.4,registry,MIT OR Apache-2.0
+glow,0.17.0,registry,MIT OR Apache-2.0 OR Zlib
+glutin_wgl_sys,0.6.1,registry,Apache-2.0
+gpu-allocator,0.28.0,registry,MIT OR Apache-2.0
+gpu-descriptor,0.3.2,registry,MIT OR Apache-2.0
+gpu-descriptor-types,0.2.0,registry,MIT OR Apache-2.0
+guillotiere,0.7.0,registry,MIT/Apache-2.0
+half,2.7.1,registry,MIT OR Apache-2.0
+harfrust,0.12.0,registry,MIT
+hashbrown,0.15.5,registry,MIT OR Apache-2.0
+hashbrown,0.16.1,registry,MIT OR Apache-2.0
+hashbrown,0.17.1,registry,MIT OR Apache-2.0
+heck,0.5.0,registry,MIT OR Apache-2.0
+hexf-parse,0.2.1,registry,CC0-1.0
+hmac,0.13.0,registry,MIT OR Apache-2.0
+hybrid-array,0.4.14,registry,MIT OR Apache-2.0
+image,0.25.10,registry,MIT OR Apache-2.0
+image-webp,0.2.4,registry,MIT OR Apache-2.0
+imagesize,0.13.0,registry,MIT
+imagesize,0.14.0,registry,MIT
+imagesize,0.15.0,registry,MIT
+indexmap,2.14.0,registry,Apache-2.0 OR MIT
+inout,0.2.2,registry,MIT OR Apache-2.0
+itertools,0.13.0,registry,MIT OR Apache-2.0
+itoa,1.0.18,registry,MIT OR Apache-2.0
+jni-sys,0.3.1,registry,MIT OR Apache-2.0
+jni-sys,0.4.1,registry,MIT OR Apache-2.0
+jni-sys-macros,0.4.1,registry,MIT OR Apache-2.0
+js-sys,0.3.104,registry,MIT OR Apache-2.0
+keccak,0.2.1,registry,Apache-2.0 OR MIT
+kem,0.3.0,registry,Apache-2.0 OR MIT
+khronos-egl,6.0.0,registry,MIT/Apache-2.0
+khronos_api,3.1.0,registry,Apache-2.0
+kurbo,0.11.3,registry,Apache-2.0 OR MIT
+kurbo,0.13.1,registry,Apache-2.0 OR MIT
+libc,0.2.189,registry,MIT OR Apache-2.0
+libloading,0.8.9,registry,ISC
+libm,0.2.16,registry,MIT
+linebender_resource_handle,0.1.1,registry,Apache-2.0 OR MIT
+linux-raw-sys,0.12.1,registry,Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT
+litrs,1.0.0,registry,MIT OR Apache-2.0
+lock_api,0.4.14,registry,MIT OR Apache-2.0
+log,0.4.34,registry,MIT OR Apache-2.0
+memchr,2.8.3,registry,Unlicense OR MIT
+memfd,0.6.5,registry,MIT OR Apache-2.0
+memmap2,0.9.11,registry,MIT OR Apache-2.0
+minicov,0.3.9,registry,Apache-2.0/MIT
+minimal-lexical,0.2.1,registry,MIT/Apache-2.0
+miniz_oxide,0.8.9,registry,MIT OR Zlib OR Apache-2.0
+miniz_oxide,0.9.1,registry,MIT OR Zlib OR Apache-2.0
+ml-dsa,0.1.1,registry,Apache-2.0 OR MIT
+ml-kem,0.3.2,registry,Apache-2.0 OR MIT
+module-lattice,0.2.3,registry,Apache-2.0 OR MIT
+moxcms,0.8.1,registry,BSD-3-Clause OR Apache-2.0
+multiversion_no_op,1.0.0,registry,Apache-2.0 OR MIT
+naga,29.0.4,registry,MIT OR Apache-2.0
+ndk-sys,0.6.0+11769913,registry,MIT OR Apache-2.0
+nom,7.1.3,registry,MIT
+nu-ansi-term,0.50.3,registry,MIT
+num-traits,0.2.19,registry,MIT OR Apache-2.0
+objc2,0.6.4,registry,MIT
+objc2-core-foundation,0.3.2,registry,Zlib OR Apache-2.0 OR MIT
+objc2-encode,4.1.0,registry,MIT
+objc2-foundation,0.3.2,registry,MIT
+objc2-metal,0.3.2,registry,Zlib OR Apache-2.0 OR MIT
+objc2-quartz-core,0.3.2,registry,Zlib OR Apache-2.0 OR MIT
+once_cell,1.21.4,registry,MIT OR Apache-2.0
+oorandom,11.1.5,registry,MIT
+ordered-float,4.6.0,registry,MIT
+parking_lot,0.12.5,registry,MIT OR Apache-2.0
+parking_lot_core,0.9.12,registry,MIT OR Apache-2.0
+password-hash,0.6.1,registry,MIT OR Apache-2.0
+paste,1.0.15,registry,MIT OR Apache-2.0
+pbkdf2,0.13.0,registry,MIT OR Apache-2.0
+pcx,0.2.5,registry,MIT OR Apache-2.0 OR WTFPL
+pdf-writer,0.12.1,registry,MIT OR Apache-2.0
+peniko,0.6.1,registry,Apache-2.0 OR MIT
+phc,0.6.1,registry,Apache-2.0 OR MIT
+pico-args,0.5.0,registry,MIT
+pin-project-lite,0.2.17,registry,Apache-2.0 OR MIT
+pkcs8,0.11.0,registry,Apache-2.0 OR MIT
+pkg-config,0.3.34,registry,MIT OR Apache-2.0
+png,0.17.16,registry,MIT OR Apache-2.0
+png,0.18.1,registry,MIT OR Apache-2.0
+pollster,1.0.1,registry,Apache-2.0/MIT
+poly1305,0.9.1,registry,Apache-2.0 OR MIT
+polycool,0.4.0,registry,MIT OR Apache-2.0
+portable-atomic,1.15.0,registry,Apache-2.0 OR MIT
+portable-atomic-util,0.2.7,registry,Apache-2.0 OR MIT
+ppv-lite86,0.2.21,registry,MIT OR Apache-2.0
+presser,0.3.1,registry,MIT OR Apache-2.0
+prettyplease,0.2.37,registry,MIT OR Apache-2.0
+proc-macro2,1.0.107,registry,MIT OR Apache-2.0
+profiling,1.0.18,registry,MIT OR Apache-2.0
+proptest,1.11.0,registry,MIT OR Apache-2.0
+pxfm,0.1.30,registry,BSD-3-Clause OR Apache-2.0
+quick-error,1.2.3,registry,MIT/Apache-2.0
+quick-error,2.0.1,registry,MIT/Apache-2.0
+quick-xml,0.42.0,registry,MIT
+quote,1.0.47,registry,MIT OR Apache-2.0
+r-efi,5.3.0,registry,MIT OR Apache-2.0 OR LGPL-2.1-or-later
+r-efi,6.0.0,registry,MIT OR Apache-2.0 OR LGPL-2.1-or-later
+rand,0.9.5,registry,MIT OR Apache-2.0
+rand_chacha,0.9.0,registry,MIT OR Apache-2.0
+rand_core,0.10.1,registry,MIT OR Apache-2.0
+rand_core,0.9.5,registry,MIT OR Apache-2.0
+rand_xorshift,0.4.0,registry,MIT OR Apache-2.0
+range-alloc,0.1.5,registry,MIT OR Apache-2.0
+raw-window-handle,0.6.2,registry,MIT OR Apache-2.0 OR Zlib
+raw-window-metal,1.1.0,registry,MIT OR Apache-2.0
+read-fonts,0.39.2,registry,MIT OR Apache-2.0
+read-fonts,0.41.0,registry,MIT OR Apache-2.0
+redox_syscall,0.5.18,registry,MIT
+regex,1.13.1,registry,MIT OR Apache-2.0
+regex-automata,0.4.18,registry,MIT OR Apache-2.0
+regex-syntax,0.8.11,registry,MIT OR Apache-2.0
+renderdoc-sys,1.1.0,registry,MIT OR Apache-2.0
+resvg,0.45.1,registry,Apache-2.0 OR MIT
+resvg,0.47.0,registry,Apache-2.0 OR MIT
+resvg,0.48.1,registry,Apache-2.0 OR MIT
+rgb,0.8.53,registry,MIT
+rhwp,0.8.7,local,MIT (rhwp 워크스페이스)
+rhwp-contracts,0.1.0,local,MIT (rhwp 워크스페이스)
+rhwp-native-ffi,0.1.0,local,MIT (rhwp 워크스페이스)
+rhwp-ooxml-chart,0.1.0,local,MIT (rhwp 워크스페이스)
+rhwp-password-crypto,0.1.0,local,MIT (rhwp 워크스페이스)
+rhwp-subsecond,0.0.0,local,MIT (rhwp 워크스페이스)
+roxmltree,0.20.0,registry,MIT OR Apache-2.0
+roxmltree,0.21.1,registry,MIT OR Apache-2.0
+rustc-hash,1.1.0,registry,Apache-2.0/MIT
+rustc-hash,2.1.3,registry,Apache-2.0 OR MIT
+rustc_version,0.4.1,registry,MIT OR Apache-2.0
+rustix,1.1.4,registry,Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT
+rustversion,1.0.23,registry,MIT OR Apache-2.0
+rusty-fork,0.3.1,registry,MIT/Apache-2.0
+rustybuzz,0.20.1,registry,MIT
+ryu,1.0.23,registry,Apache-2.0 OR BSL-1.0
+same-file,1.0.6,registry,Unlicense/MIT
+scopeguard,1.2.0,registry,MIT OR Apache-2.0
+semver,1.0.28,registry,MIT OR Apache-2.0
+serde,1.0.229,registry,MIT OR Apache-2.0
+serde_core,1.0.229,registry,MIT OR Apache-2.0
+serde_derive,1.0.229,registry,MIT OR Apache-2.0
+serde_json,1.0.151,registry,MIT OR Apache-2.0
+serde_spanned,1.1.1,registry,MIT OR Apache-2.0
+sha1,0.11.0,registry,MIT OR Apache-2.0
+sha2,0.11.0,registry,MIT OR Apache-2.0
+sha3,0.11.0,registry,MIT OR Apache-2.0
+shake,0.1.0,registry,MIT OR Apache-2.0
+shlex,1.3.0,registry,MIT OR Apache-2.0
+shlex,2.0.1,registry,MIT OR Apache-2.0
+signature,3.0.0,registry,Apache-2.0 OR MIT
+simd-adler32,0.3.10,registry,MIT
+simdutf8,0.1.5,registry,MIT OR Apache-2.0
+simplecss,0.2.2,registry,Apache-2.0 OR MIT
+siphasher,1.0.3,registry,MIT/Apache-2.0
+skia-bindings,0.153.3,registry,MIT
+skia-safe,0.153.3,registry,MIT
+skrifa,0.42.1,registry,MIT OR Apache-2.0
+skrifa,0.44.0,registry,MIT OR Apache-2.0
+slab,0.4.12,registry,MIT
+slotmap,1.1.1,registry,Zlib
+smallvec,1.15.2,registry,MIT OR Apache-2.0
+snafu,0.9.2,registry,MIT OR Apache-2.0
+snafu-derive,0.9.2,registry,MIT OR Apache-2.0
+spirv,0.4.0+sdk-1.4.341.0,registry,Apache-2.0
+spki,0.8.0,registry,Apache-2.0 OR MIT
+sponge-cursor,0.1.0,registry,MIT OR Apache-2.0
+static_assertions,1.1.0,registry,MIT OR Apache-2.0
+strict-num,0.1.1,registry,MIT
+strum,0.28.0,registry,MIT
+strum_macros,0.28.0,registry,MIT
+subsecond,0.7.10,registry,MIT OR Apache-2.0
+subsecond-types,0.7.10,registry,MIT OR Apache-2.0
+subsetter,0.2.6,registry,MIT OR Apache-2.0
+subtle,2.6.1,registry,BSD-3-Clause
+svg2pdf,0.13.0,local,MIT OR Apache-2.0 (vendor/svg2pdf/Cargo.toml)
+svg_fmt,0.4.5,registry,MIT/Apache-2.0
+svgtypes,0.15.3,registry,Apache-2.0 OR MIT
+svgtypes,0.16.1,registry,Apache-2.0 OR MIT
+syn,2.0.119,registry,MIT OR Apache-2.0
+syn,3.0.3,registry,MIT OR Apache-2.0
+tar,0.4.46,registry,MIT OR Apache-2.0
+tempfile,3.27.0,registry,MIT OR Apache-2.0
+termcolor,1.4.1,registry,Unlicense OR MIT
+thiserror,2.0.20,registry,MIT OR Apache-2.0
+thiserror-impl,2.0.20,registry,MIT OR Apache-2.0
+tiff,0.11.3,registry,MIT
+tiny-skia,0.11.4,registry,BSD-3-Clause
+tiny-skia,0.12.0,registry,BSD-3-Clause
+tiny-skia-path,0.11.4,registry,BSD-3-Clause
+tiny-skia-path,0.12.0,registry,BSD-3-Clause
+tinyvec,1.12.0,registry,Zlib OR Apache-2.0 OR MIT
+tinyvec_macros,0.1.1,registry,MIT OR Apache-2.0 OR Zlib
+toml,1.1.4+spec-1.1.0,registry,MIT OR Apache-2.0
+toml_datetime,1.1.1+spec-1.1.0,registry,MIT OR Apache-2.0
+toml_parser,1.1.3+spec-1.1.0,registry,MIT OR Apache-2.0
+toml_writer,1.1.2+spec-1.1.0,registry,MIT OR Apache-2.0
+ttf-parser,0.25.1,registry,MIT OR Apache-2.0
+typed-path,0.12.3,registry,MIT OR Apache-2.0
+typenum,1.20.1,registry,MIT OR Apache-2.0
+unarray,0.1.4,registry,MIT OR Apache-2.0
+unicode-bidi,0.3.18,registry,MIT OR Apache-2.0
+unicode-bidi-mirroring,0.4.0,registry,MIT/Apache-2.0
+unicode-ccc,0.4.0,registry,MIT/Apache-2.0
+unicode-ident,1.0.24,registry,(MIT OR Apache-2.0) AND Unicode-3.0
+unicode-properties,0.1.4,registry,MIT/Apache-2.0
+unicode-script,0.5.8,registry,MIT OR Apache-2.0
+unicode-segmentation,1.13.3,registry,MIT OR Apache-2.0
+unicode-vo,0.1.0,registry,MIT/Apache-2.0
+unicode-width,0.2.2,registry,MIT OR Apache-2.0
+universal-hash,0.6.1,registry,MIT OR Apache-2.0
+usvg,0.45.1,registry,Apache-2.0 OR MIT
+usvg,0.47.0,registry,Apache-2.0 OR MIT
+usvg,0.48.1,registry,Apache-2.0 OR MIT
+uuid,1.24.1,registry,Apache-2.0 OR MIT
+vello,0.10.0,registry,Apache-2.0 OR MIT
+vello_encoding,0.10.0,registry,Apache-2.0 OR MIT
+vello_shaders,0.10.0,registry,Apache-2.0 OR MIT
+vello_svg,0.11.0,registry,Apache-2.0 OR MIT
+version_check,0.9.5,registry,MIT/Apache-2.0
+wait-timeout,0.2.1,registry,MIT/Apache-2.0
+walkdir,2.5.0,registry,Unlicense/MIT
+wasip2,1.0.4+wasi-0.2.12,registry,Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT
+wasm-bindgen,0.2.127,registry,MIT OR Apache-2.0
+wasm-bindgen-futures,0.4.77,registry,MIT OR Apache-2.0
+wasm-bindgen-macro,0.2.127,registry,MIT OR Apache-2.0
+wasm-bindgen-macro-support,0.2.127,registry,MIT OR Apache-2.0
+wasm-bindgen-shared,0.2.127,registry,MIT OR Apache-2.0
+wasm-bindgen-test,0.3.77,registry,MIT OR Apache-2.0
+wasm-bindgen-test-macro,0.3.77,registry,MIT OR Apache-2.0
+wasm-bindgen-test-shared,0.2.127,registry,MIT OR Apache-2.0
+wayland-sys,0.31.11,registry,MIT
+web-sys,0.3.104,registry,MIT OR Apache-2.0
+web-time,1.1.0,registry,MIT OR Apache-2.0
+weezl,0.1.12,registry,MIT OR Apache-2.0
+wgpu,29.0.4,registry,MIT OR Apache-2.0
+wgpu-core,29.0.4,registry,MIT OR Apache-2.0
+wgpu-core-deps-apple,29.0.4,registry,MIT OR Apache-2.0
+wgpu-core-deps-emscripten,29.0.4,registry,MIT OR Apache-2.0
+wgpu-core-deps-windows-linux-android,29.0.4,registry,MIT OR Apache-2.0
+wgpu-hal,29.0.4,registry,MIT OR Apache-2.0
+wgpu-naga-bridge,29.0.4,registry,MIT OR Apache-2.0
+wgpu-types,29.0.4,registry,MIT OR Apache-2.0
+winapi-util,0.1.11,registry,Unlicense OR MIT
+windows,0.62.2,registry,MIT OR Apache-2.0
+windows-collections,0.3.2,registry,MIT OR Apache-2.0
+windows-core,0.62.2,registry,MIT OR Apache-2.0
+windows-future,0.3.2,registry,MIT OR Apache-2.0
+windows-implement,0.60.2,registry,MIT OR Apache-2.0
+windows-interface,0.59.3,registry,MIT OR Apache-2.0
+windows-link,0.2.1,registry,MIT OR Apache-2.0
+windows-numerics,0.3.1,registry,MIT OR Apache-2.0
+windows-result,0.4.1,registry,MIT OR Apache-2.0
+windows-strings,0.5.1,registry,MIT OR Apache-2.0
+windows-sys,0.61.2,registry,MIT OR Apache-2.0
+windows-threading,0.2.1,registry,MIT OR Apache-2.0
+winnow,1.0.4,registry,MIT
+wit-bindgen,0.57.1,registry,Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT
+write-fonts,0.48.1,registry,MIT OR Apache-2.0
+xattr,1.6.1,registry,MIT OR Apache-2.0
+xml-rs,0.8.29,registry,MIT
+xmlwriter,0.1.0,registry,MIT
+zerocopy,0.8.56,registry,BSD-2-Clause OR Apache-2.0 OR MIT
+zerocopy-derive,0.8.56,registry,BSD-2-Clause OR Apache-2.0 OR MIT
+zeroize,1.9.0,registry,Apache-2.0 OR MIT
+zip,8.6.0,registry,MIT
+zlib-rs,0.6.7,registry,Zlib
+zmij,1.0.23,registry,MIT
+zopfli,0.8.3,registry,Apache-2.0
+zune-core,0.4.12,registry,MIT OR Apache-2.0 OR Zlib
+zune-core,0.5.3,registry,MIT OR Apache-2.0 OR Zlib
+zune-jpeg,0.4.21,registry,MIT OR Apache-2.0 OR Zlib
+zune-jpeg,0.5.15,registry,MIT OR Apache-2.0 OR Zlib

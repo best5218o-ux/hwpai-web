@@ -1,0 +1,19 @@
+hwpai MCP Windows 시험 결과표 2026-11-21 16:17
+
+
+항목                                                                    결과  비고                                                                              
+--                                                                    --  --                                                                              
+v9 사본 준비(휴대용 python·node 사용)                                          통과  mcp.py 385 줄                                                                    
+A hwpai.bat mcp (작업폴더=v9 루트)                                          통과  initialize=O; tools/list=O; read_hwp=O; get_tables=O; convert_to_hwpx=O; audit=O
+B python.exe -m hwpai mcp (PYTHONUTF8 미설정, 한글·공백 경로 문서)               통과  initialize=O; tools/list=O; read_hwp=O; get_tables=O; convert_to_hwpx=O; audit=O
+C python.exe, PYTHONUTF8=0 PYTHONIOENCODING=cp949 명시(한글·공백 경로)        통과  initialize=O; tools/list=O; read_hwp=O; get_tables=O; convert_to_hwpx=O; audit=O
+D python.exe 를 C:\Windows\System32 에서 띄움·HWPAI_GRADE_LOG 없음(구판 실패 재현) 통과  initialize=O; tools/list=O; read_hwp=O; get_tables=O; convert_to_hwpx=O; audit=O
+E hwpai.bat 을 C:\Windows\System32 에서 띄움·HWPAI_GRADE_LOG 없음            통과  initialize=O; tools/list=O; read_hwp=O; get_tables=O; convert_to_hwpx=O; audit=O
+시작~initialize 3회 hwpai.bat                                            통과  0.24초 / 0.23초 / 0.22초                                                           
+시작~initialize 3회 python.exe                                           통과  0.17초 / 0.18초 / 0.17초                                                           
+Gemini CLI 로컬 설치                                                      실패                                                                                  
+Codex 로컬 설치                                                           실패                                                                                  
+Gemini CLI 모델 경유 호출                                                   미실시 설치 실패                                                                           
+Codex 모델 경유 호출                                                        미실시 설치 실패                                                                           
+
+

@@ -1,0 +1,160 @@
+From 39fd66e05ad42a1bda0a3216a4445f417fbb8956 Mon Sep 17 00:00:00 2001
+From: hwpai <496120@naver.com>
+Date: Tue, 10 Nov 2026 02:43:14 +0900
+Subject: [PATCH] hwpx serializer: guard image_rect_as_picture (hwpai local
+ build)
+
+Local-only branch for the hwpai submission engine (rhwp 0.9.0 base).
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01LTngWMttZT8jYWigepEnCJ
+---
+ src/serializer/hwpx/context.rs | 19 +++++++++++++
+ src/serializer/hwpx/section.rs | 18 ++++++++++++
+ src/serializer/hwpx/shape.rs   | 50 ++++++++++++++++++++++++++++++++++
+ 3 files changed, 87 insertions(+)
+
+diff --git a/src/serializer/hwpx/context.rs b/src/serializer/hwpx/context.rs
+index 035e14252..a1d799462 100644
+--- a/src/serializer/hwpx/context.rs
++++ b/src/serializer/hwpx/context.rs
+@@ -116,6 +116,9 @@ pub struct SerializeContext {
+     pub style_ids: IdPool<u16>,
+     /// `bin_data_id` (IR) → manifest 엔트리 매핑
+     pub bin_data_map: HashMap<u16, BinDataEntry>,
++    /// [hwpai] BinData 저장 id → 그림 원래 픽셀 크기(w, h). 이미지로 채운 사각형을
++    /// `hp:pic` 으로 낼 때 imgClip/imgDim 기준으로 쓴다(한글은 사각형 채우기 그림을 그리지 않는다).
++    pub bin_native_px: HashMap<u16, (u32, u32)>,
+     /// HWP5 BIN_DATA 레코드 순번(1-based) → storage_id 사상.
+     ///
+     /// `ImageAttr.bin_data_id`는 storage stream 이름이 아니라 DocInfo 레코드
+@@ -196,6 +199,7 @@ impl Default for SerializeContext {
+             numbering_ids: IdPool::default(),
+             style_ids: IdPool::default(),
+             bin_data_map: HashMap::new(),
++            bin_native_px: HashMap::new(),
+             bin_seq_to_storage: HashMap::new(),
+             chart_entries: Vec::new(),
+             para_page_num_pos_emitted: false,
+@@ -243,6 +247,15 @@ impl SerializeContext {
+         ctx.table_instance_ids.reservation = reservation.clone();
+         ctx.style_ids.reservation = reservation;
+ 
++        // [hwpai] 그림 원래 픽셀 크기를 한 번만 읽어 둔다(이미지 채운 사각형 → hp:pic 변환용).
++        for bd in &doc.bin_data_content {
++            let bytes = bd.data.load();
++            if let Ok(reader) = image::ImageReader::new(std::io::Cursor::new(bytes)).with_guessed_format() {
++                if let Ok((w, h)) = reader.into_dimensions() {
++                    ctx.bin_native_px.insert(bd.id, (w, h));
++                }
++            }
++        }
+         // [#8303] HWP3 원본 산출물도 문단 축으로 낸다 — 한컴 2020·2024 가 같은 HWP3 을
+         // 저장한 HWPX 의 `textpos` 축이다. 표지 엔트리는 `serialize_hwpx` 가 함께 쓴다.
+         ctx.line_segs_on_paragraph_axis = doc
+@@ -549,6 +562,12 @@ impl SerializeContext {
+     /// HWP5 본문 개체의 `bin_data_id`는 BIN_DATA 레코드 순번이므로, 등록된
+     /// 순번 사상을 storage ID 직접 조회보다 먼저 적용한다. 사상이 없는 sparse
+     /// ID(차트)와 수동 구성 문서는 기존 직접 조회를 사용한다.
++    /// [hwpai] IR 의 bin_data_id(DocInfo 순번)로 그림 원래 픽셀 크기를 찾는다.
++    pub fn native_px(&self, bin_data_id: u16) -> Option<(u32, u32)> {
++        let storage = self.bin_seq_to_storage.get(&bin_data_id).copied().unwrap_or(bin_data_id);
++        self.bin_native_px.get(&storage).or_else(|| self.bin_native_px.get(&bin_data_id)).copied()
++    }
++
+     pub fn resolve_bin_id(&self, bin_data_id: u16) -> Option<&str> {
+         self.bin_seq_to_storage
+             .get(&bin_data_id)
+diff --git a/src/serializer/hwpx/section.rs b/src/serializer/hwpx/section.rs
+index 73b9c9ba3..f61defe92 100644
+--- a/src/serializer/hwpx/section.rs
++++ b/src/serializer/hwpx/section.rs
+@@ -4322,6 +4322,24 @@ where
+ {
+     // Rectangle: Writer-based serializer (drawText 포함)
+     if let ShapeObject::Rectangle(r) = shape {
++        // [hwpai] 이미지로 채운 단순 사각형은 한글이 그리는 그림 개체(hp:pic)로 낸다.
++        if let Some(pic) = super::shape::image_rect_as_picture(r, ctx) {
++            return Ok(
++                match checked_xml_result(
++                    writer_to_string_with_storage(
++                        |w| super::picture::write_picture_with_storage(w, &pic, ctx, storage),
++                        storage,
++                    ),
++                    storage,
++                )? {
++                    Ok(xml) => xml,
++                    Err(e) => {
++                        eprintln!("[hwpx] 이미지 사각형→그림 직렬화 실패: {e}");
++                        String::new()
++                    }
++                },
++            );
++        }
+         return Ok(
+             match checked_xml_result(
+                 writer_to_string_with_storage(
+diff --git a/src/serializer/hwpx/shape.rs b/src/serializer/hwpx/shape.rs
+index df9946944..47142d200 100644
+--- a/src/serializer/hwpx/shape.rs
++++ b/src/serializer/hwpx/shape.rs
+@@ -46,6 +46,56 @@ use super::SerializeError;
+ // <hp:rect>
+ // =====================================================================
+ 
++/// [hwpai] 이미지로 채운 단순 사각형(글상자·캡션 없음)을 `<hp:pic>` 개체로 바꾼다.
++/// 한글은 `hp:rect` + `hc:imgBrush` 로 된 그림을 그리지 않으므로(HWP 원본의 그림은 대부분
++/// 이 형식이다), 한글이 직접 쓰는 그림 형식으로 낸다. 기준 크기는 그림 원래 픽셀 × 75 HWPUNIT.
++pub(super) fn image_rect_as_picture(
++    r: &RectangleShape,
++    ctx: &SerializeContext,
++) -> Option<crate::model::image::Picture> {
++    use crate::model::image::{CropInfo, ImageAttr, Picture};
++    if r.control_kind() != crate::model::shape::RectangleControlKind::Rectangle {
++        return None;
++    }
++    if r.drawing.fill.fill_type != FillType::Image {
++        return None;
++    }
++    // 글상자(글이 든 사각형)나 캡션이 있으면 글을 잃지 않도록 사각형 형식을 그대로 둔다
++    if r.drawing.text_box.is_some() || r.drawing.caption.is_some() {
++        return None;
++    }
++    let img = r.drawing.fill.image.as_ref()?;
++    let (pw, ph) = ctx.native_px(img.bin_data_id)?;
++    let nw = i32::try_from(pw.checked_mul(75)?).ok()?;
++    let nh = i32::try_from(ph.checked_mul(75)?).ok()?;
++    let (bright, contrast) = img.display_brightness_contrast();
++    let x = r.x_coords;
++    let y = r.y_coords;
++    let mut pic = Picture::default();
++    pic.common = r.common.clone();
++    pic.shape_attr = r.drawing.shape_attr.clone();
++    pic.border_attr = r.drawing.border_line;
++    pic.border_color = r.drawing.border_line.color;
++    pic.border_width = r.drawing.border_line.width;
++    pic.border_x = [x[0], y[0], x[1], y[1]];
++    pic.border_y = [x[2], y[2], x[3], y[3]];
++    pic.crop = CropInfo { left: 0, top: 0, right: nw, bottom: nh };
++    pic.img_dim = (nw as u32, nh as u32);
++    pic.image_attr = ImageAttr {
++        brightness: bright,
++        contrast,
++        bin_data_id: img.bin_data_id,
++        ..Default::default()
++    };
++    pic.instance_id = if r.drawing.inst_id != 0 {
++        r.drawing.inst_id
++    } else {
++        r.common.instance_id
++    };
++    pic.caption = r.drawing.caption.clone();
++    Some(pic)
++}
++
+ /// `<hp:rect>` 직렬화 진입점. Rectangle IR → XML.
+ pub fn write_rect<W: Write>(
+     w: &mut Writer<W>,
+-- 
+2.43.0
+

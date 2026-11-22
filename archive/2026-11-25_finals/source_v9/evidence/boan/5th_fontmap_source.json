@@ -1,0 +1,1566 @@
+{
+"#Big": {
+"ko": [
+"#빅"
+],
+"src": "hft:HCSPBIG.HFT"
+},
+"#Dinaru": {
+"ko": [
+"#디나루"
+],
+"src": "hft:HCSPDNR.HFT"
+},
+"#Gongjak": {
+"ko": [
+"#공작"
+],
+"src": "hft:HCSPGJ.HFT"
+},
+"#Graphic": {
+"ko": [
+"#그래픽"
+],
+"src": "hft:HCSPGRP.HFT"
+},
+"#Gungseo": {
+"ko": [
+"#궁서"
+],
+"src": "hft:HCSPGS.HFT"
+},
+"#Gyeongothic": {
+"ko": [
+"#견고딕"
+],
+"src": "hft:HCSPGGT.HFT"
+},
+"#Gyeonmyeongjo": {
+"ko": [
+"#견명조"
+],
+"src": "hft:HCSPGMJ.HFT"
+},
+"#Headline A": {
+"ko": [
+"#헤드라인A"
+],
+"src": "hft:HCENHEDA.HFT"
+},
+"#Headline B": {
+"ko": [
+"#헤드라인B"
+],
+"src": "hft:HCENHEDB.HFT"
+},
+"#Hwamyeongjo A": {
+"ko": [
+"#화명조A"
+],
+"src": "hft:HCENHMJA.HFT"
+},
+"#Hwamyeongjo B": {
+"ko": [
+"#화명조B"
+],
+"src": "hft:HCENHMJB.HFT"
+},
+"#Junggothic": {
+"ko": [
+"#중고딕"
+],
+"src": "hft:HCSPJGT.HFT"
+},
+"#Junggothic V": {
+"ko": [
+"#중고딕V"
+],
+"src": "hft:HCJPJGTV.HFT"
+},
+"#Jungmyeongjo": {
+"ko": [
+"#중명조"
+],
+"src": "hft:HCSPJMJ.HFT"
+},
+"#Pilgi": {
+"ko": [
+"#필기"
+],
+"src": "hft:HCSPPG.HFT"
+},
+"#Segothic": {
+"ko": [
+"#세고딕"
+],
+"src": "hft:HCSPSEGT.HFT"
+},
+"#Segothic V": {
+"ko": [
+"#세고딕V"
+],
+"src": "hft:HCJPSEGV.HFT"
+},
+"#Semyeongjo": {
+"ko": [
+"#세명조"
+],
+"src": "hft:HCSPSEMJ.HFT"
+},
+"#Semyeongjo V": {
+"ko": [
+"#세명조V"
+],
+"src": "hft:HCJPSEMV.HFT"
+},
+"#Senaru": {
+"ko": [
+"#세나루"
+],
+"src": "hft:HCSPSNR.HFT"
+},
+"#Sin Jungmyeongjo": {
+"ko": [
+"#신중명조"
+],
+"src": "hft:HCENSJMJ.HFT"
+},
+"#Sindinaru": {
+"ko": [
+"#신디나루"
+],
+"src": "hft:HCSPSDNR.HFT"
+},
+"#Singraphic": {
+"ko": [
+"#신그래픽"
+],
+"src": "hft:HCSPSGRP.HFT"
+},
+"#Sinjungmyeongjo": {
+"ko": [
+"#신중명조"
+],
+"src": "hft:HCHGSJMJ.HFT"
+},
+"#Sinmungothic": {
+"ko": [
+"#신문고딕"
+],
+"src": "hft:HCSPSMGT.HFT"
+},
+"#Sinmungyeongo": {
+"ko": [
+"#신문견고"
+],
+"src": "hft:HCHJSMGG.HFT"
+},
+"#Sinmungyeonmyeong": {
+"ko": [
+"#신문견명"
+],
+"src": "hft:HCHJSMGM.HFT"
+},
+"#Sinmunmyeongjo": {
+"ko": [
+"#신문명조"
+],
+"src": "hft:HCSPSMMJ.HFT"
+},
+"#Sinmuntaego": {
+"ko": [
+"#신문태고"
+],
+"src": "hft:HCENSMTG.HFT"
+},
+"#Sinmuntaemyeong": {
+"ko": [
+"#신문태명"
+],
+"src": "hft:HCENSMTM.HFT"
+},
+"#Sinmyeongjo": {
+"ko": [
+"#신명조"
+],
+"src": "hft:HCSPSMJ.HFT"
+},
+"#Sinsegothic": {
+"ko": [
+"#신세고딕"
+],
+"src": "hft:HCSPSSGT.HFT"
+},
+"#Sinsenaru": {
+"ko": [
+"#신세나루"
+],
+"src": "hft:HCSPSSNR.HFT"
+},
+"#Sintaemyeongjo": {
+"ko": [
+"#신태명조"
+],
+"src": "hft:HCSPSTMJ.HFT"
+},
+"#Suam A": {
+"ko": [
+"#수암A"
+],
+"src": "hft:HCSPSMA.HFT"
+},
+"#Suam B": {
+"ko": [
+"#수암B"
+],
+"src": "hft:HCENSMB.HFT"
+},
+"#Taegothic": {
+"ko": [
+"#태고딕"
+],
+"src": "hft:HCSPTGT.HFT"
+},
+"#Taegothic V": {
+"ko": [
+"#태고딕V"
+],
+"src": "hft:HCJPTGTV.HFT"
+},
+"#Taegraphic": {
+"ko": [
+"#태그래픽"
+],
+"src": "hft:HCSPTGRP.HFT"
+},
+"#Taemyeongjo": {
+"ko": [
+"#태명조"
+],
+"src": "hft:HCSPTMJ.HFT"
+},
+"#Taemyeongjo V": {
+"ko": [
+"#태명조V"
+],
+"src": "hft:HCJPTMJV.HFT"
+},
+"#Taesinmyeongjo": {
+"ko": [
+"#태신명조"
+],
+"src": "hft:HCSPTSMJ.HFT"
+},
+"Ahn Bold": {
+"ko": [
+"굵은안상수체",
+"굵은안상수체영문"
+],
+"src": "hft:HMEAHNB.HFT"
+},
+"Ahn Narrow": {
+"ko": [
+"가는안상수체",
+"가는안상수체영문"
+],
+"src": "hft:HMEAHNL.HFT"
+},
+"Ahn Normal": {
+"ko": [
+"중간안상수체",
+"중간안상수체영문"
+],
+"src": "hft:HMEAHNM.HFT"
+},
+"Ami R": {
+"ko": [
+"휴먼아미체"
+],
+"src": "ttf:HMKMAMI.TTF"
+},
+"Batang": {
+"ko": [
+"바탕"
+],
+"src": "ttf:batang.ttc"
+},
+"BatangChe": {
+"ko": [
+"바탕체"
+],
+"src": "ttf:batang.ttc"
+},
+"Corn": {
+"ko": [
+"옥수수"
+],
+"src": "hft:ENCORN.HFT"
+},
+"Cucumber": {
+"ko": [
+"오이"
+],
+"src": "hft:ENCUCMBR.HFT"
+},
+"Dotum": {
+"ko": [
+"돋움"
+],
+"src": "ttf:gulim.ttc"
+},
+"DotumChe": {
+"ko": [
+"돋움체"
+],
+"src": "ttf:gulim.ttc"
+},
+"Eggplant": {
+"ko": [
+"가지"
+],
+"src": "hft:HGEGPLNT.HFT"
+},
+"Expo M": {
+"ko": [
+"휴먼엑스포"
+],
+"src": "ttf:HMFMMUEX.TTC"
+},
+"FZSong_Superfont": {
+"ko": [
+"한컴바탕확장"
+],
+"src": "ttf:FZSong_Super.TTF"
+},
+"Ganeunhan": {
+"ko": [
+"가는한"
+],
+"src": "hft:HANENGL.HFT"
+},
+"Gothic": {
+"ko": [
+"고딕"
+],
+"src": "hft:JPGT.HFT"
+},
+"Gulgeunhan": {
+"ko": [
+"굵은한"
+],
+"src": "hft:HANENGB.HFT"
+},
+"Gulim": {
+"ko": [
+"굴림"
+],
+"src": "ttf:gulim.ttc"
+},
+"GulimChe": {
+"ko": [
+"굴림체"
+],
+"src": "ttf:gulim.ttc"
+},
+"Gungsuh": {
+"ko": [
+"궁서"
+],
+"src": "ttf:batang.ttc"
+},
+"GungsuhChe": {
+"ko": [
+"궁서체"
+],
+"src": "ttf:batang.ttc"
+},
+"HCR Batang": {
+"ko": [
+"함초롬바탕"
+],
+"src": "ttf:HANBatangB.ttf"
+},
+"HCR Batang Ext": {
+"ko": [
+"함초롬바탕 확장"
+],
+"src": "ttf:HANBatangExt.ttf"
+},
+"HCR Batang ExtB": {
+"ko": [
+"함초롬바탕 확장B"
+],
+"src": "ttf:HANBatangExtBB.ttf"
+},
+"HCR Dotum": {
+"ko": [
+"함초롬돋움"
+],
+"src": "ttf:HANDotumB.ttf"
+},
+"HCR Dotum Ext": {
+"ko": [
+"함초롬돋움 확장"
+],
+"src": "ttf:HANDotumExt.ttf"
+},
+"HY Dunggeungothic": {
+"ko": [
+"HY둥근고딕"
+],
+"src": "hft:HYSPGL.HFT"
+},
+"HY Graphic": {
+"ko": [
+"한양그래픽"
+],
+"src": "hft:ENGRP.HFT"
+},
+"HY Gungseo": {
+"ko": [
+"한양궁서"
+],
+"src": "hft:ENGS.HFT"
+},
+"HY Gyeongothic": {
+"ko": [
+"한양견고딕"
+],
+"src": "hft:ENGGT.HFT"
+},
+"HY Gyeonmyeongjo": {
+"ko": [
+"한양견명조"
+],
+"src": "hft:ENGMJ.HFT"
+},
+"HY Junggothic": {
+"ko": [
+"한양중고딕"
+],
+"src": "hft:SPJGT.HFT"
+},
+"HY Junggothic V": {
+"ko": [
+"한양중고딕V"
+],
+"src": "hft:JPJGTV.HFT"
+},
+"HY Sinmyeongjo": {
+"ko": [
+"한양신명조"
+],
+"src": "hft:SPSMJ.HFT"
+},
+"HY Sinmyeongjo V": {
+"ko": [
+"한양신명조V"
+],
+"src": "hft:JPSMJV.HFT"
+},
+"HYGothic-Extra": {
+"ko": [
+"HY견고딕"
+],
+"src": "ttf:H2GTRE.TTF"
+},
+"HYGothic-Medium": {
+"ko": [
+"HY중고딕"
+],
+"src": "ttf:H2GTRM.TTF"
+},
+"HYGraphic-Medium": {
+"ko": [
+"HY그래픽M"
+],
+"src": "ttf:H2GPRM.TTF"
+},
+"HYGungSo-Bold": {
+"ko": [
+"HY궁서B"
+],
+"src": "ttf:H2GSRB.TTF"
+},
+"HYHeadLine-Medium": {
+"ko": [
+"HY헤드라인M"
+],
+"src": "ttf:H2HDRM.TTF"
+},
+"HYMyeongJo-Extra": {
+"ko": [
+"HY견명조"
+],
+"src": "ttf:H2MJRE.TTF"
+},
+"HYPMokGak-Bold": {
+"ko": [
+"HY목각파임B"
+],
+"src": "ttf:H2MKPB.TTF"
+},
+"HYPost-Light": {
+"ko": [
+"HY엽서L"
+],
+"src": "ttf:H2PORL.TTF"
+},
+"HYPost-Medium": {
+"ko": [
+"HY엽서M"
+],
+"src": "ttf:H2PORM.TTF"
+},
+"HYShortSamul-Medium": {
+"ko": [
+"HY얕은샘물M"
+],
+"src": "ttf:H2SA1M.TTF"
+},
+"HYSinMyeongJo-Medium": {
+"ko": [
+"HY신명조"
+],
+"src": "ttf:H2MJSM.TTF"
+},
+"HYbdaL": {
+"ko": [
+"HY바다L"
+],
+"src": "ttf:HYBDAL.TTF"
+},
+"HYbdaM": {
+"ko": [
+"HY바다M"
+],
+"src": "ttf:HYBDAM.TTF"
+},
+"HYbsrB": {
+"ko": [
+"HY백송B"
+],
+"src": "ttf:HYBSRB.TTF"
+},
+"HYcysM": {
+"ko": [
+"HY크리스탈M"
+],
+"src": "ttf:HYCYSM.TTF"
+},
+"HYdnkB": {
+"ko": [
+"HY동녘B"
+],
+"src": "ttf:HYDNKB.TTF"
+},
+"HYdnkM": {
+"ko": [
+"HY동녘M"
+],
+"src": "ttf:HYDNKM.TTF"
+},
+"HYgprM": {
+"ko": [
+"HY그래픽"
+],
+"src": "ttf:HYGPRM.TTF"
+},
+"HYgsrB": {
+"ko": [
+"HY궁서"
+],
+"src": "ttf:HYGSRB.TTF"
+},
+"HYgtrE": {
+"ko": [
+"HY견고딕"
+],
+"src": "ttf:HYGTRE.TTF"
+},
+"HYhaeseo": {
+"ko": [
+"한양해서"
+],
+"src": "ttf:UNI_HSR.TTF"
+},
+"HYkanB": {
+"ko": [
+"HY강B"
+],
+"src": "ttf:HYKANB.TTF"
+},
+"HYkanM": {
+"ko": [
+"HY강M"
+],
+"src": "ttf:HYKANM.TTF"
+},
+"HYmjrE": {
+"ko": [
+"HY견명조"
+],
+"src": "ttf:HYMJRE.TTF"
+},
+"HYmprL": {
+"ko": [
+"HY목판L"
+],
+"src": "ttf:HYMPRL.TTF"
+},
+"HYnamB": {
+"ko": [
+"HY나무B"
+],
+"src": "ttf:HYNAMB.TTF"
+},
+"HYnamL": {
+"ko": [
+"HY나무L"
+],
+"src": "ttf:HYNAML.TTF"
+},
+"HYnamM": {
+"ko": [
+"HY나무M"
+],
+"src": "ttf:HYNAMM.TTF"
+},
+"HYporM": {
+"ko": [
+"HY엽서M"
+],
+"src": "ttf:HYPORM.TTF"
+},
+"HYsanB": {
+"ko": [
+"HY산B"
+],
+"src": "ttf:HYSANB.TTF"
+},
+"HYsnrL": {
+"ko": [
+"HY센스L"
+],
+"src": "ttf:HYSNRL.TTF"
+},
+"HYsupB": {
+"ko": [
+"HY수평선B"
+],
+"src": "ttf:HYSUPB.TTF"
+},
+"HYsupM": {
+"ko": [
+"HY수평선M"
+],
+"src": "ttf:HYSUPM.TTF"
+},
+"HYtbrB": {
+"ko": [
+"HY태백B"
+],
+"src": "ttf:HYTBRB.TTF"
+},
+"HYwulB": {
+"ko": [
+"HY울릉도B"
+],
+"src": "ttf:HYWULB.TTF"
+},
+"HYwulM": {
+"ko": [
+"HY울릉도M"
+],
+"src": "ttf:HYWULM.TTF"
+},
+"Haan Baekje B": {
+"ko": [
+"한컴 백제 B"
+],
+"src": "ttf:HANBaekB.ttf"
+},
+"Haan Baekje M": {
+"ko": [
+"한컴 백제 M"
+],
+"src": "ttf:HANBaekM.ttf"
+},
+"Haan Cooljazz B": {
+"ko": [
+"한컴 쿨재즈 B"
+],
+"src": "ttf:HANCooljazzB.ttf"
+},
+"Haan Cooljazz L": {
+"ko": [
+"한컴 쿨재즈 L"
+],
+"src": "ttf:HANCooljazzL.ttf"
+},
+"Haan Cooljazz M": {
+"ko": [
+"한컴 쿨재즈 M"
+],
+"src": "ttf:HANCooljazzM.ttf"
+},
+"Haan Sale B": {
+"ko": [
+"한컴 바겐세일 B"
+],
+"src": "ttf:HANSaleB.ttf"
+},
+"Haan Sale M": {
+"ko": [
+"한컴 바겐세일 M"
+],
+"src": "ttf:HANSaleM.ttf"
+},
+"Haan Sollip B": {
+"ko": [
+"한컴 솔잎 B"
+],
+"src": "ttf:HANSolB.ttf"
+},
+"Haan Sollip M": {
+"ko": [
+"한컴 솔잎 M"
+],
+"src": "ttf:HANSolM.ttf"
+},
+"Haan Somang B": {
+"ko": [
+"한컴 소망 B"
+],
+"src": "ttf:HANSomaB.ttf"
+},
+"Haan Somang M": {
+"ko": [
+"한컴 소망 M"
+],
+"src": "ttf:HANSomaM.ttf"
+},
+"Haan YGodic 230": {
+"ko": [
+"한컴 윤고딕 230"
+],
+"src": "ttf:HANYGO230.ttf"
+},
+"Haan YGodic 240": {
+"ko": [
+"한컴 윤고딕 240"
+],
+"src": "ttf:HANYGO240.ttf"
+},
+"Haan YGodic 250": {
+"ko": [
+"한컴 윤고딕 250"
+],
+"src": "ttf:HANYGO250.ttf"
+},
+"Haan YHead B": {
+"ko": [
+"한컴 윤체 B"
+],
+"src": "ttf:HANYheadB.ttf"
+},
+"Haan YHead L": {
+"ko": [
+"한컴 윤체 L"
+],
+"src": "ttf:HANYheadL.ttf"
+},
+"Haan YHead M": {
+"ko": [
+"한컴 윤체 M"
+],
+"src": "ttf:HANYheadM.ttf"
+},
+"Haan YoonGothic 720": {
+"ko": [
+"한컴 윤고딕 720"
+],
+"src": "ttf:HANYoonGothic720.ttf"
+},
+"Haan YoonGothic 740": {
+"ko": [
+"한컴 윤고딕 740"
+],
+"src": "ttf:HANYoonGothic740.ttf"
+},
+"Haan YoonGothic 760": {
+"ko": [
+"한컴 윤고딕 760"
+],
+"src": "ttf:HANYoonGothic760.ttf"
+},
+"Haansoft Batang": {
+"ko": [
+"한컴바탕"
+],
+"src": "ttf:HBATANG.TTF"
+},
+"Haansoft Dotum": {
+"ko": [
+"한컴돋움"
+],
+"src": "ttf:HDOTUM.TTF"
+},
+"Haeseo Chinese": {
+"ko": [
+"해서 간자"
+],
+"src": "hft:HJGHS.HFT"
+},
+"Haeseo Jananese": {
+"ko": [
+"해서 약자"
+],
+"src": "hft:HJYHS.HFT"
+},
+"Han Santteut Dotum": {
+"ko": [
+"한컴산뜻돋움"
+],
+"src": "ttf:HanSantteutDotum-Regular.ttf"
+},
+"Hancom Gothic": {
+"ko": [
+"한컴 고딕"
+],
+"src": "ttf:Hancom Gothic Regular.ttf"
+},
+"Hancom Hoonminjeongeum_H": {
+"ko": [
+"한컴 훈민정음 가로쓰기"
+],
+"src": "ttf:HancomHoonminjeongeumH.ttf"
+},
+"Hancom Hoonminjeongeum_V": {
+"ko": [
+"한컴 훈민정음 세로쓰기"
+],
+"src": "ttf:Hancom HMJE_V.ttf"
+},
+"Hancom MalangMalang Bold": {
+"ko": [
+"한컴 말랑말랑 Bold"
+],
+"src": "ttf:MalangmalangB.ttf"
+},
+"Hancom MalangMalang Regular": {
+"ko": [
+"한컴 말랑말랑 Regular"
+],
+"src": "ttf:MalangmalangR.ttf"
+},
+"Hancom Ulju Bangudae Petroglyph": {
+"ko": [
+"한컴 울주 반구대 암각화체"
+],
+"src": "ttf:HancomUljuBangudaePetroglyph.ttf"
+},
+"Hancom Ulju Cheonjeonri Petroglyph": {
+"ko": [
+"한컴 울주 천전리 각석체"
+],
+"src": "ttf:HancomUljuCheonjeonriPetroglyph.ttf"
+},
+"Headline R": {
+"ko": [
+"휴먼둥근헤드라인"
+],
+"src": "ttf:HMKMRHD.TTF"
+},
+"Human Gothic": {
+"ko": [
+"휴먼고딕"
+],
+"src": "hft:HMKMG.HFT"
+},
+"Human Myeongjo": {
+"ko": [
+"휴먼명조"
+],
+"src": "hft:HMKSM.HFT"
+},
+"Human Paem Bold": {
+"ko": [
+"휴먼굵은팸체"
+],
+"src": "hft:HMKBP.HFT"
+},
+"Human Paem Narrow": {
+"ko": [
+"휴먼가는팸체"
+],
+"src": "hft:HMKLP.HFT"
+},
+"Human Paem Normal": {
+"ko": [
+"휴먼중간팸체"
+],
+"src": "hft:HMKMP.HFT"
+},
+"Human Saem Bold": {
+"ko": [
+"휴먼굵은샘체"
+],
+"src": "hft:HMKBS.HFT"
+},
+"Human Saem Narrow": {
+"ko": [
+"휴먼가는샘체"
+],
+"src": "hft:HMKLS.HFT"
+},
+"Human Saem Normal": {
+"ko": [
+"휴먼중간샘체"
+],
+"src": "hft:HMKMS.HFT"
+},
+"Human Yet": {
+"ko": [
+"휴먼옛체"
+],
+"src": "hft:HMKOLD.HFT"
+},
+"Inisyeol": {
+"ko": [
+"양재 이니셜"
+],
+"src": "hft:YJENINI.HFT"
+},
+"Jungganhan": {
+"ko": [
+"중간한"
+],
+"src": "hft:HANENGM.HFT"
+},
+"Junggothic Chinese": {
+"ko": [
+"중고딕 간자"
+],
+"src": "hft:HJGJGT.HFT"
+},
+"Junggothic Jananese": {
+"ko": [
+"중고딕 약자"
+],
+"src": "hft:HJYJGT.HFT"
+},
+"Kidney bean": {
+"ko": [
+"강낭콩"
+],
+"src": "hft:HGKDNYBN.HFT"
+},
+"Konghan Bold": {
+"ko": [
+"굵은공한"
+],
+"src": "hft:KHANENGB.HFT"
+},
+"Konghan Narrow": {
+"ko": [
+"가는공한"
+],
+"src": "hft:KHANENGL.HFT"
+},
+"Konghan Normal": {
+"ko": [
+"중간공한"
+],
+"src": "hft:KHANENGM.HFT"
+},
+"MDAlong": {
+"ko": [
+"MD아롱체"
+],
+"src": "ttf:Along.ttf"
+},
+"MDArt": {
+"ko": [
+"MD아트체"
+],
+"src": "ttf:Art.ttf"
+},
+"MDEasop": {
+"ko": [
+"MD이솝체"
+],
+"src": "ttf:Easop.ttf"
+},
+"MDGaesung": {
+"ko": [
+"MD개성체"
+],
+"src": "ttf:Gaesung.ttf"
+},
+"MDSol": {
+"ko": [
+"MD솔체"
+],
+"src": "ttf:Sol.ttf"
+},
+"Magic R": {
+"ko": [
+"휴먼매직체"
+],
+"src": "ttf:HMKMMAG.TTF"
+},
+"Malgun Gothic": {
+"ko": [
+"맑은 고딕"
+],
+"src": "ttf:malgunbd.ttf"
+},
+"Malgun Gothic Semilight": {
+"ko": [
+"맑은 고딕 Semilight"
+],
+"src": "ttf:malgunsl.ttf"
+},
+"MoeumT R": {
+"ko": [
+"휴먼모음T"
+],
+"src": "ttf:HMFMMUEX.TTC"
+},
+"Munhaw Sseugi Heullim": {
+"ko": [
+"문화쓰기흘림"
+],
+"src": "hft:MHHGSSP.HFT"
+},
+"Munhwa Batang": {
+"ko": [
+"문화바탕"
+],
+"src": "hft:HGBT.HFT"
+},
+"Munhwa Batang Jemok": {
+"ko": [
+"문화바탕제목"
+],
+"src": "hft:HGBTJM.HFT"
+},
+"Munhwa Dotum": {
+"ko": [
+"문화돋움"
+],
+"src": "hft:HGDU.HFT"
+},
+"Munhwa Dotum Jemok": {
+"ko": [
+"문화돋움제목"
+],
+"src": "hft:HGDUJM.HFT"
+},
+"Munhwa Sseugi": {
+"ko": [
+"문화쓰기"
+],
+"src": "hft:MHHGSSG.HFT"
+},
+"Myeongjo": {
+"ko": [
+"명조"
+],
+"src": "hft:USER.HFT"
+},
+"Nanum Brush Script": {
+"ko": [
+"나눔손글씨 붓"
+],
+"src": "ttf:NanumBrush.ttf"
+},
+"NanumBarunGothic": {
+"ko": [
+"나눔바른고딕"
+],
+"src": "ttf:NanumBarunGothic.ttf"
+},
+"NanumGothic": {
+"ko": [
+"나눔고딕"
+],
+"src": "ttf:ngBold.ttf"
+},
+"New Gulim": {
+"ko": [
+"새굴림"
+],
+"src": "ttf:NGULIM.TTF"
+},
+"Peach": {
+"ko": [
+"복숭아"
+],
+"src": "hft:HGPEACH.HFT"
+},
+"Penheullim": {
+"ko": [
+"펜흘림"
+],
+"src": "hft:ENPENHL.HFT"
+},
+"Pilgi": {
+"ko": [
+"필기"
+],
+"src": "hft:ENPG.HFT"
+},
+"Pureosseugi": {
+"ko": [
+"한글 풀어쓰기"
+],
+"src": "hft:USHGPL.HFT"
+},
+"Pyunji R": {
+"ko": [
+"휴먼편지체"
+],
+"src": "ttf:HMFMPYUN.TTF"
+},
+"Saemmul": {
+"ko": [
+"샘물"
+],
+"src": "hft:HGSM.HFT"
+},
+"Sans Serif": {
+"ko": [
+"산세리프"
+],
+"src": "hft:ENSS.HFT"
+},
+"Sinmyeong Dinaru": {
+"ko": [
+"신명 디나루"
+],
+"src": "hft:TEDNREN.HFT"
+},
+"Sinmyeong Gungseo": {
+"ko": [
+"신명 궁서"
+],
+"src": "hft:TEGNSHJ.HFT"
+},
+"Sinmyeong Gyeongothic": {
+"ko": [
+"신명 견고딕"
+],
+"src": "hft:TEGGTSP.HFT"
+},
+"Sinmyeong Gyeonmyeongjo": {
+"ko": [
+"신명 견명조"
+],
+"src": "hft:TEGMJSP.HFT"
+},
+"Sinmyeong Gyeonmyeongjo V": {
+"ko": [
+"신명 견명조V"
+],
+"src": "hft:TEGMJJPV.HFT"
+},
+"Sinmyeong Junggothic": {
+"ko": [
+"신명 중고딕"
+],
+"src": "hft:TEJGTJP.HFT"
+},
+"Sinmyeong Junggothic V": {
+"ko": [
+"신명 중고딕V"
+],
+"src": "hft:TEJGTJPV.HFT"
+},
+"Sinmyeong Jungmyeongjo": {
+"ko": [
+"신명 중명조"
+],
+"src": "hft:TEJMJHJ.HFT"
+},
+"Sinmyeong Segothic": {
+"ko": [
+"신명 세고딕"
+],
+"src": "hft:TESEGHJ.HFT"
+},
+"Sinmyeong Semyeongjo": {
+"ko": [
+"신명 세명조"
+],
+"src": "hft:TESEMHJ.HFT"
+},
+"Sinmyeong Senaru": {
+"ko": [
+"신명 세나루"
+],
+"src": "hft:TESENEN.HFT"
+},
+"Sinmyeong Singraphic": {
+"ko": [
+"신명 신그래픽"
+],
+"src": "hft:TESGREN.HFT"
+},
+"Sinmyeong Sinmungothic": {
+"ko": [
+"신명 신문고딕"
+],
+"src": "hft:TESMGEN.HFT"
+},
+"Sinmyeong Sinmunmyeongjo": {
+"ko": [
+"신명 신문명조"
+],
+"src": "hft:TESMMHJ.HFT"
+},
+"Sinmyeong Sinmyeongjo": {
+"ko": [
+"신명 신명조"
+],
+"src": "hft:TESMJJP.HFT"
+},
+"Sinmyeong Sinmyeongjo V": {
+"ko": [
+"신명 신명조V"
+],
+"src": "hft:TESMJJPV.HFT"
+},
+"Sinmyeong Sinsinmyeongjo": {
+"ko": [
+"신명 신신명조"
+],
+"src": "hft:TESSMEN.HFT"
+},
+"Sinmyeong Sunmyeongjo": {
+"ko": [
+"신명 순명조"
+],
+"src": "hft:TESUNEN.HFT"
+},
+"Sinmyeong Taegothic": {
+"ko": [
+"신명 태고딕",
+"신명 태고딕V"
+],
+"src": "hft:TETGTJPV.HFT"
+},
+"Sinmyeong Taegraphic": {
+"ko": [
+"신명 태그래픽"
+],
+"src": "hft:TETGRSP.HFT"
+},
+"Sinmyeong Taemyeongjo": {
+"ko": [
+"신명 태명조"
+],
+"src": "hft:TETMJJP.HFT"
+},
+"Sinmyeong Taemyeongjo V": {
+"ko": [
+"신명 태명조V"
+],
+"src": "hft:TETMJJPV.HFT"
+},
+"Sinmyeongjo Chinese": {
+"ko": [
+"신명조 간자"
+],
+"src": "hft:HJGSMJ.HFT"
+},
+"Sinmyeongjo Jananese": {
+"ko": [
+"신명조 약자"
+],
+"src": "hft:HJYSMJ.HFT"
+},
+"Strawberry": {
+"ko": [
+"딸기"
+],
+"src": "hft:HGSTRBRY.HFT"
+},
+"Susik": {
+"ko": [
+"수식"
+],
+"src": "hft:HSUSSP.HFT"
+},
+"System": {
+"ko": [
+"시스템"
+],
+"src": "hft:SPSYS.HFT"
+},
+"System Chinese": {
+"ko": [
+"시스템 간자"
+],
+"src": "hft:HJGSYS.HFT"
+},
+"System Jananese": {
+"ko": [
+"시스템 약자"
+],
+"src": "hft:HJYSYS.HFT"
+},
+"Tae Headline D": {
+"ko": [
+"태 헤드라인D"
+],
+"src": "hft:TEHDDHG.HFT"
+},
+"Tae Headline D Narrow": {
+"ko": [
+"태 가는 헤드라인D"
+],
+"src": "hft:TEHDDRHG.HFT"
+},
+"Tae Headline T": {
+"ko": [
+"태 헤드라인T"
+],
+"src": "hft:TEHDTHG.HFT"
+},
+"Tae Headline T Narrow": {
+"ko": [
+"태 가는 헤드라인T"
+],
+"src": "hft:TEHDTRHG.HFT"
+},
+"Tae Namu": {
+"ko": [
+"태 나무"
+],
+"src": "hft:TAENMREN.HFT"
+},
+"Type": {
+"ko": [
+"타이프"
+],
+"src": "hft:ENTYPE.HFT"
+},
+"YJ BELLA Medium": {
+"ko": [
+"양재벨라체M"
+],
+"src": "ttf:YBLA05.TTF"
+},
+"YJ Bonmoggak M": {
+"ko": [
+"양재 본목각M"
+],
+"src": "hft:YJENBMGM.HFT"
+},
+"YJ Bonmokgak M": {
+"ko": [
+"양재 본목각M"
+],
+"src": "hft:YJHGBMGM.HFT"
+},
+"YJ Chamsuch B": {
+"ko": [
+"양재 참숯B"
+],
+"src": "hft:YJENCHM.HFT"
+},
+"YJ Chamsut B": {
+"ko": [
+"양재 참숯B"
+],
+"src": "hft:YJHGCHM.HFT"
+},
+"YJ Daun Myeongjo M": {
+"ko": [
+"양재 다운명조M"
+],
+"src": "hft:YJENDNMJ.HFT"
+},
+"YJ Daunmyeongjo M": {
+"ko": [
+"양재 다운명조M"
+],
+"src": "hft:YJHGDNMJ.HFT"
+},
+"YJ Dulgi": {
+"ko": [
+"양재 둘기"
+],
+"src": "hft:YJENDUG.HFT"
+},
+"YJ INJANG Medium": {
+"ko": [
+"양재인장체M"
+],
+"src": "ttf:YINJ05.TTF"
+},
+"YJ Initial": {
+"ko": [
+"양재 이니셜"
+],
+"src": "hft:YJHGINI.HFT"
+},
+"YJ Maehwa": {
+"ko": [
+"양재 매화"
+],
+"src": "hft:YJENMAE.HFT"
+},
+"YJ Soseul": {
+"ko": [
+"양재 소슬"
+],
+"src": "hft:YJENSOSL.HFT"
+},
+"YJ Syanel": {
+"ko": [
+"양재 샤넬"
+],
+"src": "hft:YJENSHN.HFT"
+},
+"YJ Teunteun B": {
+"ko": [
+"양재 튼튼B"
+],
+"src": "hft:YJENTTB.HFT"
+},
+"YJ Wadang": {
+"ko": [
+"양재 와당"
+],
+"src": "hft:YJENWDA.HFT"
+},
+"Yet R": {
+"ko": [
+"휴먼옛체"
+],
+"src": "ttf:HMFMOLD.TTF"
+},
+"Yethangeul": {
+"ko": [
+"옛한글"
+],
+"src": "hft:HGOLD.HFT"
+},
+"Yj BACDOO Bold ": {
+"ko": [
+"양재백두체B"
+],
+"src": "ttf:YDOO08.TTF"
+},
+"Yj BLOCK Medium": {
+"ko": [
+"양재블럭체"
+],
+"src": "ttf:YBLO05.TTF"
+},
+"Yj BONMOKGAK Medium ": {
+"ko": [
+"양재본목각체M"
+],
+"src": "ttf:YBMG05.TTF"
+},
+"Yj BUTGOT Light ": {
+"ko": [
+"양재붓꽃체L"
+],
+"src": "ttf:YBUU02.TTF"
+},
+"Yj CHMSOOT Bold": {
+"ko": [
+"양재참숯체B"
+],
+"src": "ttf:YCHM08.TTF"
+},
+"Yj DOOLGI Medium": {
+"ko": [
+"양재둘기체M"
+],
+"src": "ttf:YDUG05.TTF"
+},
+"Yj DWMMOOGJO": {
+"ko": [
+"양재다운명조M"
+],
+"src": "ttf:YDWM05.TTF"
+},
+"Yj GABI": {
+"ko": [
+"양재깨비체B"
+],
+"src": "ttf:YGBI08.TTF"
+},
+"Yj GOTGAE Medium": {
+"ko": [
+"양재꽃게체M"
+],
+"src": "ttf:YGGE05.TTF"
+},
+"Yj INITIALPOSITIVE Medium": {
+"ko": [
+"양재이니셜체"
+],
+"src": "ttf:YINP05.TTF"
+},
+"Yj MAEHWA  SemiBold": {
+"ko": [
+"양재매화체S"
+],
+"src": "ttf:YMAE07.TTF"
+},
+"Yj NANCHO Medium": {
+"ko": [
+"양재난초체M"
+],
+"src": "ttf:YNCH05.TTF"
+},
+"Yj SHANALL Medium ": {
+"ko": [
+"양재샤넬체M"
+],
+"src": "ttf:YSHN05.TTF"
+},
+"Yj SOSEL SemiBold": {
+"ko": [
+"양재소슬체S"
+],
+"src": "ttf:YSOS07.TTF"
+},
+"Yj TEUNTEUN Bold": {
+"ko": [
+"양재튼튼체B"
+],
+"src": "ttf:YTTE08.TTF"
+},
+"Yj WADAG Medium": {
+"ko": [
+"양재와당체M"
+],
+"src": "ttf:YWDA05.TTF"
+},
+"ahn2006-B": {
+"ko": [
+"안상수2006굵은"
+],
+"src": "ttf:ahn_b.ttf"
+},
+"ahn2006-L": {
+"ko": [
+"안상수2006가는"
+],
+"src": "ttf:ahn_l.ttf"
+},
+"ahn2006-M": {
+"ko": [
+"안상수2006중간"
+],
+"src": "ttf:ahn_m.ttf"
+}
+}

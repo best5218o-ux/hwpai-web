@@ -1,0 +1,45 @@
+From 7372edddaf7f39df9eeb258e51233a8b6c163d5f Mon Sep 17 00:00:00 2001
+From: hwpai <hwpai@localhost>
+Date: Tue, 10 Nov 2026 13:16:36 +0900
+Subject: [PATCH] parser: keep OLE inside group containers as ShapeObject::Ole
+ (was dropped to rect)
+
+Local hwpai branch only (C100). Verified on 68c165cd8d8d7f7e: 4 group OLE now hp:ole with BinData refs.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01LTngWMttZT8jYWigepEnCJ
+---
+ src/parser/control/shape.rs | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/src/parser/control/shape.rs b/src/parser/control/shape.rs
+index 659e37949..117e3d1b0 100644
+--- a/src/parser/control/shape.rs
++++ b/src/parser/control/shape.rs
+@@ -753,7 +753,9 @@ fn parse_container_children(child_records: &[Record], depth: u32) -> Vec<ShapeOb
+                 | tags::HWPTAG_SHAPE_COMPONENT_ARC
+                 | tags::HWPTAG_SHAPE_COMPONENT_POLYGON
+                 | tags::HWPTAG_SHAPE_COMPONENT_CURVE
+-                | tags::HWPTAG_SHAPE_COMPONENT_PICTURE => {
++                | tags::HWPTAG_SHAPE_COMPONENT_PICTURE
++                // hwpai: 묶음 안 OLE 개체도 도형 태그로 찾는다(종전에는 빠져 `_ =>` 사각형으로 떨어졌다)
++                | tags::HWPTAG_SHAPE_COMPONENT_OLE => {
+                     shape_tag_id = Some(record.tag_id);
+                     shape_tag_data = &record.data;
+                     break;
+@@ -894,6 +896,12 @@ fn parse_container_children(child_records: &[Record], depth: u32) -> Vec<ShapeOb
+                 );
+                 ShapeObject::Picture(Box::new(picture))
+             }
++            // hwpai: 묶음 안 OLE 개체 — 최상위 OLE 분기와 같은 방식으로 OleShape 로 만든다.
++            Some(tags::HWPTAG_SHAPE_COMPONENT_OLE) => {
++                let mut ole = parse_ole_shape(CommonObjAttr::default(), child_drawing, shape_tag_data);
++                ole.caption = ole.drawing.caption.take();
++                ShapeObject::Ole(Box::new(ole))
++            }
+             _ => {
+                 let mut rect = RectangleShape::default();
+                 rect.drawing = child_drawing;
+-- 
+2.43.0
+

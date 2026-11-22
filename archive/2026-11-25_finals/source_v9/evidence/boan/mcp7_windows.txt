@@ -1,0 +1,59 @@
+hwpai MCP 서버 — Windows 시험 7차 (2026-11-21)
+
+■ 환경 제약(사실)
+- device_bash 는 사용자 PC 안의 "리눅스 VM"(uname: Linux 6.8 x86_64)이다. PC 의 python\python.exe(PE32+ 윈도 실행 파일)·hwpai.bat 을
+  여기서 실행할 수 없다. 윈도 PowerShell·명령 프롬프트를 조작하는 화면 제어는 접근 목록에서 해결되지 않아 쓰지 못했다.
+  (참고: 사용자 PC 의 Claude 데스크톱 설정 파일 읽기는 권한 분류기에서 거부되어 읽지 않았다.)
+- 따라서 계획한 「hwpai.bat / python.exe 두 방식 직접 실행 + 3회 시작 시간 측정 + cp949 시험」은 실시하지 못했다.
+
+■ PC 휴대용 폴더 판 확인
+- 경로: C:\Users\대전\Downloads\RESTART\hwpai-portable-win64\hwpai-portable-win64\ (폴더가 한 겹 더 들어 있음; 바깥 폴더에는 hwpai-portable-win64_v7_20261109.zip)
+- app/hwpai/mcp.py: 307줄, md5 4d9fe05c08a1fb03f39c4bc150af2a38  (v9: 385줄, 0bc9a69f...) → 구판(v7, 11-09). 6차 M1·M2 수정 없음.
+- app/hwpai/grade.py 에 writable_logdir 없음(v9 에는 있음). 구판 파일 목록은 v9 보다 적음(aicheck·census·drop·export 등 없음).
+- 시험 폴더 RESTART\hwpai_mcp_win_시험\ 에 합성 문서 sample_plan.hwp·sample_notice.hwp 만 복사(기존 폴더 덮어쓰기 없음).
+
+■ 실제로 윈도에서 돈 시험: 사용자 PC 의 Claude 데스크톱에 이미 등록된 hwpai MCP 서버(로컬 stdio, 윈도 프로세스)
+  - 어느 판·어느 경로인지는 설정 파일을 읽지 못해 확인 못 함. 오류 형태로 보아 구판(grade.py 에 writable_logdir 없음)과 일치(추정).
+  시험                                                         결과
+  tools/call read_hwp(한글 경로 …\hwpai_mcp_win_시험\sample_data\sample_plan.hwp)    실패
+     오류: PermissionError [WinError 5] 'C:\WINDOWS\system32\hwpai_등급기록'
+  tools/call convert_to_hwpx(같은 파일, out=…\out_desktop)                         실패 (같은 오류)
+  원인: 클라이언트가 서버를 C:\WINDOWS\system32 에서 띄웠고 HWPAI_GRADE_LOG 가 없어 등급 기록 폴더를 작업 폴더에 만들려다 거부됨.
+  v9 의 grade.writable_logdir(작업 폴더 → LOCALAPPDATA → 임시 폴더 순)가 이 경우를 이미 처리한다(C97). 리눅스에서 같은 상황
+  (시작 폴더에 같은 이름의 파일을 두어 폴더 생성 불가)을 재현하는 시험 test_unwritable_launch_folder_without_grade_log_env 를 추가하여 통과.
+
+■ 결과표
+  항목                                                              결과
+  PC 휴대용 폴더 mcp.py 판 확인                                          완료(구판, 위)
+  hwpai.bat mcp 직접 실행 → initialize/tools/list/tools/call             미실시(리눅스 VM, 윈도 실행 불가)
+  python\python.exe -m hwpai mcp 직접 실행                              미실시(같은 이유)
+  한글·공백 경로 직접 실행                                               미실시(같은 이유; 데스크톱 경유 read_hwp 는 한글 경로를 인식해 파일 열기까지 감 — 오류는 기록 폴더 단계)
+  cp949 기본 인코딩(PYTHONUTF8 미설정)                                   미실시(윈도). 리눅스 PYTHONUTF8=0 PYTHONIOENCODING=cp949 시험은 6차에서 통과, 단위 시험 유지
+  시작~initialize 응답 시간 3회                                           미실시
+  PC 데스크톱 등록 서버(구판) read_hwp                                    실패(PermissionError system32, 위)
+  PC 데스크톱 등록 서버(구판) convert_to_hwpx                              실패(같은 오류)
+  PC 데스크톱 등록 서버(구판) audit                                       미실시(앞 두 도구가 같은 단계에서 실패해 의미 없음)
+  v9 단위 시험(리눅스)                                                     48개 통과(47 + 신규 1)
+  Gemini CLI·Codex 설치                                                   하지 않음(지시)
+
+■ 사용자 조치 제안
+  - PC 휴대용 폴더는 구판이다. 최신 v9 로 바꾸기 전까지 Claude 데스크톱 등록 서버는 위 오류가 날 수 있다.
+    구판을 계속 쓴다면 서버 환경변수 HWPAI_GRADE_LOG 를 쓸 수 있는 폴더(예: C:\Users\대전\hwpai_기록)로 주면 피할 수 있다(원인에서 도출, 미시험).
+  - 윈도 직접 시험은 PC 에서 `hwpai.bat mcp` 를 명령 프롬프트로 열어 시험하는 방법이 필요(이 환경에서는 불가).
+
+■ 자동 시험 묶음
+  MCP시험_실행.bat 등 4개 파일을 작성했으나 PC 로 옮기는 쓰기가 권한 분류기에서 거부되어 PC 에는 없다(사본: evidence/boan/mcp7_win_pkg/, 압축본은 클라우드 /mnt/user-data/outputs/pkg/). 아직 실행되지 않았다.
+
+■ 8차 갱신 — 사용자가 MCP시험_실행.bat 을 실행(2026-11-21 16:16 PC 시각). 원본 로그: PC RESTART\hwpai_mcp_win_시험\결과\ (사본 evidence/boan/mcp7_win_result/)
+  v9 사본 mcp.py 385줄, PC 휴대용 python 3.12.10·node 로 구동. 서버 파이썬 UTF-8 모드 0·기본 인코딩 cp949.
+  경우                                                        결과   initialize
+  A hwpai.bat mcp (작업폴더 v9)                               통과   0.45초
+  B python.exe -m hwpai mcp (PYTHONUTF8 미설정, 한글·공백 문서)   통과   0.20초
+  C PYTHONUTF8=0 PYTHONIOENCODING=cp949 명시, 한글·공백 문서     통과   0.18초
+  D python.exe, 작업폴더 C:\WINDOWS\System32, GRADE_LOG 없음   통과   0.18초
+  E hwpai.bat, 작업폴더 C:\WINDOWS\System32, GRADE_LOG 없음    통과   0.26초
+  (각 경우 initialize·tools/list(8개)·read_hwp·get_tables·convert_to_hwpx(.hwpx 생성)·audit(PASS 100.0) 모두 통과)
+  시작~initialize 3회: hwpai.bat 0.24 / 0.23 / 0.22초, python.exe 0.17 / 0.18 / 0.17초
+  앞의 「미실시」(hwpai.bat·python.exe 직접 구동, 한글·공백 경로, cp949, 시작 시간) → 통과로 바뀜. 구판 데스크톱 서버의 System32 오류는 이 판에서 재현되지 않음(D·E 통과).
+  미통과: Gemini CLI·Codex 로컬 설치(npm install 이 약 1초 만에 실패, 로그에 오류 출력이 남지 않음 — 원인 미확인). 모델 경유 시험 미실시.
+  주의: 사용자 PC 의 서버 파이썬이 읽은 hwpai 경로는 시험 폴더의 v9\app (로그 확인).

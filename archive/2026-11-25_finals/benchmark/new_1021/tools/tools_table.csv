@@ -1,0 +1,13 @@
+도구,출처,판/커밋,라이선스,엔진 계보,HWPX 출력,보류20건 성공(파일 생성+zip·XML 파싱),평균 초/건(20건),비고
+rhwp (@rhwp/core WASM),github.com/edwardkim/rhwp · npm @rhwp/core,0.9.1,MIT,Rust 자체 파서(독립),O (HwpDocument.exportHwpx),20/20,1.34,wasm 직접 호출 래퍼
+hwpforge,PyPI hwpforge (github.com/ai-screams/HwpForge),0.20.1,MIT OR Apache-2.0,Rust 자체 파서(독립),O (convert_hwp5),20/20,0.13,
+ahwp (agent-hwp),github.com/STAIxBWLB/agent-hwp,v2.1.1 (785f7ae 2026-11-17),MIT OR Apache-2.0,Rust 자체 HWP5 reader/writer(독립),O (ahwp convert in.hwp -o out.hwpx),20/20,0.05,release 바이너리는 프록시 403이라 소스 빌드(7분)
+hwp-convert,npm hwp-convert (github.com/shyang1012/hwp-convert),1.13.0,MIT,hwpxjs 포크 + rhwp 파서 포팅 + 한컴 호환 패치,O (hwpToHwpx),20/20,0.53,
+hwpxjs,npm @ssabrojs/hwpxjs (github.com/ssabro/hwpxjs),0.4.0,MIT,자체 TS 파서(hwp-convert 의 원본),O (hwpToHwpx),20/20,0.34,
+jhwpx-converter,github.com/damulhan/jhwpx-converter,0.1.0 (199f098 2026-09-09),MIT(package.json; LICENSE 파일 없음),자체 TS 파서,O (jhwpx-converter-cli in.hwp out.hwpx),20/20,0.49,npm 미등록 → 소스 빌드
+hwp2hwpx yuson 포크 (PyPI 소스),github.com/yuson0701/hwp2hwpx,1.0.1.post5 (deaea5f 2026-10-12),Apache-2.0,neolord0 hwplib+hwpxlib(Java) + 이미지·중첩표·XML 보정,O,20/20,1.14,JRE 필요
+hwp2hwpx kossembly (PyPI),PyPI hwp2hwpx (github.com/kossembly-dot/hwp2hwpx),1.0.1,Apache-2.0,neolord0 계열(Java 번들),O,19/20,1.03,b871798e2a08 실패(neolord0 계열 공통)
+hwp2hwpx asi0818 포크,github.com/asi0818/hwp2hwpx,1.0.0 (edc0527 2026-08-31),Apache-2.0,neolord0 포크(이슈#16·#17 수정),O (Hwp2HwpxCli),19/20,1.07,mvn 빌드(compiler target 7→8 만 변경)
+hwpConverter (vsdn),github.com/vsdn/hwpConverter,9af63ea 2026-07-07,Apache-2.0,hwplib/hwpxlib/hwp2hwpx 번들+자체 보강,O,19/20,2.18,기존 /home/claude/opentools 에 설치됨(앞선 조사에서 추가); 이번 시험에서 재실행
+@ohah/hwpjs (text-only),npm @ohah/hwpjs (github.com/ohah/hwpjs),0.1.1,MIT,Rust 네이티브/WASM,△ 기본 거부 → --loss-policy text-only 에서만 HWPX 출력(글꼴·표·그림 전부 버림),11/20,4.00,서식 비교에서는 사실상 하한 기준선
+hwpx-js (babpulss),npm hwpx-js,0.1.2,Apache-2.0,자체 TS,X 사실상 불가: OLE 시그니처 비교 상수 오류로 정상 HWP를 모두 거부,0/20,0.06,dist/index.cjs:1403 Invalid OLE magic number (오프셋4를 0xA1B11AE1 로 비교, 실제 LE 값은 0xE11AB1A1)

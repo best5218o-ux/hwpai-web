@@ -1,0 +1,165 @@
+diff --git a/src/model/control/equation.rs b/src/model/control/equation.rs
+index 389051c4f..992ebb42e 100644
+--- a/src/model/control/equation.rs
++++ b/src/model/control/equation.rs
+@@ -1,6 +1,6 @@
+ //! 원본 수식 속성과 선언 프레임의 런타임 출처.
+ 
+-use crate::model::shape::CommonObjAttr;
++use crate::model::shape::{Caption, CommonObjAttr};
+ 
+ /// 파일 속성과 분리된 선언 프레임의 출처와 현재 소비 세대.
+ #[derive(Debug, Clone)]
+@@ -23,6 +23,9 @@ pub struct Equation {
+     pub attr: u32,
+     /// 수식 스크립트 ("1 over 2" 등)
+     pub script: String,
++    /// hwpai 로컬 보완(결선 B1): 수식 캡션 — HWP5 eqed 컨트롤 바로 아래 LIST_HEADER + 문단.
++    /// 종전엔 파싱하지 않아 HWPX 저장에서 캡션이 빠졌다(pyhwp 시험 고정본 「수식 (자동번호) A」).
++    pub caption: Option<Caption>,
+     /// 글자 크기 (HWPUNIT)
+     pub font_size: u32,
+     /// 글자 색 (0x00BBGGRR)
+diff --git a/src/parser/control.rs b/src/parser/control.rs
+index 19c4eef4e..e60c29aec 100644
+--- a/src/parser/control.rs
++++ b/src/parser/control.rs
+@@ -956,6 +956,19 @@ fn parse_equation_control(ctrl_data: &[u8], child_records: &[Record]) -> Control
+         ..Default::default()
+     };
+ 
++    // hwpai 로컬 보완(결선 B1): EQEDIT 앞의 LIST_HEADER 는 캡션(표·도형 캡션과 같은 배치)
++    if let Some(eq_idx) = child_records.iter().position(|r| r.tag_id == tags::HWPTAG_EQEDIT) {
++        if let Some(start) = child_records[..eq_idx]
++            .iter()
++            .position(|r| r.tag_id == tags::HWPTAG_LIST_HEADER)
++        {
++            let caption_records: Vec<Record> = child_records[start..eq_idx].to_vec();
++            if !caption_records.is_empty() {
++                equation.caption = Some(parse_caption(&caption_records));
++            }
++        }
++    }
++
+     // HWPTAG_EQEDIT 자식 레코드 탐색
+     if let Some(eq_rec) = child_records
+         .iter()
+diff --git a/src/parser/hwpx/section.rs b/src/parser/hwpx/section.rs
+index 72200968c..e7a4a0139 100644
+--- a/src/parser/hwpx/section.rs
++++ b/src/parser/hwpx/section.rs
+@@ -7034,6 +7034,7 @@ fn parse_equation(
+         raw_ctrl_seal: None,
+         unpositioned_host_frame_seal: None,
+         legacy_source_frame_seal: None,
++        caption: None, // hwpai 로컬 보완: HWPX→IR 수식 캡션은 읽지 않음(HWP→HWPX 경로만 보완)
+     };
+     equation.retain_legacy_source_frame();
+     Ok(Control::Equation(Box::new(equation)))
+diff --git a/src/serializer/hwpx/context.rs b/src/serializer/hwpx/context.rs
+index a1d799462..c9cb872f1 100644
+--- a/src/serializer/hwpx/context.rs
++++ b/src/serializer/hwpx/context.rs
+@@ -814,6 +814,12 @@ fn register_border_fills_in_control(
+         Control::Shape(shape) => {
+             register_border_fills_in_shape(ctx, shape, depth)?;
+         }
++        // hwpai 로컬 보완(결선 B1): 수식 캡션 안 문단의 테두리 참조도 미리 등록
++        Control::Equation(eq) => {
++            if let Some(caption) = &eq.caption {
++                register_border_fills_in_paragraphs(ctx, &caption.paragraphs, depth + 1)?;
++            }
++        }
+         // 독립 그림 컨트롤(글상자/묶음 밖) — 자체 `caption` 을 갖는다(`src/model/image.rs`).
+         Control::Picture(pic) => {
+             if let Some(caption) = &pic.caption {
+diff --git a/src/serializer/hwpx/mod.rs b/src/serializer/hwpx/mod.rs
+index b8d128554..8d7536057 100644
+--- a/src/serializer/hwpx/mod.rs
++++ b/src/serializer/hwpx/mod.rs
+@@ -1073,6 +1073,7 @@ mod tests {
+             raw_ctrl_seal: None,
+             unpositioned_host_frame_seal: None,
+             legacy_source_frame_seal: None,
++            caption: None,
+         })));
+         section.paragraphs.push(para);
+         doc.sections.push(section);
+diff --git a/src/serializer/hwpx/section.rs b/src/serializer/hwpx/section.rs
+index f61defe92..479dddb55 100644
+--- a/src/serializer/hwpx/section.rs
++++ b/src/serializer/hwpx/section.rs
+@@ -3391,9 +3391,27 @@ where
+                 .map_err(xml_error)?;
+         }
+         Control::Equation(eq) => {
+-            storage
+-                .push_str(out, &render_equation_with_storage(eq, storage)?)
+-                .map_err(xml_error)?;
++            let mut xml = render_equation_with_storage(eq, storage)?;
++            // hwpai 로컬 보완(결선 B1): 캡션은 outMargin 뒤·shapeComment 앞(OWPML AbstractShapeObjectType 순서)
++            if let Some(cap) = &eq.caption {
++                match checked_xml_result(
++                    writer_to_string_with_storage(
++                        |w| table::write_caption_with_storage(w, cap, ctx, storage),
++                        storage,
++                    ),
++                    storage,
++                )? {
++                    Ok(cap_xml) => {
++                        let at = xml
++                            .find("<hp:shapeComment>")
++                            .or_else(|| xml.rfind("</hp:equation>"))
++                            .unwrap_or(xml.len());
++                        xml.insert_str(at, &cap_xml);
++                    }
++                    Err(e) => eprintln!("[hwpx] 수식 캡션 직렬화 실패: {e}"),
++                }
++            }
++            storage.push_str(out, &xml).map_err(xml_error)?;
+         }
+         Control::Table(tbl) => match checked_xml_result(
+             writer_to_string_with_storage(
+@@ -4322,24 +4340,9 @@ where
+ {
+     // Rectangle: Writer-based serializer (drawText 포함)
+     if let ShapeObject::Rectangle(r) = shape {
+-        // [hwpai] 이미지로 채운 단순 사각형은 한글이 그리는 그림 개체(hp:pic)로 낸다.
+-        if let Some(pic) = super::shape::image_rect_as_picture(r, ctx) {
+-            return Ok(
+-                match checked_xml_result(
+-                    writer_to_string_with_storage(
+-                        |w| super::picture::write_picture_with_storage(w, &pic, ctx, storage),
+-                        storage,
+-                    ),
+-                    storage,
+-                )? {
+-                    Ok(xml) => xml,
+-                    Err(e) => {
+-                        eprintln!("[hwpx] 이미지 사각형→그림 직렬화 실패: {e}");
+-                        String::new()
+-                    }
+-                },
+-            );
+-        }
++        // [hwpai 결선 보완 B9] 종전 로컬 패치는 이미지로 채운 사각형을 hp:pic 으로 바꿨다. 한글 2024 가 같은 원본을
++        // 저장한 HWPX(보류 표본 57016638e064 등)는 hp:rect + hc:fillBrush/imgBrush 를 그대로 두므로(그림 8·사각형 유지)
++        // 한글 저장본과 같게 사각형으로 낸다. image_rect_as_picture 는 기록용으로 남기고 부르지 않는다.
+         return Ok(
+             match checked_xml_result(
+                 writer_to_string_with_storage(
+diff --git a/src/serializer/hwpx/table.rs b/src/serializer/hwpx/table.rs
+index 55cad145e..35e92231c 100644
+--- a/src/serializer/hwpx/table.rs
++++ b/src/serializer/hwpx/table.rs
+@@ -138,6 +138,10 @@ where
+     if let Some(caption) = &table.caption {
+         write_caption_with_storage(w, caption, ctx, storage)?;
+     }
++    // hwpai 로컬 보완(결선 B7): 표 개체 설명(대체 텍스트). HWP5 파서는
++    // table.common.description 을 읽지만 저장기가 쓰지 않아 HWPX 에서 빠졌다.
++    // OWPML 자식 순서 caption → shapeComment → inMargin (모듈 doc). 빈 값은 내부 가드로 미방출.
++    super::shape::write_shape_comment_with_storage(w, &table.common, storage)?;
+     write_in_margin_with_storage(w, table, storage)?;
+     // cellzoneList: inMargin 다음, tr 앞 (OWPML 자식 순서). 셀 영역 테두리/배경
+     // 오버레이를 정의한다. 파서가 table.zones 로 보존하므로 그대로 되살린다.
