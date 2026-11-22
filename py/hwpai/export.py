@@ -42,7 +42,7 @@ def _block(b, doc) -> dict:
         return {"type": "image", "name": b.name, "orig_name": getattr(b, "orig_name", b.name), "caption": b.caption,
                 "bytes": len(data) if data else None, "sha256": _sha(data)}
     if isinstance(b, Equation):
-        return {"type": "equation", "script": b.script}
+        return {"type": "equation", "script": b.script, "caption": b.caption}
     if isinstance(b, Note):
         return {"type": b.kind, "number": b.number, "blocks": [_block(x, doc) for x in b.blocks]}
     if isinstance(b, TextBox):
@@ -184,7 +184,8 @@ def export_many(paths: list[str], outdir: str, formats=("md", "json", "chunks"),
 
 def cmd_export(a):
     fm = tuple(x.strip() for x in a.formats.split(",") if x.strip())
-    out = a.out or (a.path.rstrip("/\\") + "_export")
+    from .batch import outside_out   # 결선 보완 B6
+    out = a.out or outside_out(a.path, "_export")
     r = export_many([a.path], out, fm, a.ai_folder)
     print(f"문서 {r['files']}개 — 씀 {r['written']} · 확인 대기 {r['waiting']} · 실패 {r['failed']} → {out}")
     return 0 if not r["failed"] else 1

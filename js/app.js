@@ -3,7 +3,7 @@
   'use strict';
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
-  const R = window.HwpaiReview, E = window.HwpaiEngine, Z = window.HwpaiZip;
+  const R = window.HwpaiReview, E = window.HwpaiEngine, Z = window.HwpaiZip, ST = window.HwpaiSettle;
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const fmtSize = (n) => (n == null || n === '' ? '' : n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(1) + ' MB');
   const nfc = (s) => (s.normalize ? s.normalize('NFC') : s);
@@ -59,7 +59,7 @@
       let n = 0;
       const info = await S.pool.start(() => { n++; bar.style.width = (60 + 40 * n / opts.jobs) + '%'; });
       S.info = info; S.cfg.engine_version = info.version; S.ready = true;
-      txt.textContent = '엔진 준비됨';
+      txt.textContent = '엔진 준비됨'; $('#engine').classList.add('ready');
       $('#engineInfo').textContent = `rhwp ${info.version} (WebAssembly) · Python ${info.python} (Pyodide) · hwpai 검증서 판 1.1 · 일꾼 ${opts.jobs}개 · 파일 읽기 방식: ${S.assetMode === 'payload' ? 'file:// 내장 묶음' : '같은 위치 정적 파일'}${S.verified ? ' · 엔진 파일 SHA-256 대조 ' + S.verified + '건 일치' : ''}`;
       bar.style.width = '100%';
       setTimeout(() => { $('#engine').classList.add('done'); }, 600);
@@ -130,7 +130,7 @@
   function addFiles(list, info) {
     let skippedNon = 0, dup = 0;
     const cand = [];
-    for (const x of list) { const path = nfc(x.path.replace(/\\/g, '/')); if (!isHwp(path)) { skippedNon++; continue; } cand.push({ file: x.file, path }); }
+    for (const x of list) { const path = nfc(x.path.replace(/\\/g, '/')); if (!isHwp(path)) { skippedNon++; continue; } cand.push({ file: x.file, path, fh: x.fh, dh: x.dh }); }
     // 폴더 하나만 놓았으면 그 폴더 이름을 벗겨 데스크톱판과 같은 구조로(결과 zip 이름에 쓴다)
     const heads = new Set(cand.map(c => c.path.split('/')[0])), loose = cand.some(c => !c.path.includes('/'));
     let strip = null;
@@ -142,12 +142,12 @@
       const rel = strip ? c.path.slice(strip.length + 1) : c.path;
       const key = rel + '|' + c.file.size + '|' + c.file.lastModified;
       if (have.has(key)) { dup++; continue; }
-      have.add(key); fresh.push({ rel, file: c.file });
+      have.add(key); fresh.push({ rel, file: c.file, fh: c.fh, dh: c.dh });
     }
     const order = walkOrder(fresh.map(f => f.rel)); const byRel = new Map(fresh.map(f => [f.rel, f]));
     for (const rel of order) {
       const f = byRel.get(rel);
-      S.items.push({ id: S.nextId++, rel, name: rel.split('/').pop(), size: f.file.size, mtime: f.file.lastModified, file: f.file, status: '대기', row: null, sens: null, hwpx: null, md: null, json: null, dst: '' });
+      S.items.push({ id: S.nextId++, rel, name: rel.split('/').pop(), size: f.file.size, mtime: f.file.lastModified, file: f.file, fh: f.fh, dh: f.dh, status: '대기', row: null, sens: null, hwpx: null, md: null, json: null, dst: '' });
     }
     assignNames();
     const added = fresh.length;
@@ -253,16 +253,14 @@
   function sensTag(it) {
     const st = sensStatus(it); if (!st) return it.sens && it.sens.state == null && it.row && it.row.상태 === '변환완료' ? '<span class="tag t-gray" title="판독하지 못해 민감정보를 확인할 수 없음">확인 불가</span>' : '';
     if (!st.total) return '<span class="tag t-ok">없음</span>';
-    if (st.state === R.STATES[1]) return `<button class="tag t-wait sm-open" data-open="${it.id}" type="button" title="눌러서 확인 화면 열기">확인 필요 ${st.pending}건</button>`;
-    if (st.state === R.STATES[2]) return `<button class="tag t-ok sm-open" data-open="${it.id}" type="button">확인 완료(아님)</button>`;
-    return `<button class="tag t-warn sm-open" data-open="${it.id}" type="button">확인 완료(있음 ${st.sensitive})</button>`;
+    if (st.state === R.STATES[1]) return `<button class="tag t-wait sm-open" data-open="${it.id}" type="button" title="눌러서 확인 화면 열기">확인해 주세요 (${st.pending}건)</button>`;
+    if (st.state === R.STATES[2]) return `<button class="tag t-ok sm-open" data-open="${it.id}" type="button">확인함 · 개인정보 아님</button>`;
+    return `<button class="tag t-warn sm-open" data-open="${it.id}" type="button">확인함 · 있음 ${st.sensitive}건</button>`;
   }
+  const VWORD = { PASS: ['t-pass', '✔ 정상 변환'], WARN: ['t-warn', '▲ 확인 필요'], FAIL: ['t-fail', '✖ 변환 실패'] };
   function verdictTag(it) {
     const r = it.row; if (!r) return '';
-    if (r.판정 === 'PASS') return `<span class="tag t-pass">✔ PASS</span> <small>${r.검증점수 === '' ? '' : r.검증점수}</small>`;
-    if (r.판정 === 'WARN') return `<span class="tag t-warn">▲ WARN</span> <small>${r.검증점수 === '' ? '' : r.검증점수}</small>`;
-    if (r.판정 === 'FAIL') return `<span class="tag t-fail">✖ FAIL</span> <small>${r.검증점수 === '' || r.검증점수 == null ? '' : r.검증점수}</small>`;
-    return '';
+    const v = VWORD[r.판정]; return v ? `<span class="tag ${v[0]}">${v[1]}</span>` : '';
   }
   function statusTag(it) {
     switch (it.status) {
@@ -301,7 +299,7 @@
       case 'PASS': return it.row && it.row.판정 === 'PASS' && it.status === '변환완료';
       case 'WARN': return it.row && it.row.판정 === 'WARN';
       case 'FAIL': return it.row && it.row.판정 === 'FAIL' && it.status === '변환완료';
-      case 'bad': return it.status === '변환실패' || it.status === '격리' || it.status === '등급차단';
+      case 'bad': return it.status === '변환실패' || it.status === '격리' || it.status === '등급차단' || !!(it.row && it.row.판정 === 'FAIL' && it.status === '변환완료');
       case 'wait': return !!(st && st.state === R.STATES[1]);
       case 'skip': return it.status === '건너뜀';
     }
@@ -310,8 +308,7 @@
   function renderSummary() {
     const c = counts();
     const mk = (cls, f, n, label) => `<button type="button" class="stat ${cls} ${S.filter === f ? 'on' : ''}" data-f="${f}"><b>${n}</b><span>${label}</span></button>`;
-    $('#summary').innerHTML = S.items.length ? [mk('', 'all', c.total, '전체'), mk('pass', 'PASS', c.pass, 'PASS'), mk('warn', 'WARN', c.warn, 'WARN(사람이 볼 것)'), mk('fail', 'FAIL', c.fail, 'FAIL(내용 손실)'),
-      mk('fail', 'bad', c.fail2, '실패·격리'), mk('wait', 'wait', c.wait, '민감정보 확인 대기')].join('') : '';
+    $('#summary').innerHTML = S.items.length ? [mk('', 'all', c.total, '전체'), mk('pass', 'PASS', c.pass, '정상 변환'), mk('warn', 'WARN', c.warn, '확인 필요'), mk('fail', 'bad', c.fail2 + c.fail, '변환 실패'), mk('wait', 'wait', c.wait, '개인정보 확인 대기')].join('') : '';
     $$('#summary .stat').forEach(b => b.onclick = () => { S.filter = b.dataset.f; renderAll(); });
   }
   function renderRows() {
@@ -320,15 +317,16 @@
       const r = it.row || {}; const why = friendlyReason(it);
       let reason = r.판정_이유 ? `<span title="${esc(r.판정_이유)}">${esc(String(r.판정_이유).slice(0, 160))}</span>` : '';
       if (why) reason = `<b>${esc(why)}</b><br><small class="mut">${esc(String(r.판정_이유 || '').slice(0, 160))}</small>`;
-      if (it.status === '변환완료' && !r.판정_이유 && r.판정 === 'PASS') reason = '<span class="mut">원본과 변환본의 글·표·그림이 일치</span>';
+      if (it.status === '변환완료' && !r.판정_이유 && r.판정 === 'PASS') reason = '<span class="mut">글·표·그림이 원본과 같습니다</span>';
+      if (it.settleMsg) reason += `<br><small class="mut">제자리 교체: ${esc(it.settleMsg)}</small>`;
       const acts = [];
-      if (it.hwpx) acts.push(`<button class="btn sm" data-act="dl" data-id="${it.id}" type="button">HWPX</button>`);
-      if (it.md) acts.push(`<button class="btn sm" data-act="detail" data-id="${it.id}" type="button">검증서</button>`);
-      if (it.status === '변환완료' || it.row && it.row.원본_형식) acts.push(`<button class="btn sm" data-act="exp" data-id="${it.id}" type="button">MD·JSON</button>`);
+      if (it.hwpx) acts.push(`<button class="btn sm primary" data-act="dl" data-id="${it.id}" type="button">HWPX 받기</button>`);
+      if (it.md) acts.push(`<button class="btn sm" data-act="detail" data-id="${it.id}" type="button">자세히</button>`);
+      if (it.status === '변환완료' || it.row && it.row.원본_형식) acts.push(`<button class="btn sm" data-act="exp" data-id="${it.id}" type="button">AI용</button>`);
       return `<tr data-id="${it.id}"><td class="c-sel"><input type="checkbox" data-sel="${it.id}" ${S.selected.has(it.id) ? 'checked' : ''} aria-label="선택"></td>
 <td class="name" data-l="파일">${esc(it.rel)}${r.특성 ? `<small>${esc(r.원본_형식 || '')} ${esc(r.특성)}</small>` : ''}</td>
-<td class="c-size" data-l="크기">${fmtSize(it.size)}</td><td data-l="변환">${statusTag(it)}</td><td data-l="판정">${verdictTag(it)}</td>
-<td data-l="민감정보">${sensTag(it)}</td><td class="reason" data-l="설명">${reason}</td><td class="c-act" data-l="동작">${acts.join(' ')}</td></tr>`;
+<td data-l="결과">${it.status === '변환완료' && it.row && VWORD[it.row.판정] ? verdictTag(it) : statusTag(it)}<small class="mut">${fmtSize(it.size)}</small></td>
+<td data-l="개인정보">${sensTag(it)}</td><td class="reason" data-l="설명">${reason}</td><td class="c-act" data-l="동작">${acts.join(' ')}</td></tr>`;
     }).join('');
     tb.innerHTML = html;
     $('#selAll').checked = vis.length > 0 && vis.every(i => S.selected.has(i.id));
@@ -342,11 +340,13 @@
     $('#btnZip').disabled = !doneAny || !!S.running; $('#btnZipSel').disabled = !S.selected.size || !!S.running;
     $('#btnExport').disabled = !S.items.some(i => i.row && i.row.원본_형식 && i.status !== '대기') || !S.ready;
     $('#btnReview').disabled = !S.items.some(i => i.sens && i.sens.items && i.sens.items.length);
-    $('#btnReview').textContent = c.wait ? `확인 대기 열기 (${c.wait})` : '민감정보 검출 보기';
+    $('#btnReview').textContent = c.wait ? `개인정보 확인 (${c.wait})` : '개인정보 보기';
     $('#btnStart').hidden = !pending().length || !!S.running; $('#btnStart').disabled = !S.ready;
+    const canSettle = ST && ST.supported() && S.rootH && !S.running && S.items.some(i => i.fh && i.row && i.row.판정 === 'PASS' && i.hwpx && !i.settled && /\.hwp$/i.test(i.name));
+    $('#btnSettle').hidden = !canSettle;
     $('#btnCancel').hidden = !S.running;
     $('#btnRetry').hidden = !S.items.some(i => i.status === '변환실패' || i.status === '격리') || !!S.running;
-    const chips = [['all', '전체'], ['PASS', 'PASS'], ['WARN', 'WARN'], ['FAIL', 'FAIL'], ['bad', '실패·격리'], ['wait', '확인 대기'], ['skip', '건너뜀']];
+    const chips = [['all', '전체'], ['PASS', '정상 변환'], ['WARN', '확인 필요'], ['bad', '변환 실패'], ['wait', '개인정보 확인 대기'], ['skip', '건너뜀']];
     $('.filters').innerHTML = chips.map(([f, l]) => `<button type="button" class="chip ${S.filter === f ? 'on' : ''}" data-f="${f}">${l}</button>`).join('');
     $$('.filters .chip').forEach(b => b.onclick = () => { S.filter = b.dataset.f; renderAll(); });
     updateNet();
@@ -494,14 +494,35 @@
     }
     closeAll(); return out.join('\n');
   }
+  // 검증서 쉬운 설명: 어디가 다른지 · 왜 그런지 · 어떻게 하면 되는지 (본체 explain.py 가 만든 쉬운설명)
+  function explainHtml(it) {
+    let x = null; try { x = JSON.parse(it.json || 'null'); } catch (e) { /* */ }
+    x = x && x['쉬운설명']; if (!x) return '';
+    const cmp = (x['비교한 것'] || []).map(c => `<tr><td>${esc(c['항목'])}</td><td>${esc(c['원본'])}</td><td>${esc(c['변환본'])}</td><td>${c['결과'] === '같음' ? '✔ 같음' : '✖ 다름'}${c['설명'] ? ' — ' + esc(c['설명']) : ''}</td></tr>`).join('');
+    const df = x['다른 부분'] || [];
+    const dh = df.length ? `<h3>어디가 달랐나</h3><ol>${df.map(d => `<li><b>${esc(d['종류'])}</b> · ${esc(d['위치'])}<br>원본: 「${esc(d['원본'])}」<br>변환본: 「${esc(d['변환본'])}」</li>`).join('')}</ol>` : '';
+    const wy = x['왜 그런가'] || [];
+    const wh = wy.length ? `<h3>왜 그런가 · 어떻게 하면 되나</h3><ul>${wy.map(c => `<li><b>${esc(c['무엇이'])}</b><br>왜: ${esc(c['왜'])}<br>어떻게: ${esc(c['어떻게'])}</li>`).join('')}</ul>` : '';
+    const fx = (x['AI가_고치려면'] || {})['수정안'] || [];
+    const fh = fx.length ? `<h3>고치려면</h3><p class="mut">AI를 연결하면 이 검증서(.json)만으로 바로 고칠 수 있습니다. 「자동 가능」은 AI가 그대로 실행하는 수정입니다.</p><ol>${fx.map(f => `<li><b>${esc(f['종류'])}</b>${f['자동수정'] ? ' (자동 가능)' : ''} · ${esc(f['위치'])}<br>${esc(f['방법'])}</li>`).join('')}</ol>` : '';
+    return `<div class="plain"><h3>무엇을 비교했나</h3><table class="cmp"><thead><tr><th>항목</th><th>원본</th><th>변환본</th><th>결과</th></tr></thead><tbody>${cmp}</tbody></table>${dh}${wh}${fh}</div>`;
+  }
   function showDetail(it) {
     const r = it.row || {}; const dlg = $('#detail');
-    $('#detailTitle').textContent = '검증서 — ' + it.rel;
-    const kv = [['원본 형식', r.원본_형식], ['원본 크기', fmtSize(r.원본_크기)], ['특성', r.특성], ['원본 SHA-256', r.원본_SHA256], ['변환본 크기', fmtSize(r.변환본_크기)], ['변환본 SHA-256', r.변환본_SHA256],
-      ['엔진', r.엔진 ? `${r.엔진} ${r.엔진_판}` : ''], ['변환 소요', r.변환_소요ms ? r.변환_소요ms + ' ms' : ''], ['검증 점수·판정', r.판정 ? `${r.검증점수} · ${r.판정}` : ''], ['민감정보', r.민감정보 ? `${r.민감정보} ${r.민감정보_항목 || ''}` : '']].filter(x => x[1]);
-    $('#detailBody').innerHTML = `<dl class="kv">${kv.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+    $('#detailTitle').textContent = '자세히 — ' + it.rel;
+    const fp = (h) => h ? String(h).slice(0, 8) + '…' + String(h).slice(-4) : '';
+    const V = { PASS: '글·표·그림이 원본과 같습니다. 안심하고 쓰셔도 됩니다.', WARN: '대부분 같지만 일부가 다를 수 있습니다. 중요한 문서는 한글에서 한번 열어 보세요.', FAIL: '변환은 됐지만 원본에 있던 내용이 빠졌습니다. 이 파일은 그대로 쓰지 마세요.' }[r.판정] || '';
+    const same = r.원본_SHA256 && r.변환본_SHA256;
+    const easy = [['결과', r.판정 && VWORD[r.판정] ? VWORD[r.판정][1] : ''], ['쉽게 말하면', V], ['원본 크기', fmtSize(r.원본_크기)], ['바뀐 파일 크기', fmtSize(r.변환본_크기)],
+      ['개인정보', r.민감정보 ? `${r.민감정보} ${r.민감정보_항목 || ''}` : '']].filter(x => x[1]);
+    const tech = [['원본 형식', r.원본_형식], ['특성', r.특성], ['원본 파일 지문(SHA-256)', r.원본_SHA256], ['변환본 파일 지문(SHA-256)', r.변환본_SHA256],
+      ['엔진', r.엔진 ? `${r.엔진} ${r.엔진_판}` : ''], ['변환 소요', r.변환_소요ms ? r.변환_소요ms + ' ms' : ''], ['검증 점수·판정', r.판정 ? `${r.검증점수} · ${r.판정}` : '']].filter(x => x[1]);
+    $('#detailBody').innerHTML = `<dl class="kv big">${easy.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+${same ? `<p class="fpbox"><b>파일 지문</b> (같은 파일인지 확인하는 번호) — 원본 <code>${esc(fp(r.원본_SHA256))}</code> · 바뀐 파일 <code>${esc(fp(r.변환본_SHA256))}</code> <button class="btn sm" id="dCopy" type="button">전체 번호 복사</button></p>` : ''}
 <p class="btns" style="justify-content:flex-start"><button class="btn sm" id="dMd" type="button">검증서(.md) 받기</button> <button class="btn sm" id="dJson" type="button">검증서(.json) 받기</button></p>
-<div>${mdToHtml(it.md || '')}</div>`;
+${explainHtml(it)}
+<details class="more"><summary>자세한 기록 (전문가용)</summary><dl class="kv">${tech.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div>${mdToHtml(String(it.md || '').split('# 자세한 기록 (전문가용)').pop())}</div></details>`;
+    const cp = $('#dCopy'); if (cp) cp.onclick = () => { try { navigator.clipboard.writeText(`원본 ${r.원본_SHA256}\n변환본 ${r.변환본_SHA256}`); cp.textContent = '복사했습니다'; } catch (e) { cp.textContent = '복사 못 함'; } };
     $('#dMd').onclick = () => download(new Blob([it.md || ''], { type: 'text/markdown' }), it.name + '.검증서.md');
     $('#dJson').onclick = () => download(new Blob([it.json || ''], { type: 'application/json' }), it.name + '.검증서.json');
     dlg.showModal();
@@ -530,6 +551,26 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
     $('#netDlg').showModal();
   }
 
+  // ---------------------------------------------------------------- 보관 원본 정리(기한 지난 .hwp)
+  function openPurge() {
+    if (!(ST && ST.supported())) { toast('이 브라우저는 폴더 쓰기를 지원하지 않습니다(Chrome·Edge 데스크톱).', 6000); return; }
+    const P = { arch: null, root: null };
+    $('#detailTitle').textContent = '보관 원본 정리';
+    $('#detailBody').innerHTML = `<p>기한이 지난 보관 원본(.hwp)만 지웁니다. 먼저 <b>보관 폴더</b>(안에 보관대장.csv)와 <b>원본 폴더</b>(제자리 .hwpx 가 있는 폴더)를 차례로 엽니다. 삭제 전에 미리보기를 보여 드리며, 제자리 .hwpx 나 보관 원본의 SHA-256 이 기록과 다르면 지우지 않습니다.</p>
+<p class="btns" style="justify-content:flex-start"><button class="btn" id="pgA" type="button">① 보관 폴더 열기</button><button class="btn" id="pgR" type="button">② 원본 폴더 열기</button><button class="btn primary" id="pgPv" type="button" disabled>③ 미리보기</button><button class="btn" id="pgGo" type="button" hidden>기한 지난 원본 삭제 실행</button></p><pre id="pgOut" class="mut">아직 열지 않았습니다.</pre>`;
+    const out = (t) => { $('#pgOut').textContent = t; };
+    const fmt = (r) => `기한 지난 ${r.대상}건 — 삭제 ${r.삭제} · 보류 ${r.보류} · 기한 전 ${r.아직}` + r.내역.slice(0, 30).map(x => `\n  ${x[1]}: ${x[0]}${x[2] ? ' — ' + x[2] : ''}`).join('');
+    const ready = () => { $('#pgPv').disabled = !(P.arch && P.root); };
+    $('#pgA').onclick = async () => { try { P.arch = await window.showDirectoryPicker({ mode: 'readwrite' }); out('보관 폴더: ' + P.arch.name + (P.root ? ' · 원본 폴더: ' + P.root.name : '')); ready(); } catch (e) { /* 취소 */ } };
+    $('#pgR').onclick = async () => { try { P.root = await window.showDirectoryPicker({ mode: 'readwrite' }); out((P.arch ? '보관 폴더: ' + P.arch.name + ' · ' : '') + '원본 폴더: ' + P.root.name); ready(); } catch (e) { /* 취소 */ } };
+    $('#pgPv').onclick = async () => { try { const r = await ST.purge(P.arch, P.root, true); out(fmt(r) + (r.삭제 ? '\n\n실제로 지우려면 「기한 지난 원본 삭제 실행」을 누르세요.' : '')); $('#pgGo').hidden = !r.삭제; } catch (e) { out('오류: ' + e.message); $('#pgGo').hidden = true; } };
+    $('#pgGo').onclick = async () => {
+      if (!confirm('기한이 지난 보관 원본(.hwp)을 지웁니다. 되돌릴 수 없습니다.\n미리보기에서 본 항목만 지워지며 SHA-256 이 어긋난 것은 건너뜁니다. 실행할까요?')) return;
+      try { const r = await ST.purge(P.arch, P.root, false); out(fmt(r)); $('#pgGo').hidden = true; } catch (e) { out('오류: ' + e.message); }
+    };
+    $('#detail').showModal();
+  }
+
   // ---------------------------------------------------------------- 이벤트
   function wire() {
     const drop = $('#drop');
@@ -545,6 +586,30 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
     drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#fileInput').click(); } });
     $('#fileInput').onchange = (e) => { addFiles(Array.from(e.target.files).map(f => ({ file: f, path: f.name })), null); e.target.value = ''; };
     $('#dirInput').onchange = (e) => { addFiles(Array.from(e.target.files).map(f => ({ file: f, path: f.webkitRelativePath || f.name })), null); e.target.value = ''; };
+    if (ST && ST.supported()) { $('#pickRW').hidden = false; $('#optKeepWrap').hidden = false; }
+    $('#pickRW').onclick = async () => {
+      try {
+        const h = await window.showDirectoryPicker({ mode: 'readwrite' });
+        toast('폴더를 읽는 중…', 20000);
+        const out = []; await ST.walk(h, h.name + '/', out);
+        S.rootH = h; addFiles(out, null);
+      } catch (e) { if (e.name !== 'AbortError') toast('폴더를 열지 못했습니다: ' + e.message, 7000); }
+    };
+    $('#btnSettle').onclick = async () => {
+      const keep = +$('#optKeep').value;   // 기본 30일, 0=계속 보관
+      const items = S.items.filter(i => i.fh && i.row && i.row.판정 === 'PASS' && i.hwpx && !i.settled && /\.hwp$/i.test(i.name));
+      if (!items.length) return;
+      if (!confirm(`제자리 교체: 검증 PASS인 ${items.length}개 문서의 .hwpx 를 원래 자리에 두고, 원본 .hwp 는 이어서 고르는 보관 폴더로 옮깁니다(지워지지 않습니다).\n보관 폴더는 방금 연 원본 폴더 밖의 폴더를 고르세요. 계속할까요?`)) return;
+      let archH;
+      try { archH = await window.showDirectoryPicker({ mode: 'readwrite' }); } catch (e) { if (e.name !== 'AbortError') toast('보관 폴더를 열지 못했습니다: ' + e.message, 7000); return; }
+      try {
+        const res = await ST.settle(items, S.rootH, archH, keep, (n, t, rel) => { $('#runText').textContent = `제자리 교체 ${n} / ${t} · ${rel}`; });
+        let ok = 0; for (const r of res) { r.it.settleMsg = r.msg; if (r.ok) { r.it.settled = true; ok++; } }
+        toast(`제자리 교체 ${ok}개 완료 · 안 한 것 ${res.length - ok}개(사유는 표의 설명 칸) · 보관: ${archH.name}`, 9000);
+      } catch (e) { toast('제자리 교체를 하지 못했습니다: ' + e.message, 9000); }
+      updateProgress(); renderAll();
+    };
+    $('#btnPurge').onclick = () => openPurge();
     $('#btnStart').onclick = () => kick();
     $('#btnCancel').onclick = () => {
       S.pool.cancelQueued(() => true); S.cancelled = true;
@@ -576,6 +641,12 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
     window.addEventListener('beforeunload', (e) => { if (S.running) { e.preventDefault(); e.returnValue = ''; } });
   }
 
+  // 글자 크기(큰 글씨): 기본 크게, 이 브라우저에만 기억
+  (function () {
+    const set = (z) => { document.documentElement.style.setProperty('--z', z); LS.set('hwpai.z.v1', z); $$('.fsz button').forEach(b => b.classList.toggle('on', +b.dataset.z === +z)); };
+    $$('.fsz button').forEach(b => b.addEventListener('click', () => set(+b.dataset.z)));
+    set(+LS.get('hwpai.z.v1', 1.25) || 1.25);
+  })();
   initOpts(); wire(); renderAll();
   if (!('WebAssembly' in window) || !window.Worker) { $('#engineText').textContent = '이 브라우저는 WebAssembly 또는 Web Worker 를 지원하지 않습니다. 최신 Chrome·Edge·Firefox·Safari 를 쓰세요.'; }
   else bootPool();

@@ -214,7 +214,10 @@ class HwpxParser:
             elif n == "equation":
                 flush()
                 sc = _child(c, "script")
-                out.append(Equation((sc.text or "").strip() if sc is not None else ""))
+                cap = _child(c, "caption")   # 결선 보완 B1: 수식 캡션도 읽는다(HWP5 판독기와 같은 모델)
+                out.append(Equation((sc.text or "").strip() if sc is not None else "",
+                                    caption=" ".join(b.text for b in self.sublist_blocks(cap) if isinstance(b, Paragraph)).strip()
+                                    if cap is not None else ""))
             elif n == "ctrl":
                 for d in c:
                     ctrl(d)
@@ -320,13 +323,15 @@ class HwpxParser:
         else:
             if n == "rect":
                 # 사각형의 그림 채우기(imgBrush) — HWP5 판독기가 사각형 이미지 채우기를 그림으로 세는 것과 맞춘다
-                for d in el.iter():
-                    if _ln(d.tag) == "imgBrush":
-                        ref = next((x.get("binaryItemIDRef") for x in d.iter()
-                                    if _ln(x.tag) == "img" and x.get("binaryItemIDRef")), None)
-                        if ref:
-                            out.append(Image(self.image_name(ref), ""))
-                        break
+                # 결선 보완 B9: 자기 fillBrush 만 본다. 종전 el.iter() 는 글상자(drawText) 안의 다른 사각형 채우기까지 세어
+                # 같은 그림을 두 번 셌다(28132e5692ef: 원본 9 / 변환 15).
+                fb = _child(el, "fillBrush")
+                d = _child(fb, "imgBrush") if fb is not None else None
+                if d is not None:
+                    ref = next((x.get("binaryItemIDRef") for x in d.iter()
+                                if _ln(x.tag) == "img" and x.get("binaryItemIDRef")), None)
+                    if ref:
+                        out.append(Image(self.image_name(ref), ""))
             dt = _child(el, "drawText")
             if caption:
                 out.append(Paragraph(caption))

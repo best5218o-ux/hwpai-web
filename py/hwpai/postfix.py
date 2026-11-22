@@ -360,7 +360,11 @@ def _fix_field_ids(dst, src=None):
                 cm = re.search(r'Direction:wstring:(\d+):', body)
                 if pm and cm:
                     k = int(cm.group(1)); st = cm.end()
-                    direc = body[st:st + k]
+                    # 4차 F2: k 는 「풀린 글」의 글자 수다. body 는 XML 이스케이프된 글이라 그대로 자르면
+                    # &apos; 같은 엔티티 한가운데서 잘려 XML 이 깨진다(d3ad91a749c0). 엔티티를 한 글자로 센다.
+                    en = body.find("<", st)
+                    toks = re.findall(r'&(?:#[0-9]+|#x[0-9A-Fa-f]+|[A-Za-z]+);|[^&]', body[st:en if en >= 0 else len(body)])
+                    direc = "".join(toks[:k])
                     inner = f'<hp:integerParam name="Prop">{props[int(i.group(1))]}</hp:integerParam>' + pm.group(3)
                     inner += f'<hp:stringParam name="Direction">{direc}</hp:stringParam>'
                     body = body[:pm.start()] + f'<hp:parameters cnt="{int(pm.group(1)) + 2}"{pm.group(2)}>{inner}</hp:parameters>' + body[pm.end():]
@@ -1296,6 +1300,564 @@ def _store_incompressible(dst):
         return 0
 
 
+def _rewrite_parts(dst, fn, names_re=r"Contents/(section|masterPage)\d+\.xml", extra=None):
+    """5차 공통: names_re 에 맞는 XML 파트를 fn(이름, 글) → 새 글 로 고쳐 다시 쓴다. extra={이름: 바이트} 는 새 파일로 더한다."""
+    import re, zipfile
+    zin = zipfile.ZipFile(dst)
+    patched = {}
+    for n in zin.namelist():
+        if re.fullmatch(names_re, n):
+            x = zin.read(n).decode("utf-8")
+            y = fn(n, x)
+            if y != x:
+                patched[n] = y.encode("utf-8")
+    extra = extra or {}
+    if not patched and not extra:
+        zin.close()
+        return False
+    tmp = dst + ".p5"
+    with zipfile.ZipFile(tmp, "w") as zout:
+        for zi in zin.infolist():
+            zout.writestr(zi, patched.get(zi.filename) or zin.read(zi.filename), compress_type=zi.compress_type)
+        for n, b in extra.items():
+            zout.writestr(n, b, compress_type=zipfile.ZIP_DEFLATED)
+    zin.close()
+    os.replace(tmp, dst)
+    return True
+
+
+def _fix_cur_size_zero(dst):
+    """C122(5차, 끄려면 HWPAI_CURSZ=0): 한글 2024 는 개체 현재 크기(hp:curSz)에서 「원래 크기(hp:orgSz)와 같은 차원」을 0 으로 적는다
+    (보류·새·대량 실패 표본 6,546개 개체에서 예외 0). HWPX 에서 0 은 「원래 크기와 같음」이다(엔진 HWPX 판독기도 0 을 orgSz 로 채움).
+    엔진은 같은 값을 숫자로 적는다. (묶음 안 선의 0,0 표기는 문서마다 달라 규칙으로 넣지 않았다 — 79ade87f7e18·e9bc5e78b412 는 0,0,
+    de4d89bd8803·fc71c2a0ebce 는 원본 값. 앞의 두 문서는 한글이 묶음 크기까지 다시 계산했다.)
+    뜻은 같고 표기만 한글과 맞춘다. 고친 개체 수를 돌려준다."""
+    import re
+    pat = re.compile(r'(<hp:(\w+)\b([^>]*)>(?:<hp:offset [^>]*/>)?<hp:orgSz width="(\d+)" height="(\d+)"/>)<hp:curSz width="(\d+)" height="(\d+)"/>')
+    k = [0]
+
+    def rep(m):
+        tag, attrs = m.group(2), m.group(3)
+        ow, oh, cw, ch = (int(m.group(i)) for i in (4, 5, 6, 7))
+        nw, nh = (0 if cw == ow and cw else cw), (0 if ch == oh and ch else ch)
+        if (nw, nh) == (cw, ch):
+            return m.group(0)
+        k[0] += 1
+        return f'{m.group(1)}<hp:curSz width="{nw}" height="{nh}"/>'
+    try:
+        _rewrite_parts(dst, lambda n, x: pat.sub(rep, x))
+        return k[0]
+    except Exception as _e:
+        ERRORS.append(f"cursz {type(_e).__name__}: {str(_e)[:80]}")
+        return 0
+
+
+def _ole_chart_xml(b):
+    """HWP BinData OLE(앞 4바이트 크기 + 복합 문서)에서 OOXMLChartContents 스트림을 꺼낸다. 없으면 None."""
+    import io
+    try:
+        import olefile
+    except Exception:
+        return None
+    for off in (4, 0):
+        try:
+            o = olefile.OleFileIO(io.BytesIO(b[off:]))
+        except Exception:
+            continue
+        try:
+            for e in o.listdir():
+                if e and e[-1] == "OOXMLChartContents":
+                    return o.openstream(e).read()
+        finally:
+            o.close()
+    return None
+
+
+def _fix_ole_chart(dst):
+    """C123(5차, 끄려면 HWPAI_OLECHART=0): 한글 차트는 HWP 에서 OLE 개체로 저장되고, 그 OLE 안에 OOXML 차트(OOXMLChartContents)가 들어 있다.
+    한글 2024 는 HWPX 로 저장할 때 이 개체를 hp:switch 로 감싸 hp:case(차트 이름공간)에 hp:chart(Chart/chartN.xml), hp:default 에
+    원래 hp:ole 을 둔다. Chart/chartN.xml 은 OLE 의 OOXMLChartContents 와 바이트까지 같다(대량 표본 00c8228e0633 확인).
+    엔진은 OLE 만 적어 차트 기능이 빠졌다. 감싼 차트 수를 돌려준다."""
+    import re, zipfile
+    try:
+        zin = zipfile.ZipFile(dst)
+        names = zin.namelist()
+        if any(n.startswith("Chart/") for n in names):
+            zin.close(); return 0
+        hpf = zin.read("Contents/content.hpf").decode("utf-8", "ignore") if "Contents/content.hpf" in names else ""
+        href = dict(re.findall(r'<opf:item\b[^>]*?\bid="([^"]+)"[^>]*?\bhref="([^"]+)"', hpf))
+        charts = {}
+        for i, h in href.items():
+            for cand in (h, "Contents/" + h):
+                if cand in names and cand.lower().endswith(".ole"):
+                    x = _ole_chart_xml(zin.read(cand))
+                    if x:
+                        charts[i] = x
+        zin.close()
+        if not charts:
+            return 0
+        extra = {}
+        cnt = [0]
+        pat = re.compile(r'<hp:ole\b([^>]*)>(.*?)</hp:ole>', re.S)
+
+        def fix(n, x):
+            out = []; last = 0
+            for m in pat.finditer(x):
+                a, body = m.group(1), m.group(2)
+                bid = re.search(r'\bbinaryItemIDRef="([^"]+)"', a)
+                gl = re.search(r'\bgroupLevel="(\d+)"', a)
+                pre = x[max(0, m.start() - 40):m.start()]
+                if not bid or bid.group(1) not in charts or (gl and gl.group(1) != "0") or pre.endswith("<hp:default>"):
+                    continue
+                cnt[0] += 1
+                cname = f"Chart/chart{cnt[0]}.xml"
+                extra[cname] = charts[bid.group(1)]
+                keep = " ".join(f'{k}="{v}"' for k, v in re.findall(r'\b(id|zOrder|numberingType|textWrap|textFlow|lock|dropcapstyle)="([^"]*)"', a))
+                parts = "".join(re.findall(r'<hp:sz [^>]*/>|<hp:pos [^>]*/>|<hp:outMargin [^>]*/>', body))
+                cap = re.search(r'<hp:caption\b.*?</hp:caption>', body, re.S)     # 한글도 차트에 캡션을 함께 적는다(a29d415afb06)
+                if cap:
+                    parts += cap.group(0)
+                chart = f'<hp:chart {keep} chartIDRef="{cname}">{parts}</hp:chart>'
+                out.append(x[last:m.start()])
+                out.append('<hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/ooxmlchart">'
+                           + chart + '</hp:case><hp:default>' + m.group(0) + '</hp:default></hp:switch>')
+                last = m.end()
+            out.append(x[last:])
+            return "".join(out)
+        import zipfile as _z
+        zin = _z.ZipFile(dst)
+        secs = sorted([n for n in zin.namelist() if re.fullmatch(r"Contents/section\d+\.xml", n)], key=lambda n: int(re.findall(r"\d+", n)[-1]))
+        texts = {n: zin.read(n).decode("utf-8") for n in secs}
+        zin.close()
+        new = {n: fix(n, texts[n]) for n in secs}       # 문서 순서대로 chart1, chart2 …
+        if not cnt[0]:
+            return 0
+        _rewrite_parts(dst, lambda n, x: new.get(n, x), names_re=r"Contents/section\d+\.xml", extra=extra)
+        return cnt[0]
+    except Exception as _e:
+        ERRORS.append(f"olechart {type(_e).__name__}: {str(_e)[:80]}")
+        return 0
+
+
+_FONTMAP = None
+
+
+def _hwp5_face_types(src):
+    """원본 DocInfo 글꼴(FACE_NAME) 이름 → 글꼴 종류 비트(속성 하위 2비트: 0 모름, 1 TTF, 2 HFT) 집합. 읽지 못하면 None."""
+    import struct, zlib
+    try:
+        import olefile
+        o = olefile.OleFileIO(src)
+    except Exception:
+        return None
+    try:
+        fh = o.openstream("FileHeader").read()
+        comp = struct.unpack_from("<I", fh, 36)[0] & 1
+        d = o.openstream("DocInfo").read()
+        d = zlib.decompress(d, -15) if comp else d
+        out = {}
+        i = 0
+        while i + 4 <= len(d):
+            h = struct.unpack_from("<I", d, i)[0]; i += 4
+            tag, sz = h & 0x3FF, h >> 20
+            if sz == 0xFFF:
+                sz = struct.unpack_from("<I", d, i)[0]; i += 4
+            r = d[i:i + sz]; i += sz
+            if tag == 19 and len(r) >= 3:
+                n = struct.unpack_from("<H", r, 1)[0]
+                out.setdefault(r[3:3 + 2 * n].decode("utf-16-le", "replace"), set()).add(r[0] & 3)
+        return out
+    except Exception:
+        return None
+    finally:
+        o.close()
+
+
+def _fix_font_local_names(dst, src=None):
+    """C124(5차, 끄려면 HWPAI_FONTKO=0): 한글 2024 는 글꼴 이름을 그 글꼴의 한국어 이름으로 적는다(원본이 「Batang」·「Haansoft Batang」·
+    「HY Junggothic」이면 「바탕」·「한컴바탕」·「한양중고딕」). 표 fontmap_ko.json 은 글꼴 파일의 이름 표(영어·한국어 이름)와 한컴 HFT 등록표에서
+    뽑았다(한글 저장본에서 뽑지 않음). 보류·새·대량 실패 표본에서 바뀐 이름 16쌍을 모두 맞히고, 한글이 영문 그대로 둔 이름 중 표에 있는 것 0.
+    원본 글꼴 기록의 종류가 「모름」(속성 하위 2비트 0)이면 한글도 이름을 그대로 둔다(Haansoft Batang 종류 0: 21/21 그대로, 종류 1: 234/234 바뀜)
+    — 원본을 읽어 그런 이름은 바꾸지 않는다. C120(영문 별칭 표지)보다 뒤에 돌린다. 바꾼 글꼴 수를 돌려준다."""
+    import re, json
+    global _FONTMAP
+    try:
+        if _FONTMAP is None:
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "fontmap_ko.json"), encoding="utf-8") as f:
+                _FONTMAP = json.load(f)["map"]
+        k = [0]
+        types = _hwp5_face_types(src) if src else None
+
+        def rep(m):
+            face = m.group(2)
+            raw = face.replace("&amp;", "&")
+            ko = _FONTMAP.get(raw)
+            if ko and types is not None and raw in types and not (types[raw] - {0}):
+                ko = None      # 원본 글꼴 종류 「모름」 — 한글도 이름을 바꾸지 않는다
+            if not ko:
+                return m.group(0)
+            k[0] += 1
+            return f'{m.group(1)}{ko.replace("&", "&amp;")}"'
+        _rewrite_parts(dst, lambda n, x: re.sub(r'(<hh:font\b[^>]*?\bface=")([^"]*)"', rep, x), names_re=r"Contents/header\.xml")
+        return k[0]
+    except Exception as _e:
+        ERRORS.append(f"fontko {type(_e).__name__}: {str(_e)[:80]}")
+        return 0
+
+
+def _fix_negative_cell_height(dst):
+    """C125(5차, 끄려면 HWPAI_CELLHNEG=0): 원본 칸 높이가 음수(손상값)이면 한글 2024 는 칸 높이를 「표 안쪽 여백 위+아래」
+    (칸 여백을 쓰는 칸이면 칸 여백 위+아래)로 적는다. 칸에 글이 있어도 같다(보류 표본 5칸 모두: 566=283+283 4칸, 284=142+142 1칸 —
+    d067a213b619 의 그 칸은 글 「대도시 시장」 한 줄). 엔진은 손상값을 그대로 적는다. 고친 칸 수를 돌려준다."""
+    import re
+    k = [0]
+    tbl_open = re.compile(r'<hp:tbl\b[^>]*>')
+
+    def fix(n, x):
+        # 표마다 안쪽 여백(hp:inMargin)을 찾고, 그 표 직속 칸의 cellSz 높이가 음수면 고친다(중첩 표는 각자의 여백).
+        out = []; pos = 0
+        stack = []
+        for m in re.finditer(r'<hp:tbl\b[^>]*>|</hp:tbl>|<hp:inMargin left="(\d+)" right="(\d+)" top="(\d+)" bottom="(\d+)"/>|<hp:tc\b([^>]*)>|<hp:cellSz width="(\d+)" height="(\d+)"/>|<hp:cellMargin left="\d+" right="\d+" top="(\d+)" bottom="(\d+)"/>|<hp:t\b|<hp:lineseg\b', x):
+            g = m.group(0)
+            if g.startswith("<hp:tbl"):
+                stack.append({"pad": None, "tc": None})
+            elif g == "</hp:tbl>":
+                if stack: stack.pop()
+            elif g.startswith("<hp:inMargin") and stack and stack[-1]["pad"] is None and stack[-1]["tc"] is None:
+                stack[-1]["pad"] = (int(m.group(3)), int(m.group(4)))
+            elif g.startswith("<hp:tc") and stack:
+                stack[-1]["tc"] = {"hasMargin": 'hasMargin="1"' in m.group(5), "content": False, "sz": None}
+            elif (g.startswith("<hp:t") or g.startswith("<hp:lineseg")) and stack and stack[-1]["tc"] is not None:
+                stack[-1]["tc"]["content"] = True
+            elif g.startswith("<hp:cellSz") and stack and stack[-1]["tc"] is not None:
+                h = int(m.group(7))
+                tc = stack[-1]["tc"]
+                if h > 0x7FFFFFFF:
+                    tc["sz"] = (m.start(), m.end(), m.group(6))
+            elif g.startswith("<hp:cellMargin") and stack and stack[-1]["tc"] is not None:
+                tc = stack[-1]["tc"]
+                if tc["sz"]:
+                    pad = (int(m.group(8)), int(m.group(9))) if tc["hasMargin"] else stack[-1]["pad"]
+                    if pad:
+                        s0, e0, w = tc["sz"]
+                        out.append(x[pos:s0]); out.append(f'<hp:cellSz width="{w}" height="{pad[0] + pad[1]}"/>'); pos = e0
+                        k[0] += 1
+                stack[-1]["tc"] = None
+        out.append(x[pos:])
+        return "".join(out)
+    try:
+        _rewrite_parts(dst, fix)
+        return k[0]
+    except Exception as _e:
+        ERRORS.append(f"cellhneg {type(_e).__name__}: {str(_e)[:80]}")
+        return 0
+
+
+
+def _top_paragraph_spans(x, body_start, body_end):
+    """hs:sec 바로 아래 문단(hp:p)의 (시작, 끝) 위치 목록. 표·글상자 안 문단은 건너뛴다."""
+    import re
+    spans = []; depth = 0; start = None
+    for m in re.finditer(r'<hp:p\b[^>]*?(/?)>|</hp:p>', x[body_start:body_end]):
+        g = m.group(0); p = body_start + m.start()
+        if g.startswith("</"):
+            depth -= 1
+            if depth == 0:
+                spans.append((start, body_start + m.end()))
+        elif m.group(1) == "/":
+            if depth == 0:
+                spans.append((p, body_start + m.end()))
+        else:
+            if depth == 0:
+                start = p
+            depth += 1
+    return spans
+
+
+def _split_sections(dst):
+    """C126(5차, 끄려면 HWPAI_SECSPLIT=0): 원본 HWP 의 구역 스트림 하나에 구역 정의(secd)가 여럿 든 문서가 있다(다른 생성기 산출,
+    대량 표본 297c2c7df5e7: Section0 하나에 구역 4개). 한글 2024 는 HWPX 로 저장할 때 구역 정의마다 section 파일을 나눈다
+    (section0~3, header secCnt=4). 엔진은 한 파일에 구역 정의 4개를 넣는다. 맨 바깥 문단 가운데 구역 정의(hp:secPr)를 가진
+    문단(첫 문단 제외)에서 파일을 나누고 content.hpf·container.rdf·secCnt 를 맞춘다. 늘어난 구역 수를 돌려준다."""
+    import re, zipfile
+    try:
+        zin = zipfile.ZipFile(dst)
+        names = zin.namelist()
+        secs = sorted([n for n in names if re.fullmatch(r"Contents/section\d+\.xml", n)], key=lambda n: int(re.findall(r"\d+", n)[-1]))
+        new_bodies = []; grew = 0
+        for n in secs:
+            x = zin.read(n).decode("utf-8")
+            m0 = re.search(r'<hs:sec\b[^>]*>', x); e0 = x.rfind("</hs:sec>")
+            if not m0 or e0 < 0:
+                zin.close(); return 0
+            head, tail = x[:m0.end()], x[e0:]
+            spans = _top_paragraph_spans(x, m0.end(), e0)
+            cuts = [s for i, (s, e) in enumerate(spans) if i > 0 and "<hp:secPr" in x[s:e][:4000] and re.match(r'<hp:p\b[^>]*>\s*<hp:run\b[^>]*>\s*<hp:secPr\b', x[s:e])]
+            if not cuts:
+                new_bodies.append(x); continue
+            bounds = [m0.end()] + cuts + [e0]
+            for a, b in zip(bounds, bounds[1:]):
+                new_bodies.append(head + x[a:b] + tail)
+            grew += len(cuts)
+        if not grew:
+            zin.close(); return 0
+        out = {f"Contents/section{i}.xml": b.encode("utf-8") for i, b in enumerate(new_bodies)}
+        hpf = zin.read("Contents/content.hpf").decode("utf-8")
+        items = "".join(f'<opf:item id="section{i}" href="Contents/section{i}.xml" media-type="application/xml"/>' for i in range(len(new_bodies)))
+        refs = "".join(f'<opf:itemref idref="section{i}" linear="yes"/>' for i in range(len(new_bodies)))
+        hpf2 = re.sub(r'<opf:item id="section\d+"[^>]*/>', "", hpf)
+        hpf2 = re.sub(r'<opf:itemref idref="section\d+"[^>]*/>', "", hpf2)
+        hpf2 = re.sub(r'(<opf:item id="header"[^>]*/>)', lambda m: m.group(1) + items, hpf2, count=1)
+        hpf2 = re.sub(r'(<opf:itemref idref="header"[^>]*/>)', lambda m: m.group(1) + refs, hpf2, count=1)
+        if hpf2.count('id="section') != len(new_bodies) or hpf2.count('idref="section') != len(new_bodies):
+            zin.close(); return 0
+        out["Contents/content.hpf"] = hpf2.encode("utf-8")
+        hd = zin.read("Contents/header.xml").decode("utf-8")
+        out["Contents/header.xml"] = re.sub(r'\bsecCnt="\d+"', f'secCnt="{len(new_bodies)}"', hd, count=1).encode("utf-8")
+        if "META-INF/container.rdf" in names:
+            rdf = zin.read("META-INF/container.rdf").decode("utf-8")
+            one = re.search(r'<rdf:Description rdf:about=""><ns0:hasPart [^>]*rdf:resource="Contents/section0\.xml"/></rdf:Description><rdf:Description rdf:about="Contents/section0\.xml">.*?</rdf:Description>', rdf, re.S)
+            if one:
+                rdf2 = re.sub(r'<rdf:Description rdf:about=""><ns0:hasPart [^>]*rdf:resource="Contents/section\d+\.xml"/></rdf:Description><rdf:Description rdf:about="Contents/section\d+\.xml">.*?</rdf:Description>', "", rdf, flags=re.S)
+                blk = "".join(one.group(0).replace("section0.xml", f"section{i}.xml") for i in range(len(new_bodies)))
+                rdf2 = rdf2.replace(one.group(0), "", 1) if one.group(0) in rdf2 else rdf2
+                k = rdf2.find('<rdf:Description rdf:about=""><rdf:type')
+                rdf2 = rdf2[:k] + blk + rdf2[k:] if k >= 0 else rdf2.replace("</rdf:RDF>", blk + "</rdf:RDF>")
+                out["META-INF/container.rdf"] = rdf2.encode("utf-8")
+        tmp = dst + ".sp"
+        with zipfile.ZipFile(tmp, "w") as zout:
+            done = set()
+            for zi in zin.infolist():
+                if re.fullmatch(r"Contents/section\d+\.xml", zi.filename):
+                    if zi.filename == secs[0]:
+                        for i in range(len(new_bodies)):
+                            nm = f"Contents/section{i}.xml"
+                            zout.writestr(nm, out[nm], compress_type=zi.compress_type); done.add(nm)
+                    continue
+                zout.writestr(zi, out.get(zi.filename) or zin.read(zi.filename), compress_type=zi.compress_type)
+        zin.close()
+        os.replace(tmp, dst)
+        return grew
+    except Exception as _e:
+        ERRORS.append(f"secsplit {type(_e).__name__}: {str(_e)[:80]}")
+        return 0
+
+
+
+def _fix_clickhere_guide(dst):
+    """C127(5차, 끄려면 HWPAI_CLICKGUIDE=0): 비어 있는 누름틀(CLICK_HERE)을 한글 2024 는 HWPX 에 안내문(Direction)을 글로 넣어 저장한다.
+    안내문은 그 누름틀이 놓인 글자 모양을 복사해 빨간색(#FF0000)·기울임을 더한 글자 모양으로 적고, 누름틀 끝은 원래 글자 모양 묶음에 둔다
+    (대량 표본 518cb939079e·d991aad9b458·7f02fc45af5c·2ea9d7fe564e 모두 같은 표기). 엔진은 빈 누름틀을 비워 둔다.
+    글을 넣은 문단은 줄 배치 저장값을 지워 한글이 다시 나누게 한다. 채운 누름틀 수를 돌려준다."""
+    import re, zipfile, html
+    try:
+        zin = zipfile.ZipFile(dst)
+        hd = zin.read("Contents/header.xml").decode("utf-8")
+        secs = [n for n in zin.namelist() if re.fullmatch(r"Contents/section\d+\.xml", n)]
+        texts = {n: zin.read(n).decode("utf-8") for n in secs}
+        zin.close()
+        cps = {m.group(1): m.group(0) for m in re.finditer(r'<hh:charPr id="(\d+)".*?</hh:charPr>', hd, re.S)}
+        cnt_m = re.search(r'<hh:charProperties itemCnt="(\d+)">', hd)
+        if not cnt_m or not cps:
+            return 0
+        nxt = [int(cnt_m.group(1))]
+        made = {}       # 원래 charPr id → 안내문 charPr id
+        newdefs = []
+
+        def guide_cp(cid):
+            if cid in made:
+                return made[cid]
+            base = cps.get(cid)
+            if base is None:
+                return None
+            nid = str(nxt[0]); nxt[0] += 1
+            x = re.sub(r'^<hh:charPr id="\d+"', f'<hh:charPr id="{nid}"', base)
+            x = re.sub(r'textColor="[^"]*"', 'textColor="#FF0000"', x, count=1)
+            if "<hh:italic/>" not in x:
+                x = x.replace("<hh:underline", "<hh:italic/><hh:underline", 1) if "<hh:bold/>" not in x else x.replace("<hh:bold/>", "<hh:italic/><hh:bold/>", 1)
+            made[cid] = nid; newdefs.append(x)
+            return nid
+        total = [0]
+        pat = re.compile(r'(<hp:ctrl><hp:fieldBegin\b[^>]*\btype="CLICK_HERE"[^>]*\bid="(\d+)"|<hp:ctrl><hp:fieldBegin\b[^>]*\bid="(\d+)"[^>]*\btype="CLICK_HERE")')
+
+        def fix_sec(x):
+            out = []; pos = 0; touched = []
+            for m in pat.finditer(x):
+                fid = m.group(2) or m.group(3)
+                e = x.find("</hp:fieldBegin></hp:ctrl>", m.start())
+                if e < 0 or m.start() < pos:
+                    continue
+                e += len("</hp:fieldBegin></hp:ctrl>")
+                endm = re.match(r'<hp:ctrl><hp:fieldEnd\b[^>]*\bbeginIDRef="%s"[^>]*/></hp:ctrl>' % fid, x[e:])
+                if not endm:
+                    continue          # 누름틀 안에 글이 있다(비어 있지 않음)
+                body = x[m.start():e]
+                d = re.search(r'<hp:stringParam name="Direction">([^<]*)</hp:stringParam>', body)
+                if d:
+                    guide = d.group(1)
+                else:
+                    c = re.search(r'Direction:wstring:(\d+):', body)
+                    if not c:
+                        continue
+                    raw = html.unescape(body[c.end():body.find("<", c.end())])[:int(c.group(1))]
+                    guide = html.escape(raw, quote=False)
+                if not guide.strip():
+                    continue
+                rs = x.rfind("<hp:run ", 0, m.start())
+                rc = re.match(r'<hp:run charPrIDRef="(\d+)"', x[rs:]) if rs >= 0 else None
+                if not rc:
+                    continue
+                cid = rc.group(1); gid = guide_cp(cid)
+                if gid is None:
+                    continue
+                out.append(x[pos:e])
+                out.append(f'</hp:run><hp:run charPrIDRef="{gid}"><hp:t>{guide}</hp:t></hp:run><hp:run charPrIDRef="{cid}">')
+                pos = e; total[0] += 1; touched.append(e)
+            out.append(x[pos:])
+            y = "".join(out)
+            if touched:
+                # 글을 넣은 문단(자기 줄 배치만, 안쪽 표 문단 제외)의 줄 배치 저장값을 지운다 — 한글이 열 때 다시 계산
+                marks = [m2.end() for m2 in re.finditer(r'<hp:run charPrIDRef="(?:%s)"><hp:t>' % "|".join(made.values()), y)]
+                cut = []
+                for st in marks:
+                    depth = 0
+                    for t in re.finditer(r'<hp:p\b|</hp:p>|<hp:linesegarray>.*?</hp:linesegarray>', y[st:], re.S):
+                        g = t.group(0)
+                        if g.startswith("<hp:p"):
+                            depth += 1
+                        elif g == "</hp:p>":
+                            if depth == 0:
+                                break
+                            depth -= 1
+                        elif depth == 0:
+                            cut.append((st + t.start(), st + t.end())); break
+                for a, b in sorted(set(cut), reverse=True):
+                    y = y[:a] + y[b:]
+            return y
+        new = {n: fix_sec(t) for n, t in texts.items()}
+        if not total[0]:
+            return 0
+        hd2 = hd.replace(cnt_m.group(0), f'<hh:charProperties itemCnt="{nxt[0]}">', 1)
+        hd2 = hd2.replace("</hh:charProperties>", "".join(newdefs) + "</hh:charProperties>", 1)
+        _rewrite_parts(dst, lambda n, x: hd2 if n == "Contents/header.xml" else new.get(n, x), names_re=r"Contents/(header|section\d+)\.xml")
+        return total[0]
+    except Exception as _e:
+        ERRORS.append(f"clickguide {type(_e).__name__}: {str(_e)[:80]}")
+        return 0
+
+
+
+def _hwp5_tables(src):
+    """원본 HWP5 본문의 표를 문서 순서대로: [(행, 열, 표 폭, 표 높이, [(행, 열, 행합침, 열합침, 칸 폭, 칸 높이)…])]. 읽지 못하면 None."""
+    import struct, zlib
+    try:
+        import olefile
+        o = olefile.OleFileIO(src)
+    except Exception:
+        return None
+    try:
+        fh = o.openstream("FileHeader").read()
+        flags = struct.unpack_from("<I", fh, 36)[0]
+        if flags & 0x2 or flags & 0x4:          # 암호·배포용은 건드리지 않는다
+            return None
+        comp = flags & 1
+        names = sorted([e for e in o.listdir() if e[0] == "BodyText"], key=lambda e: int(e[1][7:] or 0))
+        out = []
+        for e in names:
+            d = o.openstream(e).read()
+            if comp:
+                d = zlib.decompress(d, -15)
+            i = 0; pend = None; cur = None
+            while i + 4 <= len(d):
+                h = struct.unpack_from("<I", d, i)[0]; i += 4
+                tag, lvl, sz = h & 0x3FF, (h >> 10) & 0x3FF, h >> 20
+                if sz == 0xFFF:
+                    sz = struct.unpack_from("<I", d, i)[0]; i += 4
+                r = d[i:i + sz]; i += sz
+                if tag == 71 and len(r) >= 24 and r[:4] == b" lbt":
+                    pend = struct.unpack_from("<II", r, 16)          # 표 공통 속성의 폭·높이
+                elif tag == 77 and len(r) >= 8:
+                    rows, cols = struct.unpack_from("<HH", r, 4)
+                    cur = [rows, cols, pend[0] if pend else None, pend[1] if pend else None, [], lvl]
+                    out.append(cur); pend = None
+                elif tag == 72 and cur is not None and lvl == cur[5] and len(r) >= 24:
+                    col, row, cs, rs, w, hh = struct.unpack_from("<HHHHII", r, 8)
+                    cur[4].append((row, col, rs, cs, w, hh))
+        return [t[:5] for t in out]
+    except Exception:
+        return None
+    finally:
+        o.close()
+
+
+def _restore_table_geometry(src, dst):
+    """C128(5차, 끄려면 HWPAI_TBLGEO=0): 4차 F1(엔진)이 적용되지 않은 표가 남았다(대량 표본 36f8c125a60a·f2101e7223e3·f5140182e12f:
+    표 구조·칸 값은 원본과 같은데 표 높이만 rhwp 측정값 68,595·63,865 — 원본·한글 66,528·62,832). 엔진 안 어느 조건에서 빠졌는지는
+    디버그 빌드 없이 확인하지 못했다(F1 은 「편집되지 않은 구역」 조건을 둔다). hwpai 는 변환만 하므로(편집 없음) 변환본의 표를 원본 HWP 레코드와
+    문서 순서대로 짝지어, 모든 표의 행·열·칸 위치·합침이 같을 때만 표 sz·칸 cellSz 를 원본 선언값으로 맞춘다. 원본 값이 0 이거나
+    음수면 건드리지 않는다(C125·엔진이 처리). 고친 값 수를 돌려준다."""
+    import re, zipfile
+    raw = _hwp5_tables(src)
+    if not raw:
+        return 0
+    try:
+        zin = zipfile.ZipFile(dst)
+        secs = sorted([n for n in zin.namelist() if re.fullmatch(r"Contents/section\d+\.xml", n)], key=lambda n: int(re.findall(r"\d+", n)[-1]))
+        texts = {n: zin.read(n).decode("utf-8") for n in secs}
+        zin.close()
+        sane = lambda v: v is not None and 0 < v <= 0x7FFFFFFF
+        # 변환본 표를 문서 순서대로: (파일, 표 시작, sz 위치, [칸 cellSz 위치·값])
+        tbls = []
+        for n in secs:
+            x = texts[n]; stack = []
+            for m in re.finditer(r'<hp:tbl\b[^>]*\browCnt="(\d+)"[^>]*\bcolCnt="(\d+)"[^>]*>|</hp:tbl>|<hp:sz width="(\d+)"([^>]*?)height="(\d+)"([^>]*)/>|<hp:cellAddr colAddr="(\d+)" rowAddr="(\d+)"/><hp:cellSpan colSpan="(\d+)" rowSpan="(\d+)"/><hp:cellSz width="(\d+)" height="(\d+)"/>', x):
+                g = m.group(0)
+                if g.startswith("<hp:tbl"):
+                    t = {"file": n, "rows": int(m.group(1)), "cols": int(m.group(2)), "sz": None, "cells": []}
+                    tbls.append(t); stack.append(t)
+                elif g == "</hp:tbl>":
+                    stack.pop() if stack else None
+                elif g.startswith("<hp:sz") and stack and stack[-1]["sz"] is None and not stack[-1]["cells"]:
+                    stack[-1]["sz"] = (m.start(), m.end(), int(m.group(3)), m.group(4), int(m.group(5)), m.group(6))
+                elif g.startswith("<hp:cellAddr") and stack:
+                    stack[-1]["cells"].append((m.start(), m.end(), int(m.group(8)), int(m.group(7)), int(m.group(10)), int(m.group(9)), int(m.group(11)), int(m.group(12))))
+        if len(tbls) != len(raw):
+            return 0
+        for t, r in zip(tbls, raw):
+            if (t["rows"], t["cols"]) != (r[0], r[1]) or len(t["cells"]) != len(r[4]) or t["sz"] is None:
+                return 0
+            if any((c[2], c[3], c[4], c[5]) != (q[0], q[1], q[2], q[3]) for c, q in zip(t["cells"], r[4])):
+                return 0
+        edits = {n: [] for n in secs}; k = 0
+        for t, r in zip(tbls, raw):
+            s0, e0, w, mid, h, tail = t["sz"]
+            nw = r[2] if sane(r[2]) else w; nh = r[3] if sane(r[3]) else h
+            if (nw, nh) != (w, h):
+                edits[t["file"]].append((s0, e0, f'<hp:sz width="{nw}"{mid}height="{nh}"{tail}/>')); k += 1
+            for c, q in zip(t["cells"], r[4]):
+                cw = q[4] if sane(q[4]) else c[6]; ch = q[5] if sane(q[5]) else c[7]
+                if (cw, ch) != (c[6], c[7]):
+                    seg = texts[t["file"]][c[0]:c[1]]
+                    seg2 = re.sub(r'<hp:cellSz width="\d+" height="\d+"/>', f'<hp:cellSz width="{cw}" height="{ch}"/>', seg)
+                    edits[t["file"]].append((c[0], c[1], seg2)); k += 1
+        if not k:
+            return 0
+        new = {}
+        for n, ed in edits.items():
+            if not ed:
+                continue
+            x = texts[n]
+            for a, b, rep in sorted(ed, reverse=True):
+                x = x[:a] + rep + x[b:]
+            new[n] = x
+        _rewrite_parts(dst, lambda n, x: new.get(n, x), names_re=r"Contents/section\d+\.xml")
+        return k
+    except Exception as _e:
+        ERRORS.append(f"tblgeo {type(_e).__name__}: {str(_e)[:80]}")
+        return 0
+
+
+
 def apply_all(src, dst):
     """뒤처리를 정해진 순서로 모두 적용하고 사용자에게 보여 줄 알림 목록을 돌려준다(데스크톱 엔진 래퍼·웹 시험판 공통)."""
     notes = []
@@ -1388,6 +1950,23 @@ def apply_all(src, dst):
     n = _fix_compose(dst)
     if n:
         notes.append(f"글자 겹치기 {n}곳의 모양 값을 한컴 저장 값과 맞춤(C102)")
+    if os.environ.get("HWPAI_TBLGEO", "1") == "1":
+        n = _restore_table_geometry(src, dst)
+        if n:
+            notes.append(f"표·칸 크기 {n}곳을 원본 선언값으로 맞춤(C128, 엔진이 편집 구역으로 본 문서)")
+    if os.environ.get("HWPAI_FONTKO", "1") == "1":
+        n = _fix_font_local_names(dst, src)
+        if n:
+            notes.append(f"글꼴 이름 {n}개를 한글이 쓰는 한국어 이름으로 맞춤(C124)")
+    for env, fn, msg in (("HWPAI_CURSZ", _fix_cur_size_zero, "개체 {n}개의 현재 크기를 한글 표기(원래 크기와 같은 차원은 0)로 맞춤(C122)"),
+                         ("HWPAI_OLECHART", _fix_ole_chart, "차트 OLE {n}개에 한글과 같은 차트(hp:chart, Chart/chartN.xml)를 함께 실음(C123)"),
+                         ("HWPAI_CELLHNEG", _fix_negative_cell_height, "원본 칸 높이 손상값(음수) {n}곳을 한글과 같게 안쪽 여백 합으로 맞춤(C125)"),
+                         ("HWPAI_CLICKGUIDE", _fix_clickhere_guide, "빈 누름틀 {n}개에 한글과 같게 안내문을 빨간 기울임 글로 넣음(C127)"),
+                         ("HWPAI_SECSPLIT", _split_sections, "구역 정의마다 구역 파일을 나눔(늘어난 구역 {n}개, C126)")):
+        if os.environ.get(env, "1") == "1":
+            n = fn(dst)
+            if n:
+                notes.append(msg.format(n=n))
     n = _drop_dangling_manifest(dst)
     if n:
         notes.append(f"파일도 참조도 없는 그림 목록 항목 {n}개를 지움(C103)")

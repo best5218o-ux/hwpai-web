@@ -74,9 +74,13 @@ class Image:
 class Equation:
     script: str
     kind: str = "equation"
+    caption: str = ""        # 결선 보완 B1: 수식 캡션(「수식 1 A」 등) — 이전 판은 읽지 않아 손실을 놓쳤다
 
     def to_dict(self):
-        return {"type": "equation", "script": self.script}
+        d = {"type": "equation", "script": self.script}
+        if self.caption:
+            d["caption"] = self.caption
+        return d
 
 
 @dataclass

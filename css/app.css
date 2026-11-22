@@ -97,3 +97,26 @@ mark.cur{outline:3px solid var(--acc)}mark.dsens{background:rgba(211,47,47,.2)}m
  .drop{padding:18px 10px}
  .btn{flex:1 1 auto}
 }
+
+/* 큰 글씨(남녀노소 누구나): 화면 배율 — 위쪽 「글자 크기」 단추(크게 1.25·더 크게 1.5·아주 크게 1.8). 기본 크게 */
+html{--z:1.25}
+body{zoom:var(--z)}
+.btn,button,select,input[type=number],input[type=password]{min-height:44px}
+.fsz{display:flex;gap:6px;align-items:center;margin-top:8px}
+.fsz>span{font-weight:700;font-size:14px}
+.fsz button{min-height:0;padding:6px 14px;border-radius:999px;border:1px solid var(--bd);background:var(--card);color:var(--fg);cursor:pointer;font:inherit;font-weight:700}
+.fsz button.on{background:var(--acc);color:var(--acc-fg);border-color:var(--acc)}
+
+.btn.big{font-size:18px;padding:12px 26px;min-height:54px}
+.more{margin-top:8px}.more>summary{cursor:pointer;font-weight:700;padding:6px 0}
+.help>summary{cursor:pointer}
+.privacy small{display:block;margin-top:2px}
+.fpbox{background:color-mix(in srgb,var(--acc) 8%,var(--card));border-radius:10px;padding:10px 12px}
+.fpbox code{font-size:15px}
+.kv.big dd{font-size:16px}
+td .mut{display:block;font-size:12px}
+.tag{font-size:14px;padding:4px 10px}
+.engine.ready .bar,.engine.ready .mut{display:none}.engine.ready{padding:8px 14px}
+
+.plain h3{margin:14px 0 6px;font-size:17px}.plain ol,.plain ul{padding-left:22px}.plain li{margin:6px 0;line-height:1.6}
+.cmp{width:100%;border-collapse:collapse}.cmp th,.cmp td{border-bottom:1px solid var(--bd);padding:6px 8px;text-align:left}

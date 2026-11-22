@@ -171,6 +171,14 @@ class RhwpWasmEngine(Engine):
         return self.convert(None, dst, timeout=timeout, op="empty", text=text)
 
     def convert(self, src, dst, timeout=120.0, password=None, op=None, text=None):
+        r = self._convert_inner(src, dst, timeout, password, op, text)
+        if r.get("ok") and src and op is None:
+            notes = apply_all(src, dst)
+            if notes:
+                r["notes"] = list(r.get("notes") or []) + notes
+        return r
+
+    def _convert_inner(self, src, dst, timeout=120.0, password=None, op=None, text=None):
         """일꾼이 중간에 죽으면(메모리 압박 등 일시적 원인일 수 있다) 새 일꾼으로 한 번만 다시 시도한다. 시간 초과·엔진 오류는 다시 시도하지 않는다."""
         r = self._convert_once(src, dst, timeout, password, op, text)
         if not r.get("ok") and r.get("kind") == "crash" and src:
@@ -179,6 +187,16 @@ class RhwpWasmEngine(Engine):
             if r2.get("ok"):
                 return r2
             r["retried_after_crash"] = True
+        if not r.get("ok") and r.get("kind") == "timeout" and src and op is None and timeout < 600:
+            # C84: 큰 표 하나가 문서를 이루는 등 정상이지만 오래 걸리는 문서가 있다. 시간 초과는 한 번만 3배 시간(최대 900초)으로 다시 한다.
+            t2 = min(timeout * 3, 900.0)
+            r2 = self._convert_once(src, dst, t2, password, op, text)
+            r2["retried_after_timeout"] = f"{timeout:.0f}초 초과 후 {t2:.0f}초로 재시도"
+            return r2
+        if not r.get("ok") and r.get("kind") == "engine_error" and src and "FORM_ACTION_INVALID" in str(r.get("error")):
+            r3 = _retry_without_empty_script(self, src, dst, timeout, password)
+            if r3 is not None:
+                return r3
         return r
 
     def _convert_once(self, src, dst, timeout=120.0, password=None, op=None, text=None):
@@ -272,6 +290,53 @@ class RhwpCliEngine(Engine):
             return {"ok": False, "error": (p.stderr or p.stdout)[-400:], "kind": "engine_error", "ms": ms}
         os.replace(part, dst)
         return {"ok": True, "ms": ms, "bytes": os.path.getsize(dst), "loss": None}
+
+
+
+def _retry_without_empty_script(eng, src, dst, timeout, password):
+    """C83: 압축 비트가 꺼진 HWP 에 비어 있는 스크립트가 압축형으로 들어 있는 옛 저장본은 엔진이 스크립트 스트림을 못 읽어 변환을 거부한다.
+    스크립트 내용이 비어 있음(0x00·0xFF 뿐)을 직접 확인한 경우에만, 같은 길이의 빈 스크립트로 바꾼 임시 사본으로 한 번 다시 변환한다.
+    내용이 있는 스크립트는 건드리지 않는다(변환 실패로 둔다). 원본 파일은 바꾸지 않는다."""
+    import shutil, tempfile, zlib
+    try:
+        import olefile
+    except Exception:
+        return None
+    tmpd = tempfile.mkdtemp(prefix="hwpai_scr_")
+    try:
+        cp = os.path.join(tmpd, "c.hwp")
+        shutil.copyfile(src, cp)
+        o = olefile.OleFileIO(cp, write_mode=True)
+        try:
+            if not o.exists("Scripts/DefaultJScript"):
+                return None
+            fh = o.openstream("FileHeader").read()
+            if len(fh) < 40 or (int.from_bytes(fh[36:40], "little") & 1):
+                return None  # 압축 파일은 이 경로가 아니다
+            b = o.openstream("Scripts/DefaultJScript").read()
+            if len(b) % 2:
+                return None
+            try:
+                raw = zlib.decompress(b, -15)
+            except Exception:
+                return None
+            if not raw or any(x not in (0x00, 0xFF) for x in raw):
+                return None
+            o.write_stream("Scripts/DefaultJScript", b"\x00" * len(b))
+        finally:
+            o.close()
+        r = eng._convert_once(cp, dst, timeout, password)
+        if r.get("ok"):
+            r["notes"] = list(r.get("notes") or []) + ["빈 스크립트 스트림(형식 불일치)을 같은 길이의 빈 스크립트로 바꿔 변환(내용 손실 없음)"]
+        return r
+    except Exception:
+        return None
+    finally:
+        shutil.rmtree(tmpd, ignore_errors=True)
+
+
+from ..postfix import (apply_all, _restore_extensionless_images, _restore_symbol_codepoints, _fix_note_autonum,  # noqa: E402  (뒤처리는 postfix.py 로 옮김)
+                       _fix_revision_sign_field, _fix_last_page_number_pos)
 
 
 def _rm(p):

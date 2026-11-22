@@ -40,7 +40,7 @@ def _flat_text(blocks, sep: str, nested_ref: bool = True) -> str:
         elif isinstance(b, Image):
             parts.append(f"[그림:{b.name}]" + (f" {b.caption}" if b.caption else ""))
         elif isinstance(b, Equation):
-            parts.append(f"${b.script}$")
+            parts.append(f"${b.script}$" + (f" {b.caption}" if b.caption else ""))
         elif isinstance(b, Note):
             parts.append(f"[^{b.number}]")
         elif isinstance(b, TextBox):
@@ -133,6 +133,8 @@ def to_markdown(doc: Document, with_headerfooter: bool = True) -> str:
                 out.append(f"![{alt}](images/{b.name})")
             elif isinstance(b, Equation):
                 out.append(f"$$ {b.script} $$")
+                if b.caption:   # 결선 보완 B1: 수식 캡션
+                    out.append(b.caption)
             elif isinstance(b, Note):
                 txt = _flat_text(b.blocks, " ")
                 tag = f"[^{b.number}]" if b.kind == "footnote" else f"[^미{b.number}]"
@@ -174,8 +176,9 @@ def squash_latent_rows(t: Table) -> tuple:
     return dataclasses.replace(t, nrows=t.nrows - len(latent), cells=cells), len(latent)
 
 
-def plain_text(doc: Document) -> str:
-    """서식 표시 없는 순수 글 (평가용). 표는 행 단위로 칸을 탭으로 이어 붙인다."""
+def plain_text(doc: Document, with_hf: bool = False) -> str:
+    """서식 표시 없는 순수 글 (평가용). 표는 행 단위로 칸을 탭으로 이어 붙인다.
+    with_hf=True 이면 머리말·꼬리말 글도 넣는다(결선 보완 B3: 검증서는 머리말·꼬리말 손실도 글 대조로 본다)."""
     out: list[str] = []
 
     def emit(blocks):
@@ -186,13 +189,18 @@ def plain_text(doc: Document) -> str:
                 for row in grid_of(squash_latent_rows(b)[0], " "):
                     out.append("\t".join(row))
                 for c in b.cells:
-                    emit([x for x in c.blocks if (isinstance(x, Table) and not is_tag_table(x)) or isinstance(x, Note)])
+                    emit([x for x in c.blocks if (isinstance(x, Table) and not is_tag_table(x)) or isinstance(x, Note)
+                          or (with_hf and isinstance(x, HeaderFooter))])   # B3: 표 칸 문단에 붙은 머리말·꼬리말
             elif isinstance(b, (Note, TextBox)):
                 emit(b.blocks)
             elif isinstance(b, Equation):
                 out.append(b.script)
+                if b.caption:   # 결선 보완 B1: 수식 캡션도 검증 대상 글에 넣는다
+                    out.append(b.caption)
             elif isinstance(b, Image) and b.caption:
                 out.append(b.caption)
+            elif with_hf and isinstance(b, HeaderFooter):
+                emit(b.blocks)
 
     emit(doc.blocks)
     return "\n".join(out)
@@ -325,7 +333,7 @@ def to_chunks(doc: Document, max_chars: int = 1500) -> list[dict]:
                     if nt:
                         walk(nt)
             elif isinstance(b, Equation):
-                add_text(f"$$ {b.script} $$")
+                add_text(f"$$ {b.script} $$" + (f" {b.caption}" if b.caption else ""))
             elif isinstance(b, Image):
                 add_text(f"[그림:{b.name}]" + (f" {b.caption}" if b.caption else ""))
 

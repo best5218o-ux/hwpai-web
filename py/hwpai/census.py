@@ -280,7 +280,9 @@ def compare(hw: dict, hx: dict) -> dict:
     unk = sum(v for k, v in hw["개수"].items() if k.startswith("그리기:"))
     pa, pb = out.get("그림", (0, 0)), out.get("사각형", (0, 0))
     ta, tb = pa[0] + pb[0] + unk, pa[1] + pb[1]
-    if ta == tb and (pa[0] != pa[1] or pb[0] != pb[1] or unk):
+    # 결선 보완 B9: 엔진이 그림 채운 사각형을 더는 그림으로 바꾸지 않으므로(한글 저장본과 같이 rect 유지) 종류별로 비교하고,
+    #      원본에 종류 미분류 개체가 있을 때만 합계로 비교한다.
+    if ta == tb and unk:
         out.pop("그림", None); out.pop("사각형", None)
         # 원본 「그리기:*」(종류를 못 읽은 개체)가 합계에 들어갔으면 이름에 표시한다 — 이 경우는 개수 합계만 확인한 것(독립 검수 2026-11-10)
         out["그림·사각형(합" + (", 원본 종류 미분류 포함)" if unk else ")")] = (ta, tb)

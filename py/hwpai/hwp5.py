@@ -340,6 +340,10 @@ class SectionParser:
                     k, ke = ctrls[nctrl]
                     nctrl += 1
                     inline, blocks, splits = self.ctrl(k, ke)
+                    if not inline and self.st.get("autonum_mark") and pos < len(s) and ord(s[pos]) == 4:
+                        # 5차(C127 짝, 검증서 판독일 때만): 빈 누름틀은 한글 HWPX 처럼 안내문을 글로 본다.
+                        # 일반 읽기(read·convert)는 종전대로 안내문을 글로 내지 않는다.
+                        inline = self._clickhere_guide(k)
                     if inline:
                         buf.append(inline)
                     if splits:          # 표·도형은 블록 단위 — 내용이 비어도 문단을 끊는다
@@ -361,6 +365,16 @@ class SectionParser:
         out.extend(trailing)
         return out
 
+    def _clickhere_guide(self, k: int) -> str:
+        """누름틀(%clk) 컨트롤의 안내문(Direction). 아니면 빈 글. 한글 2024 는 빈 누름틀을 HWPX 로 저장할 때 안내문을 글로 넣는다(뒤처리 C127)."""
+        pl = self.pl[k]
+        if bytes(pl[:4][::-1]) != b"%clk" or len(pl) < 11:
+            return ""
+        n = struct.unpack_from("<H", pl, 9)[0]
+        cmd = bytes(pl[11:11 + 2 * n]).decode("utf-16-le", "replace")
+        m = re.search(r"Direction:wstring:(\d+):", cmd)
+        return cmd[m.end():m.end() + int(m.group(1))] if m else ""
+
     # ---- 컨트롤 하나 → (본문에 끼울 글, 블록들, 문단을 끊는가) ----
     def ctrl(self, k: int, ke: int):
         cid = bytes(self.pl[k][:4][::-1]).decode("latin1")
@@ -369,13 +383,27 @@ class SectionParser:
         if cid == "gso ":
             return "", self.shape(k, ke), True
         if cid == "eqed":
-            for m in range(k + 1, ke):
-                if self.tag[m] == T_EQEDIT:
+            # 결선 보완 B1: 수식 컨트롤 바로 아래 LIST_HEADER + 형제 문단 = 수식 캡션(표 캡션과 같은 구조).
+            # 이전 판은 EQEDIT 스크립트만 읽어 캡션이 변환에서 빠져도 검증서가 알 수 없었다.
+            L1 = self.lv[k] + 1
+            cap: list[str] = []
+            script = None
+            m = k + 1
+            while m < ke:
+                if self.lv[m] == L1 and self.tag[m] == T_LIST_HEADER:
+                    blocks, m = self.paras_from(m + 1, ke, L1)
+                    cap.extend(b.text for b in blocks if isinstance(b, Paragraph))
+                    continue
+                if self.tag[m] == T_EQEDIT and script is None:
                     pl = self.pl[m]
                     if len(pl) >= 6:
                         ln = struct.unpack_from("<H", pl, 4)[0]
                         script = pl[6:6 + ln * 2].decode("utf-16-le", "replace").strip()
-                        return "", [Equation(script)], True
+                m += 1
+            if script is not None:
+                return "", [Equation(script, caption=" ".join(cap).strip())], True
+            if cap:
+                return "", [Paragraph(" ".join(cap).strip())], True
             return "", [], False
         if cid in ("fn  ", "en  "):
             kind = "footnote" if cid == "fn  " else "endnote"
@@ -448,53 +476,56 @@ class SectionParser:
         out: list = []
         caption = ""
         m = k + 1
-        images: list[Image] = []
-        texts: list = []
-        fill_bids: list[int] = []   # 사각형의 이미지 채우기 (rhwp 는 hp:pic 으로 변환)
-        saw_rect = False
-        saw_pic = False
+        # 결선 보완 3차(C3-1): 묶음 안 그림·글상자를 레코드 순서대로 둔다. 종전엔 그림을 모두 앞에, 글상자를 모두 뒤에 모아
+        # 변환본(HWPX 판독기는 문서 순서)·한글 저장본과 순서가 달라졌고, 여러 글상자가 한 「빠짐」 구간으로 묶여
+        # 거짓 TEXT_LOSS 가 났다(보류 표본 35c715135448: 그림+글상자 4쌍 묶음, 한글 2024 저장본도 같은 FAIL).
+        seq: list = []              # Image·TextBox 를 레코드 순서대로
+        comp_pos = 0                # 바로 앞 SHAPE_COMPONENT 가 시작된 seq 위치 — 사각형 채우기 그림은 자기 글상자 앞에 둔다(HWPX 판독기 순서)
+        fill_bids: list[int] = []   # 사각형의 이미지 채우기 (한글 저장 HWPX 는 hp:rect + hc:imgBrush)
+        pending_fill = None         # 바로 앞 SHAPE_COMPONENT 의 이미지 채우기 — 그 개체가 사각형일 때만 센다
         while m < ke:
             tg = self.tag[m]
             if tg == T_SHAPE_COMP:
-                bid = _fill_image_bin_id(self.pl[m])
-                if bid is not None:
-                    fill_bids.append(bid)
+                pending_fill = _fill_image_bin_id(self.pl[m])
+                comp_pos = len(seq)
                 m += 1
             elif tg == T_SHAPE_RECT:
-                saw_rect = True
+                # 결선 보완 B9: 개체마다 자기 채우기를 짝지어 센다. 종전엔 「묶음 안에 그림이 하나라도 있으면」 사각형 채우기를
+                # 통째로 버려, 그림과 그림 채운 사각형이 섞인 묶음(보류 표본 57016638e064)에서 원본 그림 수를 적게 셌다.
+                if pending_fill is not None:
+                    fill_bids.append(pending_fill)
+                    seq.insert(comp_pos, Image(self.st["bin_names"].get(pending_fill, f"BIN{pending_fill:04X}")))
+                pending_fill = None
                 m += 1
             elif tg == T_LIST_HEADER:
                 blocks, m2 = self.paras_from(m + 1, ke, self.lv[m])
                 if self.lv[m] == L1:   # 도형 바로 아래 = 캡션
                     caption = " ".join(b.text for b in blocks if isinstance(b, Paragraph)).strip()
                 else:                  # 도형 안쪽 = 글상자 내용
-                    texts.append(TextBox(blocks))
+                    seq.append(TextBox(blocks))
                 m = m2
             elif tg == T_PICTURE:
-                saw_pic = True
+                pending_fill = None
                 pl = self.pl[m]
                 if len(pl) >= 73:
                     bid = struct.unpack_from("<H", pl, 71)[0]
-                    images.append(Image(self.st["bin_names"].get(bid, f"BIN{bid:04X}")))
+                    seq.append(Image(self.st["bin_names"].get(bid, f"BIN{bid:04X}")))
                 m += 1
             elif tg == T_OLE:  # 속성(4) extentX(4) extentY(4) BinData ID(2)
                 pl = self.pl[m]
                 if len(pl) >= 14:
                     bid = struct.unpack_from("<H", pl, 12)[0]
-                    images.append(Image(self.st["bin_names"].get(bid, f"BIN{bid:04X}")))
+                    seq.append(Image(self.st["bin_names"].get(bid, f"BIN{bid:04X}")))
                 m += 1
             else:
                 m += 1
-        # 사각형에 이미지 채우기가 있고 별도 그림 개체가 없으면 그 채우기 이미지를 그림으로 센다
-        if fill_bids and saw_rect and not saw_pic and not images:
-            for bid in fill_bids:
-                images.append(Image(self.st["bin_names"].get(bid, f"BIN{bid:04X}")))
+        # 사각형의 이미지 채우기도 그림으로 센다(HWPX 판독기의 rect imgBrush 계산과 같은 기준)
+        images = [b for b in seq if isinstance(b, Image)]
         for im in images:
             im.caption = caption
-        out.extend(images)
         if caption and not images:
             out.append(Paragraph(caption))
-        out.extend(texts)
+        out.extend(seq)
         return out
 
 

@@ -40,15 +40,28 @@ from .engines import EngineMissing, get_engine
 
 COLUMNS = ["순번", "원본", "원본_SHA256", "원본_크기", "원본_형식", "특성", "상태", "엔진", "엔진_판",
            "변환_소요ms", "변환본", "변환본_SHA256", "변환본_크기", "엔진_손실보고", "검증점수", "판정",
-           "판정_이유", "검증서", "처리시각", "민감정보", "민감정보_항목"]
+           "판정_이유", "검증서", "처리시각", "민감정보", "민감정보_항목", "제자리교체", "보관위치", "삭제예정일"]
 STATUS_DONE, STATUS_SKIP, STATUS_FAIL, STATUS_QUAR = "변환완료", "건너뜀", "변환실패", "격리"
 SRC_EXT = (".hwp", ".hwpx")
 OUT_SUFFIX = "_hwpx변환"  # 결과 폴더 = 〈원본 폴더〉_hwpx변환 (원본 폴더 밖)
 
 
-def default_out(path: str) -> str:
+def outside_out(path: str, suffix: str) -> str:
+    """결선 보완 B6: 기본 결과 위치 = 〈입력 폴더〉+suffix — 입력 폴더 「밖」(공고 개발 규칙: 투입 원본은 읽기 전용,
+    산출물은 별도 위치). 폴더를 넣으면 그 폴더 옆, 파일을 넣으면 그 파일이 든 폴더 옆이다.
+    이전 판은 파일 하나를 넣으면 결과 폴더를 그 파일 옆(입력 폴더 안)에 만들었다(read·convert 파일·export).
+    드라이브 맨 위처럼 상위 폴더가 없을 때만 예전처럼 파일 옆에 둔다."""
     p = os.path.abspath(path)
-    return (os.path.splitext(p)[0] if os.path.isfile(p) else p.rstrip("/\\")) + OUT_SUFFIX
+    if not os.path.isfile(p):
+        return p.rstrip("/\\") + suffix
+    parent = os.path.dirname(p)
+    if os.path.dirname(parent) == parent:
+        return os.path.splitext(p)[0] + suffix
+    return parent + suffix
+
+
+def default_out(path: str) -> str:
+    return outside_out(path, OUT_SUFFIX)
 
 
 def sha256_file(path: str) -> str:
@@ -147,11 +160,16 @@ class BatchConverter:
                  jobs: int = 1, password: str | None = None, password_file: str | None = None,
                  verify: bool = True, quarantine_copy: bool = True, include_hwpx: bool = False,
                  retry_failed: bool = False, reverify: bool = False, log=print, on_row=None, gate=None,
-                 only: list | None = None, files: list | None = None):
+                 only: list | None = None, files: list | None = None, settle=None):
+        self.settle = settle  # settle.Settler — 제자리 교체·원본 보관(선택, 기본 없음)
         self.files = files  # 미리 구한 상대경로 목록(전체 변환용) — 없으면 폴더를 훑는다
         self.src = os.path.abspath(src)
         self.root = self.src if os.path.isdir(self.src) else os.path.dirname(self.src)
         self.outdir = os.path.abspath(outdir)
+        if settle is not None:  # 보관 폴더가 변환 대상 폴더 안이면 보관한 원본을 다시 변환하는 되먹임이 생긴다
+            a_, r_ = os.path.normcase(settle.archive), os.path.normcase(self.root)
+            if a_ == r_ or a_.startswith(r_.rstrip("\\/") + os.sep):
+                raise ValueError("보관 폴더(--archive)는 변환 대상 폴더 밖이어야 합니다")
         self.engine_pref = engine
         self.timeout = timeout
         self.jobs = max(1, jobs)
@@ -356,7 +374,14 @@ class BatchConverter:
                 kinds = sd.get("sens_kinds") or {}
                 row["민감정보_항목"] = ", ".join(f"{k} {v}" for k, v in kinds.items()) + (
                     f" (추정 비민감 {sd['sens_probably_ok']}건)" if sd.get("sens_probably_ok") else "")
-            if row.pop("_resumed", False):
+            resumed = row.pop("_resumed", False)
+            if self.settle is not None and row.get("상태") == STATUS_DONE:
+                upd = self.settle.settle(self.root, rel, self.outdir, row)
+                if upd:
+                    row.update(upd)
+                    if upd.get("제자리교체") == "완료":
+                        resumed = False  # 대장에 새로 적는다
+            if resumed:
                 stats["resumed"] += 1
             else:
                 row.pop("_total_ms", None)
@@ -450,7 +475,7 @@ def write_summary(outdir: str, s: dict, rows: list[dict]):
         f.write("\n".join(L) + "\n")
 
 
-def watch(src: str, outdir: str, interval: float = 30.0, rounds: int | None = None, log=print, **kw) -> int:
+def watch(src: str, outdir: str, interval: float = 30.0, rounds: int | None = None, log=print, auto_purge=None, **kw) -> int:
     """폴더 감시 자동 변환 — 주기마다 이어하기로 돌린다(새 파일·바뀐 파일만 엔진을 부른다).
     rounds 를 주면 그 횟수만 돌고 끝낸다(시험용). 처리한 새 파일 수 합계를 돌려준다."""
     import time as _t
@@ -459,6 +484,10 @@ def watch(src: str, outdir: str, interval: float = 30.0, rounds: int | None = No
     while rounds is None or n < rounds:
         n += 1
         s = BatchConverter(src, outdir, log=lambda *a, **k: None, **kw).run()
+        if auto_purge is not None:  # 선택: 보관 기한이 지난 원본을 매 주기 정리(조건 확인 후에만 삭제)
+            pr = auto_purge.purge(dry_run=False)
+            if pr["삭제"] or pr["보류"]:
+                log(f"[감시] 보관 기한 정리: 삭제 {pr['삭제']} · 보류 {pr['보류']}")
         new = s["files"] - s.get("resumed", 0)
         total_new += new
         if new:

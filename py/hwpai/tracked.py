@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from xml.sax.saxutils import escape
 
 _T_PARA_HEADER, _T_PARA_TEXT, _T_RANGE = 0x42, 0x43, 0x46
+_T_PARA_CS = 0x44
 _T_TRACK, _T_TRACK_AUTHOR = 0x60, 0x61
 _EXT = {1, 2, 3, 11, 12, 14, 15, 16, 17, 18, 21, 22, 23}   # 8 유닛 컨트롤
 _INL = {4, 5, 6, 7, 8, 9, 19, 20}
@@ -107,6 +108,7 @@ def read_tracked(src: str):
                     continue
                 text = b""
                 rng = b""
+                csb = b""
                 k = i + 1
                 while k < n and recs[k][1] > lv:
                     if recs[k][1] == lv + 1:
@@ -114,6 +116,8 @@ def read_tracked(src: str):
                             text = recs[k][2]
                         elif recs[k][0] == _T_RANGE:
                             rng = recs[k][2]
+                        elif recs[k][0] == _T_PARA_CS:
+                            csb = recs[k][2]
                     k += 1
                 if not text and rng:
                     # C105: 빈 문단은 PARA_TEXT 레코드가 없지만 문단 끝(나눔) 글자 하나를 가진다(범위 표식 [0,1)).
@@ -121,6 +125,10 @@ def read_tracked(src: str):
                     text = b"\r\x00"
                 pp = _para(text, rng, defs)
                 pp["lv"] = lv
+                # 5차(C129): 글자 모양 구간(유닛 위치 → 글자 위치). 숨김 삭제 글을 원래 글자 모양으로 싣는 데 쓴다.
+                u2c = pp.get("u2c") or []
+                pp["cs"] = [(u2c[min(a, len(u2c) - 1)] if u2c else 0, sid)
+                            for a, sid in (struct.unpack_from("<II", csb, q) for q in range(0, len(csb) - 7, 8))]
                 paras.append(pp)
         return defs, authors, paras
     finally:
@@ -168,7 +176,11 @@ def _para(text: bytes, rng: bytes, defs):
             ch = "\n"
             plain = False
         elif c in _EXT or c in _INL:
-            plain = False
+            # 구역·단 정의(2)는 HWPX 에서 글(hp:t) 없이 따로 hp:ctrl 로만 나온다 — 보이는 글 대응에 끼어들지 않으므로
+            # 문단을 「복잡」으로 보지 않는다. 종전엔 단 정의가 든 제목 문단(보류 표본 0a606aa5243d)을 건너뛰어
+            # 숨김 삭제 글(「SE」·「 」」 등)이 변환본에서 빠졌다(결선 보완 B8).
+            if c != 2:
+                plain = False
             step = min(8, n - x)
             toks.append((x, "o", None))
         elif c < 32:
@@ -190,7 +202,7 @@ def _para(text: bytes, rng: bytes, defs):
     cmarks = [(u2c[a], u2c[min(b, n)], tc) for (a, b, tc) in marks]
     return {"text": "".join(vis), "full": "".join(full) if plain else None, "marks": cmarks if plain else [], "plain": plain, "n": n,
             "has_marks": bool(marks), "end_del": end_del, "toks": toks, "umarks": marks, "hid": hid,
-            "end_unit": n - 1 if n and units[n - 1] == 13 else n}
+            "end_unit": n - 1 if n and units[n - 1] == 13 else n, "u2c": u2c}
 
 
 def _group(hp):
@@ -211,15 +223,17 @@ def _group(hp):
             G.append(g[0])
             continue
         plain = all(x["plain"] for x in g)
-        full, marks, off = [], [], 0
+        full, marks, off, cs = [], [], 0, []
         for x in g:
             if plain:
                 for (a, b, tc) in x["marks"]:
                     marks.append((a + off, b + off, tc))
+                cs.extend((a + off, sid) for a, sid in x.get("cs", []))
                 full.append(x["full"])
                 off += len(x["full"])
         G.append({"text": "".join(x["text"] for x in g), "full": "".join(full) if plain else None, "marks": marks if plain else [],
-                  "plain": plain, "n": sum(x["n"] for x in g), "has_marks": any(x["has_marks"] for x in g), "merged": len(g)})
+                  "plain": plain, "n": sum(x["n"] for x in g), "has_marks": any(x["has_marks"] for x in g), "merged": len(g),
+                  "cs": cs if plain else []})
     return G
 
 
@@ -375,13 +389,55 @@ def apply(src: str, dst: str):
                 cur += 1
                 used = 0
         pend = ""
+        pend_at = [0]
+        cs = sorted(p.get("cs") or [])
+        sec_xml = xmls[xp[j]["sec"]]
+
+        def run_cp(t):
+            # 이 글 조각(hp:t)이 든 묶음(hp:run)의 글자 모양 번호
+            a = ts[t][0]
+            r0 = sec_xml.rfind("<hp:run ", 0, a)
+            m0 = re.match(r'<hp:run charPrIDRef="(\d+)"', sec_xml[r0:]) if r0 >= 0 else None
+            return m0.group(1) if m0 else None
+
+        def shape_at(u):
+            sid = None
+            for a, s_ in cs:
+                if a <= u:
+                    sid = s_
+                else:
+                    break
+            return sid
+
+        def xml_of(t_):
+            x = escape(t_).replace("\t", _TABXML)
+            for k, v in _SPECIAL_XML.items():
+                x = x.replace(k, v)
+            return x
+
         def flush():
             nonlocal pend, used
             if pend:
-                x = escape(pend).replace("\t", _TABXML)
-                for k, v in _SPECIAL_XML.items():
-                    x = x.replace(k, v)
-                emit(x)
+                # C129(5차): 숨김 삭제 글을 원본 ViewText 의 글자 모양 구간대로 나눠, 둘레 묶음과 다른 모양이면 그 모양의 묶음에 싣는다
+                # (한글 2024 저장본과 같은 표기 — 보류 표본 0a606aa5243d 지운 문단 15묶음). 종전엔 둘레 묶음 모양 하나로 실었다.
+                here = run_cp(cur) if cs else None
+                if not here:
+                    emit(xml_of(pend))
+                else:
+                    seg, segs, st = "", [], pend_at[0]
+                    last = shape_at(st)
+                    for q, ch_ in enumerate(pend):
+                        sid = shape_at(st + q)
+                        if sid != last and seg:
+                            segs.append((last, seg)); seg = ""
+                        last = sid; seg += ch_
+                    if seg:
+                        segs.append((last, seg))
+                    for sid, t_ in segs:
+                        if sid is None or str(sid) == here:
+                            emit(xml_of(t_))
+                        else:
+                            emit(f'</hp:t></hp:run><hp:run charPrIDRef="{sid}"><hp:t>{xml_of(t_)}</hp:t></hp:run><hp:run charPrIDRef="{here}"><hp:t>')
                 pend = ""
 
         def emit_visible():
@@ -408,6 +464,8 @@ def apply(src: str, dst: str):
                 break
             ch = full[u]
             if hidden[u]:
+                if not pend:
+                    pend_at[0] = u
                 pend += ch
             else:
                 if pend:

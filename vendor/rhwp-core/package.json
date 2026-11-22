@@ -1,7 +1,7 @@
 {
   "name": "@rhwp/core",
-  "version": "0.9.0-local.c100",
-  "description": "rhwp 로컬 빌드(변경 추적 숨김 반영, 그림 사각형 가드 포함). 원본 npm 배포본(0.8.7)과 다름",
+  "version": "0.9.0-local.c102",
+  "description": "rhwp 로컬 빌드 C102(C101 + 결선 4차 F1: HWP5 원본 표·칸 선언 크기를 HWPX 에 그대로 옮김). C101 = C100 + 결선 보완(수식 캡션 B1·표 개체 설명 B7·그림 채운 사각형 유지 B9). 원본 npm 배포본(0.8.7)과 다름",
   "type": "module",
   "main": "rhwp.js",
   "types": "rhwp.d.ts",

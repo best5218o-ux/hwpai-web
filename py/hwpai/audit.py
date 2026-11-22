@@ -35,7 +35,7 @@ from dataclasses import dataclass, field
 from .model import Equation, HeaderFooter, Image, Note, Paragraph, Table, TextBox, walk_tables
 from .render import grid_of, plain_text, squash_latent_rows as _squash_latent_rows
 
-AUDIT_VERSION = "1.1"
+AUDIT_VERSION = "1.2"   # 1.2: 결선 보완(수식 캡션·변이 시험으로 찾은 빈틈)
 TEXT_RECALL_FAIL = 0.98
 PRV_RECALL_WARN = 0.80
 
@@ -87,6 +87,40 @@ def recall_precision(ref: str, got: str) -> tuple[float, float]:
     return inter / max(sum(ga.values()), 1), inter / max(sum(gb.values()), 1)
 
 
+# ---------------------------------------------------------------- 차이 구간 (결선 보완 B5)
+_SM_DIRECT_LIMIT = 4_000_000   # 앞뒤 공통 부분을 뺀 가운데 길이의 곱이 이보다 크면 difflib 자동 잡음 처리를 켠다
+
+
+def _opcodes(a: list, b: list) -> list:
+    """difflib 의 get_opcodes 와 같은 결과 형식. 결선 보완 B5: 이전 판은 문단 수만큼의 목록 전체를
+    SequenceMatcher(autojunk=False)에 넣어, 같은 문단이 수만 번 되풀이되는 큰 문서(hwplib big_file.hwp:
+    대조 단위 131,072개·서로 다른 글 4종)에서 비교가 제곱 시간으로 늘어 검증이 수 분간 멈췄다.
+    앞뒤 공통 부분을 먼저 잘라 내고(같은 문서면 비교 0회) 가운데만 비교한다."""
+    n, m = len(a), len(b)
+    p = 0
+    while p < n and p < m and a[p] == b[p]:
+        p += 1
+    s = 0
+    while s < n - p and s < m - p and a[n - 1 - s] == b[m - 1 - s]:
+        s += 1
+    ops = []
+    if p:
+        ops.append(("equal", 0, p, 0, p))
+    ma, mb = a[p:n - s], b[p:m - s]
+    if ma or mb:
+        if not ma:
+            ops.append(("insert", p, p, p, m - s))
+        elif not mb:
+            ops.append(("delete", p, n - s, p, p))
+        else:
+            sm = difflib.SequenceMatcher(None, ma, mb, autojunk=len(ma) * len(mb) > _SM_DIRECT_LIMIT)
+            for op, i1, i2, j1, j2 in sm.get_opcodes():
+                ops.append((op, i1 + p, i2 + p, j1 + p, j2 + p))
+    if s:
+        ops.append(("equal", n - s, n, m - s, m))
+    return ops
+
+
 # ---------------------------------------------------------------- 문서 → 대조 단위
 def _units(doc) -> list[tuple[str, str]]:
     """표 밖의 글 단위(위치 이름, 글). 표 칸 글은 표 대조에서 따로 본다."""
@@ -102,7 +136,7 @@ def _units(doc) -> list[tuple[str, str]]:
                 if b.caption:
                     out.append((f"표{b.id} 캡션", b.caption))
                 for c in b.cells:
-                    emit([x for x in c.blocks if isinstance(x, (Note, TextBox))], f"표{b.id} 칸 안")
+                    emit([x for x in c.blocks if isinstance(x, (Note, TextBox, HeaderFooter))], f"표{b.id} 칸 안")
                     for x in c.blocks:
                         if isinstance(x, Table):
                             emit([x], where)
@@ -113,6 +147,8 @@ def _units(doc) -> list[tuple[str, str]]:
                 emit(b.blocks, f"{where}·글상자")
             elif isinstance(b, Equation):
                 out.append((f"{where} 수식", b.script))
+                if b.caption:   # 결선 보완 B1: 수식 캡션도 대조 단위 — 이전 판은 원본·변환본 모두 읽지 않았다
+                    out.append((f"{where} 수식 캡션", b.caption))
             elif isinstance(b, Image) and b.caption:
                 out.append((f"{where} 그림 캡션", b.caption))
             elif isinstance(b, HeaderFooter):
@@ -253,6 +289,329 @@ def _prv_recall(prv_raw: str, conv_text: str) -> float:
     return found / tot
 
 
+# ---------------------------------------------------------------- 컨트롤 목록 (결선 보완 B4)
+# 문서 모델(Paragraph·Table…)에 올라오지 않는 컨트롤 — 하이퍼링크·누름틀 등 필드, 쪽 번호, 숨은 설명, 책갈피,
+# 개체 설명(대체 텍스트) — 은 이전 판 검증서가 아예 대조하지 않았다(변이 시험에서 지워도 PASS).
+# 원본은 HWP5 레코드에서, 변환본은 HWPX XML 에서 각각 따로 읽어 개수·값을 맞춘다.
+_FIELD_TYPES = {"%hlk": "HYPERLINK", "%clk": "CLICK_HERE", "%fmu": "FORMULA", "%dte": "DATE", "%ddt": "DOC_DATE",
+                "%pat": "PATH", "%bmk": "BOOKMARK", "%mmg": "MAILMERGE", "%xrf": "CROSSREF", "%sum": "SUMMARY",
+                "%usr": "USER_INFO", "%cpr": "PRIVATE_INFO_SECURITY", "%toc": "TABLE_OF_CONTENTS"}
+_PAGE_POS = {1: "TOP_LEFT", 2: "TOP_CENTER", 3: "TOP_RIGHT", 4: "BOTTOM_LEFT", 5: "BOTTOM_CENTER", 6: "BOTTOM_RIGHT",
+             7: "OUTSIDE_TOP", 8: "OUTSIDE_BOTTOM", 9: "INSIDE_TOP", 10: "INSIDE_BOTTOM"}
+_PAGE_FMT = {0: "DIGIT", 1: "CIRCLED_DIGIT", 2: "ROMAN_CAPITAL", 3: "ROMAN_SMALL", 4: "LATIN_CAPITAL", 5: "LATIN_SMALL",
+             6: "CIRCLED_LATIN_CAPITAL", 7: "CIRCLED_LATIN_SMALL", 8: "HANGUL_SYLLABLE", 9: "CIRCLED_HANGUL_SYLLABLE",
+             10: "HANGUL_JAMO", 11: "CIRCLED_HANGUL_JAMO", 12: "HANGUL_PHONETIC", 13: "IDEOGRAPH", 14: "CIRCLED_IDEOGRAPH",
+             15: "DECAGON_CIRCLE", 16: "DECAGON_CIRCLE_HANJA", 128: "SYMBOL", 129: "USER_CHAR"}
+_FIELD_ALIAS = {"TABLEOFCONTENTS": "TABLE_OF_CONTENTS"}   # 변환 엔진의 표기(밑줄 없음)
+_FIELD_LABEL = {"HYPERLINK": "하이퍼링크", "CLICK_HERE": "누름틀", "FORMULA": "계산식", "DATE": "날짜", "DOC_DATE": "문서 날짜",
+                "PATH": "파일 경로", "BOOKMARK": "책갈피 필드", "MAILMERGE": "메일 머지", "CROSSREF": "상호 참조",
+                "SUMMARY": "문서 요약", "USER_INFO": "사용자 정보", "PRIVATE_INFO_SECURITY": "개인정보 보호",
+                "TABLE_OF_CONTENTS": "차례"}
+
+
+def _ws(s: str) -> str:
+    return _WS.sub(" ", (s or "").replace("\x00", "")).strip()
+
+
+def _hwp5_plain(b: bytes, H) -> str:
+    """PARA_TEXT → 글만(확장·인라인 컨트롤 8칸은 건너뛴다)."""
+    u = struct.unpack_from(f"<{len(b) // 2}H", b, 0)
+    out, i = [], 0
+    while i < len(u):
+        c = u[i]
+        if c in H._EXTENDED or c in H._INLINE:
+            i += 8
+            continue
+        if c >= 32:
+            out.append(chr(c))
+        i += 1
+    return "".join(out)
+
+
+def _inv_new() -> dict:
+    return {"fields": collections.Counter(), "pagenum": collections.Counter(), "page_auto": 0,
+            "hidden": collections.Counter(), "bookmarks": 0, "shape_desc": collections.Counter(),
+            "shapes": collections.Counter()}
+
+
+# 결선 보완 3차(C3-2b): 그리기 개체 종류별 개수. 이전 판은 그림(그림+사각형 그림 채우기)만 세어,
+# 사각형·선·타원·다각형·묶음이 빠지거나 사각형이 그림으로 바뀌어도(보류 표본 57016638e064, 제출본 엔진) 종류를 대조하지 않았다.
+# HWP5 는 SHAPE_COMPONENT(0x4C) 레코드 첫 4바이트 개체 ID, HWPX 는 hp: 요소 이름으로 센다. 차트는 OLE 와 같이 센다.
+_SHAPE_ID5 = {"$pic": "pic", "$rec": "rect", "$lin": "line", "$col": "connectLine", "$ell": "ellipse", "$arc": "arc",
+              "$pol": "polygon", "$cur": "curve", "$con": "container", "$ole": "ole"}
+_SHAPE_XML = {"pic": "pic", "rect": "rect", "line": "line", "connectLine": "connectLine", "ellipse": "ellipse", "arc": "arc",
+              "polygon": "polygon", "curve": "curve", "container": "container", "ole": "ole", "chart": "ole"}
+_SHAPE_LABEL = {"pic": "그림", "rect": "사각형", "line": "선", "connectLine": "연결선", "ellipse": "타원", "arc": "호",
+                "polygon": "다각형", "curve": "곡선", "container": "묶음", "ole": "OLE·차트"}
+
+
+def _inventory_hwp5(path: str, visible: bool = False) -> dict | None:
+    import olefile
+    from . import hwp5 as H
+    inv = _inv_new()
+    o = olefile.OleFileIO(path)
+    try:
+        fh = o.openstream("FileHeader").read()
+        flags = struct.unpack_from("<I", fh, 36)[0]
+        if flags & (H.FLAG_ENCRYPTED | H.FLAG_DRM):
+            return None
+        body = "ViewText" if flags & H.FLAG_DISTRIBUTE else "BodyText"
+        secs = sorted((e for e in o.listdir() if len(e) == 2 and e[0] == body and e[1].startswith("Section")),
+                      key=lambda e: int(re.findall(r"\d+", e[1])[0]))
+        for si, e in enumerate(secs):
+            last_pg = None
+            raw = o.openstream(e).read()
+            if flags & H.FLAG_DISTRIBUTE:
+                raw = H._decrypt_viewtext(raw)
+            data = H._inflate(raw) if flags & H.FLAG_COMPRESSED else raw
+            recs = list(H.iter_records(data))
+            n = len(recs)
+            for i, (tag, lv, pl) in enumerate(recs):
+                if tag == 0x4C and len(pl) >= 4:   # SHAPE_COMPONENT — 결선 보완 3차(C3-2b) 종류별 개수
+                    k = _SHAPE_ID5.get(pl[:4][::-1].decode("latin1"))
+                    if k:
+                        inv["shapes"][k] += 1
+                    continue
+                if tag != H.T_CTRL_HEADER or len(pl) < 4:
+                    continue
+                cid = pl[:4][::-1].decode("latin1")
+                if cid in _FIELD_TYPES:
+                    cmd = ""
+                    if len(pl) >= 11:
+                        ln_ = struct.unpack_from("<H", pl, 9)[0]
+                        cmd = pl[11:11 + ln_ * 2].decode("utf-16-le", "replace")
+                    inv["fields"][(_FIELD_TYPES[cid], _ws(cmd))] += 1
+                elif cid == "pgnp":
+                    attr = struct.unpack_from("<I", pl, 4)[0] if len(pl) >= 8 else 0
+                    last_pg = (si, _PAGE_POS.get((attr >> 8) & 0xF, "NONE"), _PAGE_FMT.get(attr & 0xFF, str(attr & 0xFF)))
+                elif cid == "atno":
+                    if len(pl) >= 8 and struct.unpack_from("<I", pl, 4)[0] & 0xF == 0:
+                        inv["page_auto"] += 1
+                elif cid == "bokm":
+                    inv["bookmarks"] += 1
+                elif cid == "tcmt":
+                    txt = []
+                    j = i + 1
+                    while j < n and recs[j][1] > lv:
+                        if recs[j][0] == H.T_PARA_TEXT:
+                            txt.append(_hwp5_plain(recs[j][2], H))
+                        j += 1
+                    inv["hidden"][loose("".join(txt))] += 1
+                elif cid in ("gso ", "tbl ", "eqed") and len(pl) >= 46:
+                    dl = struct.unpack_from("<H", pl, 44)[0]
+                    if dl and 46 + dl * 2 <= len(pl):
+                        d = _ws(pl[46:46 + dl * 2].decode("utf-16-le", "replace"))
+                        if d:
+                            inv["shape_desc"][d] += 1
+            if last_pg:
+                inv["pagenum"][last_pg] += 1
+    finally:
+        o.close()
+    return inv
+
+
+def _inventory_hwpx(path: str) -> dict:
+    import xml.etree.ElementTree as ET
+    inv = _inv_new()
+    with zipfile.ZipFile(path) as z:
+        names = [x for x in z.namelist() if x.startswith("Contents/") and x.endswith(".xml")
+                 and (x.startswith("Contents/section") or x.startswith("Contents/masterpage"))]
+        secnames = sorted((x for x in names if x.startswith("Contents/section")), key=lambda x: int((re.findall(r"\d+", x) or [0])[0]))
+        for nm in names:
+            si = secnames.index(nm) if nm in secnames else -1
+            last_pg = None
+            try:
+                root = ET.fromstring(z.read(nm))
+            except ET.ParseError:
+                continue
+            for el in root.iter():
+                t = el.tag.rsplit("}", 1)[-1]
+                if t in _SHAPE_XML and el.tag.startswith("{http://www.hancom.co.kr/hwpml/2011/paragraph}"):
+                    inv["shapes"][_SHAPE_XML[t]] += 1   # 결선 보완 3차(C3-2b)
+                if t == "fieldBegin":
+                    ty = el.get("type", "")
+                    ty = _FIELD_ALIAS.get(ty, ty)
+                    if ty in _FIELD_LABEL:
+                        cmd = ""
+                        for sp in el.iter():
+                            if sp.tag.rsplit("}", 1)[-1] == "stringParam" and sp.get("name") == "Command":
+                                cmd = sp.text or ""
+                                break
+                        inv["fields"][(ty, _ws(cmd))] += 1
+                elif t == "pageNum":
+                    last_pg = (si, el.get("pos", "NONE"), el.get("formatType", "DIGIT"))
+                elif t == "autoNum" and (el.get("numType", "").upper() == "PAGE"):
+                    inv["page_auto"] += 1
+                elif t == "bookmark":
+                    inv["bookmarks"] += 1
+                elif t == "hiddenComment":
+                    inv["hidden"][loose("".join(x.text or "" for x in el.iter() if x.tag.rsplit("}", 1)[-1] == "t"))] += 1
+                elif t == "shapeComment":
+                    d = _ws(el.text or "")
+                    if d:
+                        inv["shape_desc"][d] += 1
+            if last_pg:
+                inv["pagenum"][last_pg] += 1
+    return inv
+
+
+def _compare_inventory(a: dict, b: dict, fail, warn, ck, details) -> None:
+    fa, fb = a["fields"], b["fields"]
+    ck["fields"] = [sum(fa.values()), sum(fb.values())]
+    lost = fa - fb
+    if lost:
+        ex = []
+        for (ty, cmd), k in lost.items():
+            same_type_extra = sum(v for (t2, _), v in (fb - fa).items() if t2 == ty)
+            ex.append(f"{_FIELD_LABEL.get(ty, ty)} {'값 바뀜' if same_type_extra else '빠짐'} 「{cmd[:50]}」")
+        details["fields_lost"] = ex[:30]
+        fail("FIELD_LOST", f"필드(하이퍼링크·누름틀 등) 빠짐·값 바뀜 {sum(lost.values())}개 — 예: {ex[0]}")
+    pa, pb = a["pagenum"], b["pagenum"]
+    ck["page_numbers"] = [sum(pa.values()) + a["page_auto"], sum(pb.values()) + b["page_auto"]]
+    # 한 구역 안에 쪽 번호 매기기가 여러 번 있으면 마지막 값만 적용된다(제작자가 한글 저장 HWPX 로 확정한 규칙 —
+    # 변환기도 그렇게 정리한다: 2,286건 회귀에서 원본 13개 → 변환 3개). 그래서 구역마다 「적용되는 값」을 맞춘다.
+    gone = sorted(set(pa) - set(pb))
+    if gone:
+        fail("PAGENUM_LOST", f"쪽 번호 매기기 빠짐·바뀜 {len(gone)}개 구역 — 원본 {gone[0][0] + 1}구역 {gone[0][1]}·{gone[0][2]}")
+    if a["page_auto"] > b["page_auto"]:
+        fail("PAGENUM_LOST", f"글 속 쪽 번호(머리말·꼬리말·글상자 안 자동 번호) 빠짐: 원본 {a['page_auto']} / 변환 {b['page_auto']}")
+    ha, hb = a["hidden"], b["hidden"]
+    ck["hidden_comments"] = [sum(ha.values()), sum(hb.values())]
+    if ha - hb:
+        fail("HIDDEN_COMMENT", f"숨은 설명 빠짐·바뀜 {sum((ha - hb).values())}개")
+    ck["bookmarks"] = [a["bookmarks"], b["bookmarks"]]
+    if a["bookmarks"] > b["bookmarks"]:
+        warn("BOOKMARK_LOST", f"책갈피 개수 감소: 원본 {a['bookmarks']} / 변환 {b['bookmarks']} (상호 참조가 깨질 수 있음)")
+    da, db = a["shape_desc"], b["shape_desc"]
+    ck["shape_descriptions"] = [sum(da.values()), sum(db.values())]
+    if da - db:
+        x = next(iter(da - db))
+        warn("SHAPE_DESC", f"개체 설명(대체 텍스트) 빠짐·바뀜 {sum((da - db).values())}개 — 예: 「{x[:40]}」")
+    # 결선 보완 3차(C3-2b): 그리기 개체 종류별 개수
+    sa, sb = a.get("shapes", collections.Counter()), b.get("shapes", collections.Counter())
+    ck["shape_kinds"] = [dict(sa), dict(sb)]
+    if sa != sb:
+        diff = [f"{_SHAPE_LABEL.get(k, k)} {sa.get(k, 0)}→{sb.get(k, 0)}" for k in sorted(set(sa) | set(sb)) if sa.get(k, 0) != sb.get(k, 0)]
+        details["shape_kind_diff"] = diff
+        # 그림·OLE 의 빠짐은 그림 대조(IMAGE_MISSING·IMAGE_REF_NO_DATA)가 이미 판정한다 — 여기서 겹쳐 FAIL 을 내지 않는다
+        # (2,286건 회귀 e6f995b7301c: 데이터 없는 그림 참조는 설계상 WARN). 그 밖 종류가 빠진 만큼이 다른 종류로 늘어난 만큼보다
+        # 많으면 「빠짐」(FAIL), 아니면 「종류 바뀜」(WARN: 예 사각형→그림, 제출본 엔진의 57016638e064).
+        lost = sa - sb
+        gained = sum((sb - sa).values())
+        lost_draw = sum(v for k, v in lost.items() if k not in ("pic", "ole"))
+        if lost_draw > gained:
+            fail("SHAPE_MISSING", f"그리기 개체 빠짐 {lost_draw - gained}개 — 종류별: {', '.join(diff[:6])}")
+        elif lost_draw or (lost and gained):
+            warn("SHAPE_KIND", f"그리기 개체 종류가 바뀜 {sum(lost.values())}개 — 종류별: {', '.join(diff[:6])}")
+
+
+# ---------------------------------------------------------------- 변경 추적 이력 (결선 보완 3차 C3-2a)
+# 이전 판은 최종 본문(지운 글이 반영된 글)끼리만 비교해, 변경 추적 「이력」(지운 글·삽입 표식)이 변환에서 빠져도 몰랐다
+# (보류 표본 0a606aa5243d: 표 칸 지운 글 「SE」·「「」·「」」 빠짐, 제출본 검증서 PASS 92). 원본 HWP5 의 변경 추적 구간
+# (뒤처리 tracked.read_tracked 와 같은 판독)과 변환본 HWPX 의 deleteBegin~deleteEnd·insertBegin~insertEnd 사이 글을 글자 묶음으로 맞춘다.
+def _tracked_hwp5(path: str) -> dict | None:
+    """원본 변경 추적 구간 글 — 문단마다 이어진 표시 구간(컨트롤에서 끊음)을 한 조각으로."""
+    from . import tracked as _tr
+    r = _tr.read_tracked(path)
+    if r is None:
+        return None
+    defs, _authors, paras = r
+    out = {"Delete": [], "Insert": []}
+    for pp in paras:
+        toks = pp.get("toks") or []
+        at = {"Delete": set(), "Insert": set()}   # 구간이 겹쳐도 글자는 한 번만 센다
+        for (s0, e0, ident) in pp.get("umarks") or []:
+            kind = defs[ident - 1]["kind"]
+            if kind in at:
+                at[kind].update(range(s0, e0))
+        for kind in at:
+            if not at[kind]:
+                continue
+            cur: list = []
+            for (x, k, ch) in toks:
+                if x in at[kind] and k == "c":
+                    if ch != "\n":
+                        cur.append(ch)
+                elif cur:   # 표시 밖 글자나 컨트롤에서 조각을 끊는다
+                    out[kind].append("".join(cur))
+                    cur = []
+            if cur:
+                out[kind].append("".join(cur))
+    return out
+
+
+def _tracked_hwpx(path: str) -> dict:
+    """변환본 deleteBegin~deleteEnd·insertBegin~insertEnd 사이 글 — 보이는 글이 끼지 않는 한 한 조각으로 잇는다
+    (한컴·뒤처리가 글자 모양 경계에서 표식을 끊었다 다시 여는 차이를 흡수)."""
+    import xml.etree.ElementTree as ET
+    out = {"Delete": [], "Insert": []}
+    with zipfile.ZipFile(path) as z:
+        secs = sorted((x for x in z.namelist() if x.startswith("Contents/section") and x.endswith(".xml")),
+                      key=lambda x: int((re.findall(r"\d+", x) or [0])[0]))
+        for nm in secs:
+            data = z.read(nm)
+            if b"deleteBegin" not in data and b"insertBegin" not in data:
+                continue
+            root = ET.fromstring(data)
+            opened = {"Delete": set(), "Insert": set()}   # 열린 구간 Id — 겹치거나 중첩돼도 글자는 한 번만 센다
+            cur = {"Delete": [], "Insert": []}
+
+            def add(txt):
+                if not txt:
+                    return
+                for kind in opened:
+                    if opened[kind]:
+                        cur[kind].append(txt)
+                    elif cur[kind] and txt.strip():   # 표시 밖 보이는 글이 끼면 조각을 끊는다
+                        out[kind].append("".join(cur[kind]))
+                        cur[kind] = []
+
+            def walk(el):
+                t = el.tag.rsplit("}", 1)[-1]
+                if t in ("deleteBegin", "insertBegin"):
+                    opened["Delete" if t[0] == "d" else "Insert"].add(el.get("Id", ""))
+                elif t in ("deleteEnd", "insertEnd"):
+                    opened["Delete" if t[0] == "d" else "Insert"].discard(el.get("Id", ""))
+                if t == "t":
+                    add(el.text)
+                for c in el:
+                    walk(c)
+                    if t == "t":
+                        add(c.tail)
+            walk(root)
+            for kind in cur:
+                if cur[kind]:
+                    out[kind].append("".join(cur[kind]))
+    return out
+
+
+def _compare_tracked(a: dict, b: dict, fail, warn, ck, details) -> None:
+    """원본 조각마다 변환본 조각 묶음에서 찾는다(개수까지). 변환본에 이력이 더 있는 것(표 안 글 등)은 손실이 아니다."""
+    for kind, label in (("Delete", "지운 글"), ("Insert", "삽입 표식 글")):
+        pa = [loose(x) for x in a.get(kind, []) if loose(x)]
+        pb = [loose(x) for x in b.get(kind, []) if loose(x)]
+        key = "tracked_deleted_chars" if kind == "Delete" else "tracked_inserted_chars"
+        ck[key] = [sum(map(len, pa)), sum(map(len, pb))]
+        # ① 글자 묶음: 원본 이력 글자가 변환본 이력에 개수만큼 있는가(짧은 조각 「SE」·「,」 빠짐도 잡는다)
+        chars_lost = collections.Counter("".join(pa)) - collections.Counter("".join(pb))
+        # ② 조각: 원본 조각마다 변환본 조각 묶음 안에서 찾는다(변환본에 다른 이력이 더 많아 ①이 가려질 때)
+        hay = "\x00".join(pb)
+        need = collections.Counter(pa)
+        seg_lost = [(g, n - hay.count(g)) for g, n in need.items() if hay.count(g) < n]
+        if chars_lost or seg_lost:
+            if chars_lost:
+                n_, ex = sum(chars_lost.values()), "".join(sorted(chars_lost.elements()))[:30]
+                what = f"{n_}자"
+            else:
+                n_ = sum(len(g) * k for g, k in seg_lost)
+                ex = "」「".join(g[:20] for g, _ in seg_lost[:3])
+                what = f"{sum(k for _, k in seg_lost)}조각({n_}자)"
+            details.setdefault("tracked_lost", []).append(f"{label} 빠짐 {what}: 「{ex}」")
+            # 최종 본문(보이는 글)은 위 글 대조가 따로 본다. 여기서는 「이력」만 빠진 것이라 사람 확인(WARN)으로 보낸다.
+            warn("TRACK_LOST", f"변경 추적 이력에서 {label} {what} 빠짐 "
+                               f"(원본 {ck[key][0]}자 / 변환 {ck[key][1]}자) — 예: 「{ex}」 (최종 본문은 위 글 대조로 따로 판정)")
+
+
 # ---------------------------------------------------------------- 형식 판별
 def sniff(path: str) -> dict:
     """파일 형식·특성(암호·DRM·배포용·HWP3)을 본문을 풀지 않고 가린다."""
@@ -345,7 +704,7 @@ def _compare_table(a: Table, b: Table, limit: int = 20) -> dict:
                     continue
                 nbad += 1
                 if len(diffs) < limit:
-                    diffs.append({"row": r + 1, "col": c + 1, "orig": (va or "").replace("\u2063", "")[:80], "conv": (vb or "").replace("\u2063", "")[:80],
+                    diffs.append({"row": r + 1, "col": c + 1, "orig": (va or "").replace("\u2063", "")[:300], "conv": (vb or "").replace("\u2063", "")[:300],
                                   "kind": "칸 없음" if vb is None else ("칸 추가" if va is None else "글 다름")})
     res["cells_bad"] = nbad
     res["cells_symbol_mapped"] = nsym
@@ -366,11 +725,14 @@ class Audit:
     visible_reference: dict | None = None  # 가시 글 기준 참고 판정 (공식 판정에 쓰지 않음)
 
     def to_dict(self):
-        return {"audit_version": AUDIT_VERSION, "original": self.original, "converted": self.converted,
+        out = {"audit_version": AUDIT_VERSION, "original": self.original, "converted": self.converted,
                 "verdict": self.verdict, "score": None if self.score is None else round(self.score, 2),
                 "reasons": self.reasons,
                 "checks": self.checks, "details": self.details,
                 "visible_reference": self.visible_reference}
+        from .explain import plain_report
+        out["쉬운설명"] = plain_report(out)
+        return out
 
 
 def audit(original: str, converted: str, engine_report: dict | None = None, read=None, _nested: bool = False) -> Audit:
@@ -421,7 +783,7 @@ def audit(original: str, converted: str, engine_report: dict | None = None, read
         kinds = collections.Counter(x.get("kind") or x.get("code") or "?" for x in engine_report.get("losses", []))
         warn("ENGINE_LOSS", "변환 엔진이 손실을 보고함: " + ", ".join(f"{k}×{v}" for k, v in kinds.most_common(6)))
 
-    conv_raw = plain_text(conv)
+    conv_raw = plain_text(conv, with_hf=True)   # 결선 보완 B3: 머리말·꼬리말 글도 대조 글에 넣는다
     conv_text = norm(conv_raw)
     ck["conv_chars"] = len(conv_text)
     if conv.warnings:
@@ -446,19 +808,19 @@ def audit(original: str, converted: str, engine_report: dict | None = None, read
         warn("ORIG_READ_WARN", f"원본 판독 경고 {len(orig.warnings)}건: {orig.warnings[0][:120]}")
 
     # ---- 1 글
-    orig_raw = plain_text(orig)
+    orig_raw = plain_text(orig, with_hf=True)
     orig_text = norm(orig_raw)
     r, p = recall_precision(orig_text, conv_text)
     exact = orig_text == conv_text
     ck.update(text_chars=len(orig_text), text_exact=exact, text_recall=round(r, 4), text_precision=round(p, 4))
     ua, ub = _units(orig), _units(conv)
-    sm = difflib.SequenceMatcher(None, [norm(t) for _, t in ua], [norm(t) for _, t in ub], autojunk=False)
+    unit_ops = _opcodes([norm(t) for _, t in ua], [norm(t) for _, t in ub])   # B5
     conv_loose = loose(conv_raw)
     orig_loose = loose(orig_raw)
     conv_grams = grams(conv_loose)
     tdiff = []
     sym_spots = []
-    for op, i1, i2, j1, j2 in sm.get_opcodes():
+    for op, i1, i2, j1, j2 in unit_ops:
         if op == "equal":
             continue
         a_txt = "".join(t for _, t in ua[i1:i2])
@@ -479,7 +841,8 @@ def audit(original: str, converted: str, engine_report: dict | None = None, read
         tdiff.append({"op": {"replace": "바뀜", "delete": "빠짐", "insert": "더해짐"}[op], "lost": bool(lost and na),
                       "where_orig": ua[i1][0] if i1 < i2 else (ua[i1 - 1][0] + " 뒤" if i1 else "처음"),
                       "where_conv": ub[j1][0] if j1 < j2 else (ub[j1 - 1][0] + " 뒤" if j1 else "처음"),
-                      "orig": a_txt.replace("\u2063", "")[:120], "conv": b_txt.replace("\u2063", "")[:120]})
+                      "orig": a_txt.replace("\u2063", "")[:400], "conv": b_txt.replace("\u2063", "")[:400],
+                      "anchor_conv": (ub[j1 - 1][1].replace("\u2063", "")[:400] if j1 and ub[j1 - 1][0].startswith("본문 ") and "·" not in ub[j1 - 1][0] else "")})
     ck["text_diff_spots"] = len(tdiff)
     A.details["text_diffs"] = tdiff[:30]
     lost_spots = [x for x in tdiff if x["lost"]]
@@ -514,11 +877,24 @@ def audit(original: str, converted: str, engine_report: dict | None = None, read
     ck["tables"] = [len(ta), len(tb)]
     if len(ta) != len(tb):
         fail("TABLE_COUNT", f"표 개수 다름: 원본 {len(ta)} / 변환 {len(tb)}")
-    sm2 = difflib.SequenceMatcher(None, [_table_sig(t) for t in ta], [_table_sig(t) for t in tb], autojunk=False)
+    table_ops = _opcodes([_table_sig(t) for t in ta], [_table_sig(t) for t in tb])   # B5
     pairs = []
-    for op, i1, i2, j1, j2 in sm2.get_opcodes():
+    left_a, left_b = [], []
+    for op, i1, i2, j1, j2 in table_ops:
         if op in ("equal", "replace"):
             pairs.extend(zip(ta[i1:i2], tb[j1:j2]))
+            # replace 구간 길이가 다르면 남는 쪽
+            left_a.extend(ta[i1 + (j2 - j1):i2])
+            left_b.extend(tb[j1 + (i2 - i1):j2])
+        elif op == "delete":
+            left_a.extend(ta[i1:i2])
+        elif op == "insert":
+            left_b.extend(tb[j1:j2])
+    # 결선 보완 B2: 짝 맞춤(표 모양·첫 줄 글)에서 delete/insert 로 갈라진 표는 이전 판에서 아예 대조하지 않았다.
+    # 같은 꼬리말 표 두 개 중 하나의 칸 글이 지워지면 「원본 표 하나 삭제 + 변환본 표 하나 추가」로 갈라져
+    # 개수는 같고 칸 대조는 0 이 되어 PASS 가 났다(변이 시험에서 발견). 남은 표끼리 순서대로 짝지어 대조한다.
+    pairs.extend(zip(left_a, left_b))
+    ck["table_pairs_by_order"] = min(len(left_a), len(left_b))
     tres = [_compare_table(a, b) for a, b in pairs]
     tot_cells = sum(x["cells"] for x in tres) or 0
     bad_cells = sum(x["cells_bad"] for x in tres)
@@ -589,6 +965,43 @@ def audit(original: str, converted: str, engine_report: dict | None = None, read
         fail("EQUATION_COUNT", f"수식 개수 다름: 원본 {len(qa)} / 변환 {len(qb)}")
     elif qa != qb:
         warn("EQUATION_SCRIPT", "수식 스크립트 내용이 다름")
+    # 결선 보완 B1: 수식 캡션 — 개수가 같아도 캡션이 빠지거나 바뀌면 손실이다(자동 번호 저장값 차이는 빼고 본다)
+    capa = collections.Counter(loose(e.caption) for e in _iter(orig, Equation) if loose(e.caption))
+    capb = collections.Counter(loose(e.caption) for e in _iter(conv, Equation) if loose(e.caption))
+    ck["equation_captions"] = [sum(capa.values()), sum(capb.values())]
+    cap_lost = capa - capb
+    if cap_lost:
+        x = next(iter(cap_lost))
+        raw = next((e.caption for e in _iter(orig, Equation) if loose(e.caption) == x), x).replace("\u2063", "")
+        fail("EQUATION_CAPTION", f"수식 캡션 빠짐·바뀜 {sum(cap_lost.values())}개 — 예: 「{raw[:40]}」")
+
+    # 결선 보완 B3: 머리말·꼬리말 컨트롤 개수 — 글은 위 글 대조가 보고, 여기서는 빈 머리말·꼬리말까지 빠진 것을 경고한다
+    ha_, hb_ = _count(orig, HeaderFooter), _count(conv, HeaderFooter)
+    ck["headers_footers"] = [ha_, hb_]
+    if hb_ < ha_:
+        warn("HEADER_FOOTER_COUNT", f"머리말·꼬리말 개수 감소: 원본 {ha_} / 변환 {hb_} (글은 같음 — 빈 머리말·꼬리말일 수 있음)")
+
+    # ---- 4-2 컨트롤 목록: 필드·쪽 번호·숨은 설명·책갈피·개체 설명 (결선 보완 B4)
+    try:
+        if so.get("format") == "hwp5":
+            inv_a = _inventory_hwp5(original)
+        elif so.get("format") == "hwpx":
+            inv_a = _inventory_hwpx(original)
+        else:
+            inv_a = None
+        if inv_a is not None:
+            _compare_inventory(inv_a, _inventory_hwpx(converted), fail, warn, ck, A.details)
+    except Exception as e:   # 목록 대조가 실패해도 나머지 판정은 그대로 — 사람이 보도록 경고만 남긴다
+        warn("INVENTORY_ERROR", f"컨트롤 목록 대조 실패: {type(e).__name__}: {str(e)[:80]}")
+
+    # ---- 4-3 변경 추적 이력 (결선 보완 3차 C3-2a)
+    if so.get("format") in ("hwp5", "hwpx"):
+        try:
+            tr_a = _tracked_hwp5(original) if so.get("format") == "hwp5" else _tracked_hwpx(original)
+            if tr_a is not None and (tr_a["Delete"] or tr_a["Insert"]):
+                _compare_tracked(tr_a, _tracked_hwpx(converted), fail, warn, ck, A.details)
+        except Exception as e:
+            warn("TRACK_CHECK_ERROR", f"변경 추적 이력 대조 실패: {type(e).__name__}: {str(e)[:80]}")
 
     # ---- 5 미리보기(PrvText)
     prv_score = 1.0
@@ -640,6 +1053,8 @@ def to_markdown(a: Audit) -> str:
     L = [f"# 변환 검증서 — {d['original']}", "",
          f"- 판정: **{d['verdict']}**  ·  점수 {'(원본 대조 불가)' if d['score'] is None else '%.1f/100' % d['score']}  ·  검증서 판 {AUDIT_VERSION}",
          f"- 원본: `{d['original']}` ({ck.get('original_format')})  →  변환본: `{d['converted']}` ({ck.get('converted_format')})", ""]
+    from .explain import to_plain_markdown
+    L += [to_plain_markdown(d), "---", "", "# 자세한 기록 (전문가용)", ""]
     if d["reasons"]:
         L += ["## 판정 이유", ""] + [f"- [{x['level']}] {x['code']}: {x['msg']}" for x in d["reasons"]] + [""]
     vr = d.get("visible_reference")
@@ -661,7 +1076,7 @@ def to_markdown(a: Audit) -> str:
                  f"{ck.get('table_cells_bad', 0)} · 병합 구조 다른 표 {ck.get('table_span_bad', 0)} |")
     if "images" in ck:
         L.append(f"| 그림 | {ck['images'][0]} | {ck['images'][1]} | 데이터 불일치 {ck.get('images_hash_unmatched', 0)} |")
-    for k, nm in (("footnotes", "각주"), ("endnotes", "미주"), ("equations", "수식")):
+    for k, nm in (("footnotes", "각주"), ("endnotes", "미주"), ("equations", "수식"), ("equation_captions", "수식 캡션")):
         if k in ck:
             L.append(f"| {nm} | {ck[k][0]} | {ck[k][1]} | {'일치' if ck[k][0] == ck[k][1] else '다름'} |")
     if "prv_recall" in ck:
@@ -670,7 +1085,7 @@ def to_markdown(a: Audit) -> str:
     if d["details"].get("text_diffs"):
         L += ["## 글 차이 위치 (최대 30곳)", "", "| 종류 | 원본 위치 | 변환본 위치 | 원본 | 변환본 |", "|---|---|---|---|---|"]
         for x in d["details"]["text_diffs"]:
-            L.append(f"| {x['op']} | {x['where_orig']} | {x['where_conv']} | {_md(x['orig'])} | {_md(x['conv'])} |")
+            L.append(f"| {x['op']} | {x['where_orig']} | {x['where_conv']} | {_md(x['orig'])[:120]} | {_md(x['conv'])[:120]} |")
         L.append("")
     if d["details"].get("tables"):
         L += ["## 표 차이", ""]
@@ -680,7 +1095,7 @@ def to_markdown(a: Audit) -> str:
                 L.append(f"- 병합 구조 다름 — 원본에만: {t.get('span_missing')} / 변환에만: {t.get('span_extra')} "
                          "(행,열,행병합,열병합; 0부터)")
             for c in t["cell_diffs"]:
-                L.append(f"- {c['row']}행 {c['col']}열 [{c['kind']}] 「{_md(c['orig'])}」 → 「{_md(c['conv'])}」")
+                L.append(f"- {c['row']}행 {c['col']}열 [{c['kind']}] 「{_md(c['orig'])[:120]}」 → 「{_md(c['conv'])[:120]}」")
             L.append("")
     if d["details"].get("images_unmatched"):
         L += ["## 데이터가 맞지 않는 그림", "", ", ".join(d["details"]["images_unmatched"]), ""]
