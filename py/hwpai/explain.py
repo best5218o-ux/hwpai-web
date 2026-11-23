@@ -70,6 +70,38 @@ def _clip(s: str, n: int = 60) -> str:
     return s if len(s) <= n else s[:n] + "…"
 
 
+def _small_pairs(orig: str, conv: str, ctx: int = 6) -> list:
+    """원본 글과 변환본 글에서 실제로 다른 곳만 앞뒤 몇 글자와 함께 짝으로 뽑는다(찾는 글 → 바꿀 글).
+    긴 문단·여러 문단으로 된 표 칸 글을 통째로 바꾸려 하면 문단 경계를 넘어 찾지 못하므로, 다른 곳만 좁혀 바꾼다.
+    앞뒤 글은 띄어쓰기에서 멈춘다(표 칸 안 문단은 띄어쓰기로 이어 붙여 비교하므로 그 너머는 다른 문단일 수 있다)."""
+    import difflib
+    out = []
+    if not orig or not conv:
+        return out
+    ops = [o for o in difflib.SequenceMatcher(None, conv, orig, autojunk=False).get_opcodes() if o[0] != "equal"]
+    spans = []
+    for _, i1, i2, j1, j2 in ops:   # 가까운 차이는 하나로 묶는다
+        if spans and i1 - spans[-1][1] <= ctx:
+            spans[-1] = (spans[-1][0], i2, spans[-1][2], j2)
+        else:
+            spans.append((i1, i2, j1, j2))
+    for i1, i2, j1, j2 in spans:
+        def grow(stop_at_space):
+            k, r = i1, i2
+            while k > 0 and i1 - k < ctx and not (stop_at_space and conv[k - 1].isspace()):
+                k -= 1
+            while r < len(conv) and r - i2 < ctx and not (stop_at_space and conv[r].isspace()):
+                r += 1
+            return k, r
+        k, r = grow(True)
+        if (i1 - k) + (r - i2) < 1 and (i2 - i1) < 3:   # 바뀐 글이 짧고 앞뒤 글도 없으면 띄어쓰기를 넘어 넓힌다
+            k, r = grow(False)
+        key, val = conv[k:r], conv[k:i1] + orig[j1:j2] + conv[i2:r]
+        if "\n" in key or not key.strip() or key == val:
+            continue
+        out.append((key, val))
+    return out
+
 def plain_report(d: dict) -> dict:
     ck, det = d.get("checks", {}), d.get("details", {})
     label, line = HEAD.get(d.get("verdict"), ("— 판정 없음", ""))
@@ -98,9 +130,15 @@ def plain_report(d: dict) -> dict:
     def add_fix(kind, where, orig, conv, how, auto):
         n = len(fixes) + 1
         f = {"번호": n, "종류": kind, "위치": where, "원본에_있던_글": orig, "변환본의_글": conv, "방법": how, "자동수정": auto}
-        if auto and orig and conv and conv not in mapping:
-            mapping[conv] = orig
-            f["replace_text"] = {conv: orig}
+        if auto and orig and conv:
+            pairs = _small_pairs(orig, conv) if orig != conv else []
+            if not pairs:
+                f["자동수정"] = False   # 보이는 글은 같고 다른 곳을 좁힐 수 없다 — 사람에게 넘긴다
+            f["replace_text"] = {}
+            for k, v in pairs:
+                if k not in mapping:
+                    mapping[k] = v
+                    f["replace_text"][k] = v
         fixes.append(f)
     for x in det.get("text_diffs", []):
         o, c, op = (x.get("orig") or "").strip(), (x.get("conv") or "").strip(), x.get("op")
@@ -111,10 +149,11 @@ def plain_report(d: dict) -> dict:
             f = add_fix("빠진 글 채우기", f"{w} (변환본에서는 {x.get('where_conv') or ''})", o, "",
                         "앞 문단 글을 「앞 문단 글 + 줄바꿈 + 빠진 글」로 바꿔(replace_text) 그 뒤에 새 문단으로 넣습니다.", True)
             key = x["anchor_conv"]
+            o_raw = (x.get("orig") or "").strip("\n")   # 문단 앞 띄어쓰기까지 원본 그대로 넣는다
             if key not in mapping:
-                mapping[key] = key + "\n" + o
+                mapping[key] = key + "\n" + o_raw
             else:
-                mapping[key] += "\n" + o
+                mapping[key] += "\n" + o_raw
             fixes[-1]["replace_text"] = {key: mapping[key]}
         elif op == "빠짐" and o:
             add_fix("빠진 글 채우기", f"{w} (변환본에서는 {x.get('where_conv') or ''})", o, "", "변환본의 해당 위치에 원본 글을 새 문단으로 넣어야 합니다. 앞 문단을 하나로 정할 수 없어 자동으로 넣지 못합니다. 한글에서 직접 넣어 주세요.", False)

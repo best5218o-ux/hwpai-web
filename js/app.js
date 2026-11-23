@@ -28,14 +28,16 @@
     };
   }
   function initOpts() {
-    const saved = LS.get('hwpai.opts.v1', {});
-    const cores = navigator.hardwareConcurrency || 2;
-    $('#optJobs').value = String(saved.jobs || Math.min(2, Math.max(1, cores - 1)));
+    const saved = LS.get('hwpai.opts.v2', {});
+    // 동시 처리 수: 코어가 많은 기기는 3개(큰 문서 여러 건을 나눠 처리), 아니면 2개까지. 메모리가 적으면 줄인다.
+    const cores = navigator.hardwareConcurrency || 2; const mem = navigator.deviceMemory || 4;
+    const autoJobs = cores >= 8 && mem >= 4 ? 3 : Math.min(2, Math.max(1, cores - 1));
+    $('#optJobs').value = String(saved.jobs || autoJobs);
     $('#optTimeout').value = saved.timeout || 120;
     $('#optPolicy').value = saved.policy || 'review';
     $('#optHwpx').checked = !!saved.include_hwpx;
     $('#optAuto').checked = saved.auto !== false;
-    const persist = () => { const o = readOpts(); delete o.password; LS.set('hwpai.opts.v1', o); S.cfg.policy = o.policy; };
+    const persist = () => { const o = readOpts(); delete o.password; LS.set('hwpai.opts.v2', o); S.cfg.policy = o.policy; };
     $$('#opts select,#opts input').forEach(e => e.addEventListener('change', persist));
     $('#optJobs').addEventListener('change', () => { if (!S.running) bootPool(); else toast('처리가 끝난 뒤에 동시 처리 수가 바뀝니다.'); });
     S.cfg.policy = $('#optPolicy').value;
@@ -230,7 +232,13 @@
     if (!S.running) { S.runStart = performance.now(); S.doneCount = 0; S.totalCount = 0; S.cancelled = false; }
     S.running += todo.length; S.totalCount += todo.length;
     for (const it of todo) { it.status = '큐'; }
-    for (const it of todo) processItem(it);
+    // 큰 파일부터 일꾼에 넣는다(가장 오래 걸리는 문서가 마지막에 혼자 남지 않게 — 전체 시간 단축). 화면 표 순서는 그대로.
+    const sz = (it) => (it.file && it.file.size) || it.size || 0;
+    const ord = todo.slice().sort((a, b) => sz(b) - sz(a));
+    // 단, 가장 작은 파일 하나는 마지막 일꾼 몫으로 앞에 넣어 첫 결과가 바로 보이게 한다
+    const w = Math.max(1, readOpts().jobs || 1);
+    if (ord.length > w && w >= 2) ord.splice(w - 1, 0, ord.pop());
+    for (const it of ord) processItem(it);
     updateProgress(); renderAll();
   }
   function runFinished() {
@@ -685,15 +693,19 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
   // 현장 시연: 주소에 ?demo 가 있을 때만 예제 HWP 를 불러오는 단추를 보인다(같은 출처 정적 파일, 외부 전송 없음)
   (function () {
     if (!new URLSearchParams(location.search).has('demo')) return;
-    const SAMPLES = [['s1.hwp', '질병청_보도참고자료(표29·그림29).hwp'], ['s2.hwp', '산업부_보도자료(표46·그림23).hwp'], ['s3.hwp', '경기도_사업계획서(표48·병합칸510).hwp'], ['s5.hwp', '군청_물품요구서(병합칸425).hwp'], ['s6.hwp', '국립국어원_업무계획(표16).hwp'], ['s4.hwp', '개인정보_예시.hwp']];
+    // 큰 문서를 먼저 넣어 여러 일꾼이 동시에 맡게 하고, 작은 문서는 그 사이 빈 일꾼이 처리한다
+    const SAMPLES = [['s2.hwp', '산업부_보도자료(표46·그림23).hwp'], ['s1.hwp', '질병청_보도참고자료(표29·그림29).hwp'], ['s3.hwp', '경기도_사업계획서(표48·병합칸510).hwp'], ['s6.hwp', '국립국어원_업무계획(표16).hwp'], ['s5.hwp', '군청_물품요구서(병합칸425).hwp'], ['s4.hwp', '개인정보_예시.hwp']];
     const card = $('#demoCard'); card.hidden = false;
+    // 엔진을 올리는 동안 예제 파일을 미리 받아 둔다(단추를 누르면 바로 시작)
+    const pre = SAMPLES.map(([f]) => fetch('samples/' + f).then(r => { if (!r.ok) throw new Error(f + ' ' + r.status); return r.blob(); }));
+    pre.forEach(p => p.catch(() => {}));
     $('#btnDemo').onclick = async () => {
       const b = $('#btnDemo'); b.disabled = true; b.textContent = '예제 문서를 불러오는 중…';
       try {
         const list = [];
         for (const [f, name] of SAMPLES) {
-          const r = await fetch('samples/' + f); if (!r.ok) throw new Error(name + ' ' + r.status);
-          list.push({ file: new File([await r.blob()], name, { lastModified: 1763769600000 }), path: '예제문서/' + name });
+          const blob = await pre[list.length];
+          list.push({ file: new File([blob], name, { lastModified: 1763769600000 }), path: '예제문서/' + name });
         }
         addFiles(list, null);
         if (!readOpts().auto) kick();
