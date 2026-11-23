@@ -32,7 +32,8 @@
     // 동시 처리 수: 코어가 많은 기기는 3개(큰 문서 여러 건을 나눠 처리), 아니면 2개까지. 메모리가 적으면 줄인다.
     const cores = navigator.hardwareConcurrency || 2; const mem = navigator.deviceMemory || 4;
     const autoJobs = cores >= 8 && mem >= 4 ? 3 : Math.min(2, Math.max(1, cores - 1));
-    $('#optJobs').value = String(saved.jobs || autoJobs);
+    const qj = +new URLSearchParams(location.search).get('jobs');   // 속도 비교용: 주소 끝 &jobs=2 처럼 동시 처리 수를 정해 열 수 있다
+    $('#optJobs').value = String((qj >= 1 && qj <= 4 && qj) || saved.jobs || autoJobs);
     $('#optTimeout').value = saved.timeout || 120;
     $('#optPolicy').value = saved.policy || 'review';
     $('#optHwpx').checked = !!saved.include_hwpx;

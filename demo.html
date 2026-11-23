@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache"><title>HWP AI 현장 시연</title>
+<style>body{margin:0;font:16px/1.6 system-ui,"Noto Sans KR",sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;color:#5f6570}</style></head>
+<body><p>HWP AI 시연을 여는 중…</p>
+<script>
+/* 현장 QR 입구: 이 기기에 옛 판이 저장돼 있어도 항상 최신 판으로 연다(저장본·서비스 워커를 비운 뒤 이동). 문서·설정은 건드리지 않는다. */
+(async function () {
+  try { if ('serviceWorker' in navigator) { const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(r => r.unregister())); } } catch (e) {}
+  try { if (window.caches) { const ks = await caches.keys(); await Promise.all(ks.filter(k => k.startsWith('hwpai-')).map(k => caches.delete(k))); } } catch (e) {}
+  location.replace('./?demo&t=' + Date.now());
+})();
+</script></body></html>
