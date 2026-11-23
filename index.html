@@ -18,46 +18,44 @@
 <body>
 <a class="skip" href="#drop">본문으로 건너뛰기</a>
 <header class="top">
-  <div class="brand">
-    <h1>HWP AI</h1>
-    <p class="sub">한글 없이 HWP를 HWPX로</p>
-  </div>
   <button id="netBadge" class="badge ok" type="button" aria-haspopup="dialog" title="눌러서 네트워크 점검 보기">
     <span class="dot"></span><span id="netText">외부 전송 0건</span>
   </button>
 </header>
 
 <main>
-  <p class="privacy-line mut center">내 파일은 밖으로 나가지 않습니다</p>
+  <section class="hero">
+    <h1 class="logo"><span class="g">HWP</span> AI <span class="lt">어댑터</span></h1>
+    <p class="tag-line">HWP를 AI가 바로 읽고 HWPX로 바꾸는 어댑터</p>
 
-  <section id="engine" class="card engine" aria-live="polite">
-    <div class="row"><span id="engineText">엔진 준비 중…</span><span id="engineInfo" class="mut"></span></div>
-    <div class="bar"><i id="engineBar" style="width:0%"></i></div>
-  </section>
-
-  <section id="demoCard" class="card demo" hidden>
-    <h2>현장 시연 — 복잡한 정부 문서 6건</h2>
-    <p class="mut">표 46개·병합 칸 510개·그림 29개짜리 실제 공문서 5건과 개인정보 예시 1건. 이 기기 안에서 HWPX로 바꾸고 원본과 하나하나 대조합니다.</p>
-    <button id="btnDemo" class="btn primary big" type="button">▶ 예제로 체험하기</button>
-    <p class="mut small">결과 표의 「검증서」를 누르면 검증서(무엇을 비교했는지·다른 곳)가 보입니다.</p>
-  </section>
-
-  <section id="drop" class="drop" tabindex="0" aria-label="HWP 파일·폴더 끌어놓기 영역">
-    <div class="drop-in">
-      <div class="drop-ico" aria-hidden="true">📂</div>
-      <p class="drop-title">HWP 파일을 여기에 끌어다 놓으세요</p>
-      <div class="btns">
-        <button id="pickFiles" class="btn primary big" type="button">파일 선택</button>
-        <button id="pickDir" class="btn big" type="button">폴더 선택</button>
-      </div>
-      <p class="mut center hint1">변환한 파일은 ZIP 하나로 내려받습니다. 원본은 그대로 둡니다.</p>
+    <div id="drop" class="drop search" tabindex="0" role="button" aria-label="HWP 파일·폴더 끌어놓기 또는 눌러서 고르기">
+      <span class="drop-ico" aria-hidden="true">📂</span>
+      <span class="drop-title">HWP 파일이나 폴더를 끌어놓거나, 눌러서 고르세요</span>
+      <span class="drop-mag" aria-hidden="true">⌕</span>
       <input id="fileInput" type="file" multiple accept=".hwp,.hwpx,.HWP,.HWPX" hidden>
       <input id="dirInput" type="file" webkitdirectory hidden>
     </div>
+    <div class="btns hero-btns">
+      <button id="pickFiles" class="btn soft" type="button">파일 선택</button>
+      <button id="pickDir" class="btn soft" type="button">폴더 선택</button>
+    </div>
+
+    <section id="engine" class="engine" aria-live="polite">
+      <div class="bar"><i id="engineBar" style="width:0%"></i></div>
+      <div class="row"><span id="engineText">엔진 준비 중…</span><span id="engineInfo" class="mut"></span></div>
+    </section>
+
+    <section id="demoCard" class="demo" hidden>
+      <button id="btnDemo" class="btn primary big" type="button">▶ 예제로 체험하기</button>
+      <p class="mut small">복잡한 실제 정부 문서 5건(표 46개·병합 칸 510개·그림 29개) + 개인정보 예시 1건</p>
+    </section>
   </section>
 
 
-  <section id="rwCard" class="card rw" hidden>
+
+  <details id="opts" class="opts plain-opts">
+    <summary>설정</summary>
+  <section id="rwCard" class="rw" hidden>
     <h2>폴더째 HWPX로 전환 <small class="mut">(Chrome·Edge 데스크톱)</small></h2>
     <p class="rw-lead">폴더 안 문서를 <b>같은 자리에서</b> HWPX 로 바꿔 두고, 옛 파일은 안전하게 따로 모아 둡니다.</p>
     <div class="rw-flow" aria-label="바뀌는 모습">
@@ -67,9 +65,6 @@
     <ol class="rw-steps"><li><b>전환할 폴더 선택</b> — 아래 단추를 누르거나 위 상자에 폴더를 끌어놓고, 「수정 허용」을 누릅니다</li><li>변환이 끝나면 <b>「폴더에 반영」</b> 띠가 나타납니다. 검증 PASS 문서만 바뀝니다</li></ol>
     <div class="btns"><button id="pickRW" class="btn primary big" type="button">전환할 폴더 선택</button></div>
   </section>
-
-  <details id="opts" class="card opts">
-    <summary>설정</summary>
     <div class="grid">
       <label>동시 처리 수
         <select id="optJobs"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
@@ -136,6 +131,7 @@
     </ul>
     <p class="mut">변환 엔진 <a href="licenses/rhwp-MIT-LICENSE.txt" target="_blank" rel="noopener">rhwp</a> (MIT, Copyright (c) 2025-2026 Edward Kim) · hwpai (MIT, 김영민) · Pyodide (MPL-2.0) · olefile (BSD). 전체 고지는 <a href="licenses/NOTICE.md" target="_blank" rel="noopener">licenses/NOTICE.md</a>.</p>
   </details>
+  <p class="foot mut center">이 기기 안에서만 처리합니다 · 원본은 바꾸지 않습니다</p>
 </main>
 
 <dialog id="detail" aria-labelledby="detailTitle"><div class="dlg">

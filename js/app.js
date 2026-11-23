@@ -358,6 +358,7 @@
   function renderAll() {
     const has = S.items.length > 0;
     $('#toolbar').hidden = !has; $('#listWrap').hidden = !has;
+    document.body.classList.toggle('has-items', has);
     renderSummary(); renderRows();
     const c = counts();
     const doneAny = S.items.some(i => i.hwpx);
@@ -625,6 +626,7 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
       try { const r = await resolveDropped(c); addFiles(r.list, r); } catch (err) { toast('끌어놓은 항목을 읽지 못했습니다: ' + err.message, 7000); console.error(err); }
     });
     $('#pickFiles').onclick = () => $('#fileInput').click();
+    drop.addEventListener('click', (e) => { if (e.target.closest('button,input')) return; $('#fileInput').click(); });
     $('#pickDir').onclick = () => $('#dirInput').click();
     drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#fileInput').click(); } });
     $('#fileInput').onchange = (e) => { addFiles(Array.from(e.target.files).map(f => ({ file: f, path: f.name })), null); e.target.value = ''; };

@@ -37,7 +37,7 @@
   // 3) 휴대폰 화면 — 끌어놓기 대신 「파일 선택」, 폴더 선택은 숨김, 파일 고르기 창에서 HWP 가 흐리게 보이지 않게
   if (mobile) {
     document.documentElement.classList.add('is-mobile');
-    const t = $('.drop-title'); if (t) t.textContent = '「파일 선택」을 눌러 HWP 파일을 고르세요';
+    const t = $('.drop-title'); if (t) t.textContent = '눌러서 HWP 파일을 고르세요';
     const d = $('#pickDir'); if (d) d.hidden = true;
     const fi = $('#fileInput'); if (fi) fi.removeAttribute('accept'); // 휴대폰은 .hwp 형식을 몰라 고를 수 없게 막는 경우가 있다 — 확장자는 앱이 다시 거른다
   }
