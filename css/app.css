@@ -179,3 +179,17 @@ td .mut{display:block;font-size:12px}
 }
 @media (max-width:760px){.rv-foot{display:none}}
 button.tag{min-height:0;height:auto;line-height:1.4;border-width:1px;width:auto;cursor:pointer}
+
+/* 검증서 창 첫머리: 「변환」과 「개인정보」를 두 칸으로 따로 (2026-11-23) */
+.dcards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 12px}
+.dcard{border:2px solid var(--bd);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.dcard span{font-size:12px;color:var(--mut);font-weight:700}
+.dcard b{font-size:20px}
+.dcard p{margin:0;font-size:14px;line-height:1.5}
+.dcard .btn{align-self:flex-start;margin-top:6px}
+.dcard.ok{border-color:#1a7f37}.dcard.ok b{color:#1a7f37}
+.dcard.wait{border-color:#8250df}.dcard.wait b{color:#8250df}
+.dcard.warn{border-color:#bf8700}.dcard.warn b{color:#9a6700}
+.dcard.bad{border-color:#cf222e}.dcard.bad b{color:#cf222e}
+@media (prefers-color-scheme:dark){.dcard.ok b{color:#4ade80}.dcard.ok{border-color:#2f8f4e}.dcard.wait b{color:#c4a5ff}.dcard.wait{border-color:#8b6cd9}.dcard.warn b{color:#f2c94c}.dcard.bad b{color:#ff7b72}}
+@media (max-width:760px){.dcards{grid-template-columns:1fr}.fpbox{font-size:13px}.fpbox code{font-size:13px}}

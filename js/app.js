@@ -535,16 +535,27 @@
     const fp = (h) => h ? String(h).slice(0, 8) + '…' + String(h).slice(-4) : '';
     const V = { PASS: '원본과 같습니다. 그대로 쓰셔도 됩니다.', WARN: '일부가 다를 수 있습니다. 한글에서 한번 열어 보세요.', FAIL: '내용이 빠졌습니다. 그대로 쓰지 마세요.' }[r.판정] || '';
     const same = r.원본_SHA256 && r.변환본_SHA256;
-    const easy = [['결과', r.판정 && VWORD[r.판정] ? VWORD[r.판정][1] : ''], ['설명', V],
-      ['개인정보', r.민감정보 ? `${r.민감정보} ${r.민감정보_항목 || ''}` : '']].filter(x => x[1]);
+    // 두 가지를 따로 보인다: ① 변환이 제대로 됐는가 ② AI에 넘기기 전 개인정보 확인이 필요한가
+    const vcls = { PASS: 'ok', WARN: 'warn', FAIL: 'bad' }[r.판정] || 'gray';
+    const vtxt = { PASS: '✔ 정상 변환', WARN: '▲ 확인 필요', FAIL: '✖ 변환 실패' }[r.판정] || esc(it.status || '');
+    const st = sensStatus(it);
+    const kinds = st ? Object.entries(st.kinds || {}).map(([k, v]) => `${k} ${v}건`).join(', ') : '';
+    let scls = 'gray', stxt = '—', sdesc = '판독하지 못해 확인할 수 없습니다.', sbtn = '';
+    if (st && !st.total) { scls = 'ok'; stxt = '✔ 없음'; sdesc = '개인정보로 보이는 것이 없습니다.'; }
+    else if (st && st.state === R.STATES[1]) { scls = 'wait'; stxt = '⚠ 확인해 주세요'; sdesc = `발견: ${kinds}. 변환에는 문제가 없고, AI에 넘기기 전에 사람이 한 번 확인합니다.`; sbtn = `<button class="btn primary sm" id="dReview" type="button">개인정보 확인하기</button>`; }
+    else if (st && st.state === R.STATES[2]) { scls = 'ok'; stxt = '✔ 확인 완료'; sdesc = '사람이 확인했습니다 — 개인정보 아님.'; }
+    else if (st && !st.sensitive && !st.pending) { scls = 'ok'; stxt = '✔ 없음'; sdesc = `담당 부서 같은 업무 정보 ${st.probably_ok || ''}건은 개인정보가 아니라서 자동으로 제외했습니다.`; }
+    else if (st) { scls = 'warn'; stxt = `개인정보 있음 ${st.sensitive}건`; sdesc = 'AI에는 가리거나 막아서 넘깁니다.'; sbtn = `<button class="btn sm" id="dReview" type="button">다시 보기</button>`; }
+    const cards = `<div class="dcards"><div class="dcard ${vcls}"><span>변환</span><b>${vtxt}</b><p>${esc(V)}</p></div><div class="dcard ${scls}"><span>개인정보 (AI에 넘기기 전)</span><b>${stxt}</b><p>${esc(sdesc)}</p>${sbtn}</div></div>`;
     const tech = [['원본 크기', fmtSize(r.원본_크기)], ['변환본 크기', fmtSize(r.변환본_크기)], ['원본 형식', r.원본_형식], ['특성', r.특성], ['원본 파일 지문(SHA-256)', r.원본_SHA256], ['변환본 파일 지문(SHA-256)', r.변환본_SHA256],
       ['엔진', r.엔진 ? `${r.엔진} ${r.엔진_판}` : ''], ['변환 소요', r.변환_소요ms ? r.변환_소요ms + ' ms' : ''], ['검증 점수·판정', r.판정 ? `${r.검증점수} · ${r.판정}` : '']].filter(x => x[1]);
-    $('#detailBody').innerHTML = `<dl class="kv big">${easy.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+    $('#detailBody').innerHTML = `${cards}
 ${same ? `<p class="fpbox"><b>파일 지문</b> 원본 <code>${esc(fp(r.원본_SHA256))}</code> · 바뀐 파일 <code>${esc(fp(r.변환본_SHA256))}</code> <button class="btn sm" id="dCopy" type="button">지문 복사</button></p>` : ''}
 <p class="btns" style="justify-content:flex-start"><button class="btn sm" id="dMd" type="button">검증서(.md) 받기</button> <button class="btn sm" id="dJson" type="button">검증서(.json) 받기</button></p>
 ${explainHtml(it)}
 <details class="more"><summary>전문가용 기록</summary><dl class="kv">${tech.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div>${mdToHtml(String(it.md || '').split('# 자세한 기록 (전문가용)').pop())}</div></details>`;
     const cp = $('#dCopy'); if (cp) cp.onclick = () => { try { navigator.clipboard.writeText(`원본 ${r.원본_SHA256}\n변환본 ${r.변환본_SHA256}`); cp.textContent = '복사했습니다'; } catch (e) { cp.textContent = '복사 못 함'; } };
+    const dr = $('#dReview'); if (dr) dr.onclick = () => { dlg.close(); openReview(it.id); };
     $('#dMd').onclick = () => download(new Blob([it.md || ''], { type: 'text/markdown' }), it.name + '.검증서.md');
     $('#dJson').onclick = () => download(new Blob([it.json || ''], { type: 'application/json' }), it.name + '.검증서.json');
     dlg.showModal();
