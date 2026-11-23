@@ -11,11 +11,18 @@
     // 새 판이 설치되면 한 번 새로 고쳐 바로 새 화면을 보인다(처음 설치 때는 하지 않음)
     const hadCtl = !!navigator.serviceWorker.controller; let reloaded = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadCtl && !reloaded) { reloaded = true; location.reload(); } });
-    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((r) => {
-      r.update().catch(() => {});
-      window.HWPAI_PWA.sw = 'registered';
-      navigator.serviceWorker.ready.then(() => { window.HWPAI_PWA.sw = 'ready'; });
-    }).catch((e) => { window.HWPAI_PWA.sw = 'error: ' + e.message; });
+    // 속도 개선: 처음 여는 기기는 엔진이 다 올라온 뒤에 오프라인 저장을 시작한다(첫 화면과 저장이 회선을 나눠 쓰지 않게). 이미 설치된 기기는 바로 확인.
+    let regd = false;
+    const reg = () => {
+      if (regd) return; regd = true;
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((r) => {
+        r.update().catch(() => {});
+        window.HWPAI_PWA.sw = 'registered';
+        navigator.serviceWorker.ready.then(() => { window.HWPAI_PWA.sw = 'ready'; });
+      }).catch((e) => { window.HWPAI_PWA.sw = 'error: ' + e.message; });
+    };
+    if (hadCtl) reg();
+    else { window.addEventListener('hwpai-engine-ready', () => setTimeout(reg, 1500), { once: true }); setTimeout(reg, 60000); }
   }
 
   // 2) 설치 단추 — 브라우저가 설치를 허락할 때만 보인다

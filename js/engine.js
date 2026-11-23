@@ -65,13 +65,25 @@
     let done = 0;
     const step = (label) => { done++; onProgress && onProgress(done / names.length, label); };
     if (mode === 'fetch') {
-      try {
-        for (const n of names) {
-          const r = await window.fetch(ASSET_FILES[n]);
-          if (!r.ok) throw new Error(n + ' ' + r.status);
-          assets[n] = await r.arrayBuffer(); step(n);
-        }
-      } catch (e) { mode = 'payload'; done = 0; for (const k in assets) delete assets[k]; }
+      // 속도 개선(2026-11-23): 엔진 파일 8개를 한꺼번에 받고, 한 번 받은 파일은 기기 저장소(Cache Storage)에서 바로 꺼낸다.
+      // 저장본이 배포 목록 SHA-256 과 다르면(엔진이 바뀐 경우) 그 파일만 서버에서 다시 받는다.
+      const HC = 'hwpaiheavy-v1';
+      let hc = null; try { if (window.caches) hc = await caches.open(HC); } catch (e) { hc = null; }
+      const fromNet = async (n) => {
+        const r = await window.fetch(ASSET_FILES[n], { cache: 'no-cache' });
+        if (!r.ok) throw new Error(n + ' ' + r.status);
+        if (hc) { try { await hc.put(ASSET_FILES[n], r.clone()); } catch (e) { /* 저장 공간 부족 등 — 무시 */ } }
+        return r.arrayBuffer();
+      };
+      const one = async (n) => {
+        let buf = null;
+        if (hc) { try { const c = await hc.match(ASSET_FILES[n]) || await caches.match(ASSET_FILES[n], { ignoreSearch: true }); if (c) buf = await c.arrayBuffer(); } catch (e) { buf = null; } }
+        if (buf && byName[n]) { const h = await sha256hex(buf); if (h != null && h !== byName[n].sha256) buf = null; }
+        if (!buf) buf = await fromNet(n);
+        assets[n] = buf; step(n);
+      };
+      try { await Promise.all(names.map(one)); }
+      catch (e) { mode = 'payload'; done = 0; for (const k in assets) delete assets[k]; }
     }
     if (mode === 'payload') {
       for (const n of names) {
@@ -86,13 +98,13 @@
     }
     // 무결성: 배포 목록의 SHA-256 과 대조(브라우저가 허용할 때)
     let verified = 0, skipped = 0;
-    for (const n of names) {
-      const m = byName[n]; if (!m) { skipped++; continue; }
+    await Promise.all(names.map(async (n) => {
+      const m = byName[n]; if (!m) { skipped++; return; }
       const h = await sha256hex(assets[n]);
-      if (h == null) { skipped++; continue; }
+      if (h == null) { skipped++; return; }
       if (h !== m.sha256) throw new Error('엔진 파일 해시 불일치: ' + n);
       verified++;
-    }
+    }));
     return { assets, mode, verified, skipped };
   }
 
@@ -108,7 +120,9 @@
     }
     async start(onStatus) {
       this.slots = Array.from({ length: this.size }, (_, i) => ({ i, w: null, ready: false, busy: false, pending: null, recVer: -1, cfgKey: '' }));
-      await Promise.all(this.slots.map((s) => this._spawn(s, onStatus)));
+      // 속도 개선: 첫 일꾼을 혼자 먼저 올려 바로 일을 시작하고(휴대폰 CPU 를 나눠 쓰지 않게), 나머지는 그 뒤에 올린다.
+      await this._spawn(this.slots[0], onStatus);
+      this.rest = Promise.all(this.slots.slice(1).map((s) => this._spawn(s, onStatus))).catch(() => {});
       return this.info;
     }
     _spawn(slot, onStatus) {

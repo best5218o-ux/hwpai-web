@@ -63,6 +63,7 @@
       const info = await S.pool.start(() => { n++; bar.style.width = (60 + 40 * n / opts.jobs) + '%'; });
       S.info = info; S.cfg.engine_version = info.version; S.ready = true;
       txt.textContent = '엔진 준비됨'; $('#engine').classList.add('ready');
+      try { window.dispatchEvent(new Event('hwpai-engine-ready')); } catch (e) { /* */ }
       $('#engineInfo').textContent = `rhwp ${info.version} (WebAssembly) · Python ${info.python} (Pyodide) · hwpai 검증서 판 1.1 · 일꾼 ${opts.jobs}개 · 파일 읽기 방식: ${S.assetMode === 'payload' ? 'file:// 내장 묶음' : '같은 위치 정적 파일'}${S.verified ? ' · 엔진 파일 SHA-256 대조 ' + S.verified + '건 일치' : ''}`;
       bar.style.width = '100%';
       setTimeout(() => { $('#engine').classList.add('done'); }, 600);
@@ -700,14 +701,16 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
     const SAMPLES = [['s2.hwp', '산업부_보도자료(표46·그림23).hwp'], ['s1.hwp', '질병청_보도참고자료(표29·그림29).hwp'], ['s3.hwp', '경기도_사업계획서(표48·병합칸510).hwp'], ['s6.hwp', '국립국어원_업무계획(표16).hwp'], ['s5.hwp', '군청_물품요구서(병합칸425).hwp'], ['s4.hwp', '개인정보_예시.hwp']];
     const card = $('#demoCard'); card.hidden = false;
     // 엔진을 올리는 동안 예제 파일을 미리 받아 둔다(단추를 누르면 바로 시작)
-    const pre = SAMPLES.map(([f]) => fetch('samples/' + f).then(r => { if (!r.ok) throw new Error(f + ' ' + r.status); return r.blob(); }));
-    pre.forEach(p => p.catch(() => {}));
+    // 엔진 파일을 받는 동안 회선을 나눠 쓰지 않도록, 예제는 엔진이 준비된 직후(또는 단추를 누를 때) 받는다
+    let pre = null;
+    const getPre = () => { if (!pre) { pre = SAMPLES.map(([f]) => fetch('samples/' + f).then(r => { if (!r.ok) throw new Error(f + ' ' + r.status); return r.blob(); })); pre.forEach(p => p.catch(() => {})); } return pre; };
+    window.addEventListener('hwpai-engine-ready', getPre, { once: true });
     $('#btnDemo').onclick = async () => {
       const b = $('#btnDemo'); b.disabled = true; b.textContent = '예제 문서를 불러오는 중…';
       try {
         const list = [];
         for (const [f, name] of SAMPLES) {
-          const blob = await pre[list.length];
+          const blob = await getPre()[list.length];
           list.push({ file: new File([blob], name, { lastModified: 1763769600000 }), path: '예제문서/' + name });
         }
         addFiles(list, null);

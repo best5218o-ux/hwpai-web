@@ -7,7 +7,7 @@
 /* 현장 QR 입구: 이 기기에 옛 판이 저장돼 있어도 항상 최신 판으로 연다(저장본·서비스 워커를 비운 뒤 이동). 문서·설정은 건드리지 않는다. */
 (async function () {
   try { if ('serviceWorker' in navigator) { const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(r => r.unregister())); } } catch (e) {}
-  try { if (window.caches) { const ks = await caches.keys(); await Promise.all(ks.filter(k => k.startsWith('hwpai-')).map(k => caches.delete(k))); } } catch (e) {}
+  /* 저장본은 지우지 않는다 — 엔진 파일은 화면이 SHA-256 으로 확인해 그대로 다시 쓴다(두 번째부터 바로 열림, 2026-11-23 속도 개선). */
   location.replace('./?demo&t=' + Date.now());
 })();
 </script></body></html>
