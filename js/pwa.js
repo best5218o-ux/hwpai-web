@@ -8,7 +8,11 @@
 
   // 1) 오프라인 캐시 — http(s) 보안 컨텍스트에서만(file:// 로 열면 해당 없음)
   if ('serviceWorker' in navigator && window.isSecureContext && location.protocol !== 'file:') {
-    navigator.serviceWorker.register('sw.js').then((r) => {
+    // 새 판이 설치되면 한 번 새로 고쳐 바로 새 화면을 보인다(처음 설치 때는 하지 않음)
+    const hadCtl = !!navigator.serviceWorker.controller; let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadCtl && !reloaded) { reloaded = true; location.reload(); } });
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((r) => {
+      r.update().catch(() => {});
       window.HWPAI_PWA.sw = 'registered';
       navigator.serviceWorker.ready.then(() => { window.HWPAI_PWA.sw = 'ready'; });
     }).catch((e) => { window.HWPAI_PWA.sw = 'error: ' + e.message; });
