@@ -100,7 +100,7 @@
       const val = dec(d, it); const col = colorOf(it.kind);
       return `<div class="ritem ${i === ci ? 'cur' : ''}" data-i="${i}" tabindex="0"><span class="k" style="background:${col}">${esc(it.kind)}</span> <span class="val">${esc(it.text)}</span>
   <div class="ctx">…${esc(it.before)}<b>${esc(it.text)}</b>${esc(it.after)}…</div><div class="hint">${esc(it.reason)}</div>
-  <div class="rrow"><label><input type="radio" name="r${i}" value="sensitive" ${val === 'sensitive' ? 'checked' : ''}> 민감정보임</label><label><input type="radio" name="r${i}" value="not_sensitive" ${(val === 'not_sensitive' || val === 'not_sensitive_auto') ? 'checked' : ''}> 민감정보 아님(업무 연락처 등)</label></div></div>`;
+  <div class="rrow"><label><input type="radio" name="r${i}" value="sensitive" ${val === 'sensitive' ? 'checked' : ''}> 개인정보임</label><label><input type="radio" name="r${i}" value="not_sensitive" ${(val === 'not_sensitive' || val === 'not_sensitive_auto') ? 'checked' : ''}> 개인정보 아님(업무 연락처 등)</label></div></div>`;
     }).join('');
     document.querySelectorAll('.ritem').forEach(e => {
       e.onclick = ev => { ci = +e.dataset.i; if (ev.target.tagName !== 'INPUT') { drawText(); markCur(); } };

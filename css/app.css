@@ -140,3 +140,42 @@ td .mut{display:block;font-size:12px}
 
 /* 현장 시연(?demo) */
 .demo{border:3px solid var(--acc);text-align:center}.demo h2{margin:0 0 6px}.demo .btn{margin:14px auto 6px;display:inline-block;font-size:1.25em;padding:.8em 1.6em}.demo .small{font-size:.9em}
+
+/* 숨김 표시가 다른 display 규칙에 덮이지 않게(결과를 폴더에 반영 띠가 늘 보이던 오류 수정) */
+[hidden]{display:none!important}
+
+/* 휴대폰: 한 화면 안에 — 결과를 한 줄 카드로, 데스크톱 전용 영역은 숨김 (2026-11-23) */
+@media (max-width:760px){
+ html{font-size:15px}
+ main{padding:8px 10px}
+ .top{padding:10px 12px}
+ .top h1{font-size:20px}
+ .privacy-line{margin:4px 0}
+ #rwCard,#settleBar,#opts,.help{display:none!important}
+ .demo{padding:12px}.demo h2{font-size:18px}.demo p{font-size:13px;margin:4px 0}.demo .btn{margin:8px auto 4px;font-size:1.05em;padding:.6em 1.2em}
+ .drop{padding:10px}.drop-ico{display:none}.drop-title{font-size:15px}.hint1{display:none}
+ .summary{grid-template-columns:repeat(5,1fr);gap:4px}
+ .summary .stat{padding:6px 2px;min-height:0}.summary .stat b{font-size:18px}.summary .stat span{font-size:10px;line-height:1.2}
+ .toolbar .btns{gap:6px}.toolbar .btn{padding:8px 6px;font-size:14px}
+ #list tr{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 6px;border-bottom:6px solid var(--bg)}
+ #list td{display:block;width:auto;padding:0}
+ #list td::before{display:none}
+ #list td.c-sel,#list td.reason{display:none}
+ #list td.name{flex:1 0 100%;font-weight:700;font-size:14px;word-break:break-all}
+ #list td.c-act{margin-left:auto;display:flex;gap:4px}
+ #list td.c-act .btn{flex:0 0 auto;padding:5px 8px;font-size:12px;min-height:0}
+ #list .tag{font-size:12px;padding:3px 9px;min-height:0;line-height:1.4;border-width:1px;width:auto;height:auto}
+ .summary .stat span{word-break:keep-all}
+}
+
+#detailClose,#netClose,#rv-close{white-space:nowrap;flex:0 0 auto}
+@media (max-width:760px){
+ .rv-head{gap:6px;padding:8px 10px}.rv-head h2{flex:1 0 100%;font-size:18px;margin:0}
+ .rv-head .legend,.rv-head .rv-who,.rv-head .rv-only,#rv-kindf,.rv-head .rv-pol,#rv-export,#rv-import,#rv-msg{display:none!important}
+ .rv-head .btn{flex:1 1 40%;padding:8px 6px;font-size:14px}
+ #rv-docs{display:none}
+ .rv-main{grid-template-columns:1fr!important}.pane{max-height:none}
+ .kbd-hint,.rv-keys{display:none}
+}
+@media (max-width:760px){.rv-foot{display:none}}
+button.tag{min-height:0;height:auto;line-height:1.4;border-width:1px;width:auto;cursor:pointer}

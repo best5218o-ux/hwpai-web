@@ -19,12 +19,11 @@
 <a class="skip" href="#drop">본문으로 건너뛰기</a>
 <header class="top">
   <div class="brand">
-    <h1>hwpai 웹</h1>
-    <p class="sub">한글 없이 HWP를 HWPX로 바꿉니다</p>
-    <div class="fsz" role="group" aria-label="글자 크기"><span>글자 크기</span><button type="button" data-z="1.25">크게</button><button type="button" data-z="1.5">더 크게</button><button type="button" data-z="1.8">아주 크게</button></div>
+    <h1>HWP AI</h1>
+    <p class="sub">한글 없이 HWP를 HWPX로</p>
   </div>
   <button id="netBadge" class="badge ok" type="button" aria-haspopup="dialog" title="눌러서 네트워크 점검 보기">
-    <span class="dot"></span><span id="netText">네트워크 요청 0건</span>
+    <span class="dot"></span><span id="netText">외부 전송 0건</span>
   </button>
 </header>
 
@@ -37,10 +36,10 @@
   </section>
 
   <section id="demoCard" class="card demo" hidden>
-    <h2>현장 시연 — 예제 HWP 6건이 준비되어 있습니다</h2>
-    <p class="mut">업무계획·공지문·회의록·개인정보 예시·보도자료 2건. 단추를 누르면 이 기기 안에서 HWPX로 변환하고 원본과 대조해 검증합니다.</p>
-    <button id="btnDemo" class="btn primary big" type="button">▶ 예제 문서 변환해 보기</button>
-    <p class="mut small">결과 표의 「자세히」를 누르면 검증서(무엇을 비교했는지·다른 곳)가 보입니다.</p>
+    <h2>현장 시연 — 복잡한 정부 문서 6건</h2>
+    <p class="mut">표 46개·병합 칸 510개·그림 29개짜리 실제 공문서 5건과 개인정보 예시 1건. 이 기기 안에서 HWPX로 바꾸고 원본과 하나하나 대조합니다.</p>
+    <button id="btnDemo" class="btn primary big" type="button">▶ 예제로 체험하기</button>
+    <p class="mut small">결과 표의 「검증서」를 누르면 검증서(무엇을 비교했는지·다른 곳)가 보입니다.</p>
   </section>
 
   <section id="drop" class="drop" tabindex="0" aria-label="HWP 파일·폴더 끌어놓기 영역">
@@ -48,8 +47,8 @@
       <div class="drop-ico" aria-hidden="true">📂</div>
       <p class="drop-title">HWP 파일을 여기에 끌어다 놓으세요</p>
       <div class="btns">
-        <button id="pickFiles" class="btn primary big" type="button">파일 고르기</button>
-        <button id="pickDir" class="btn big" type="button">폴더 고르기</button>
+        <button id="pickFiles" class="btn primary big" type="button">파일 선택</button>
+        <button id="pickDir" class="btn big" type="button">폴더 선택</button>
       </div>
       <p class="mut center hint1">변환한 파일은 ZIP 하나로 내려받습니다. 원본은 그대로 둡니다.</p>
       <input id="fileInput" type="file" multiple accept=".hwp,.hwpx,.HWP,.HWPX" hidden>
@@ -59,22 +58,22 @@
 
 
   <section id="rwCard" class="card rw" hidden>
-    <h2>폴더를 그 자리에서 바꾸기 <small class="mut">(Chrome·Edge 데스크톱)</small></h2>
+    <h2>폴더째 HWPX로 전환 <small class="mut">(Chrome·Edge 데스크톱)</small></h2>
     <p class="rw-lead">폴더 안 문서를 <b>같은 자리에서</b> HWPX 로 바꿔 두고, 옛 파일은 안전하게 따로 모아 둡니다.</p>
     <div class="rw-flow" aria-label="바뀌는 모습">
       <div><span class="fn">보고서.hwp</span><em>→</em><span class="fn new">보고서.hwpx</span><small>같은 폴더, 같은 자리에 생깁니다</small></div>
       <div><span class="fn">보고서.hwp (원본)</span><em>→</em><span class="fn arc">_원본보관 / 보고서.hwp</span><small>폴더 안 「_원본보관」으로 옮깁니다. 지우지 않습니다</small></div>
     </div>
-    <ol class="rw-steps"><li><b>바꿀 폴더 고르기</b> — 아래 단추를 누르거나 위 상자에 폴더를 끌어놓고, 「수정 허용」을 누릅니다</li><li>변환이 끝나면 <b>「결과를 폴더에 적용」</b> 띠가 나타납니다. 검증 PASS 문서만 바뀝니다</li></ol>
-    <div class="btns"><button id="pickRW" class="btn primary big" type="button">바꿀 폴더 고르기</button></div>
+    <ol class="rw-steps"><li><b>전환할 폴더 선택</b> — 아래 단추를 누르거나 위 상자에 폴더를 끌어놓고, 「수정 허용」을 누릅니다</li><li>변환이 끝나면 <b>「폴더에 반영」</b> 띠가 나타납니다. 검증 PASS 문서만 바뀝니다</li></ol>
+    <div class="btns"><button id="pickRW" class="btn primary big" type="button">전환할 폴더 선택</button></div>
   </section>
 
   <details id="opts" class="card opts">
-    <summary>⚙ 설정</summary>
+    <summary>설정</summary>
     <div class="grid">
-      <label>동시에 몇 개씩
+      <label>동시 처리 수
         <select id="optJobs"><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
-      <label>파일당 최대 시간(초)
+      <label>파일당 제한 시간(초)
         <input id="optTimeout" type="number" min="10" max="3600" value="120"></label>
       <label>개인정보 처리
         <select id="optPolicy">
@@ -85,12 +84,12 @@
         </select></label>
       <label>문서 암호
         <input id="optPw" type="password" autocomplete="off" placeholder="없으면 비워 두세요"></label>
-      <label class="chk"><input id="optHwpx" type="checkbox"> HWPX 파일도 다시 검증</label>
+      <label class="chk"><input id="optHwpx" type="checkbox"> HWPX 파일도 검증</label>
       <label class="chk"><input id="optAuto" type="checkbox" checked> 놓으면 바로 변환</label>
-      <label id="optArcWrap" class="chk"><input type="checkbox" id="optPickArc"> 보관 폴더를 직접 고르기(기본: 폴더 안 「_원본보관」 자동)</label>
+      <label id="optArcWrap" class="chk"><input type="checkbox" id="optPickArc"> 원본 보관 위치 직접 지정 (기본: 폴더 안 「_원본보관」)</label>
       <label id="optKeepWrap" hidden>원본 보관 기간
         <select id="optKeep"><option value="30" selected>30일 (기본)</option><option value="90">3개월</option><option value="180">6개월</option><option value="0">계속 보관</option></select>
-        <small class="mut">「바꿀 폴더 고르기」로 연 폴더의 변환이 끝나면 「결과를 폴더에 적용」 띠가 나타납니다. 삭제는 자동이 아니며 「보관 원본 정리」에서 미리보기를 본 뒤 직접 합니다.</small>
+        <small class="mut">「전환할 폴더 선택」으로 연 폴더의 변환이 끝나면 「폴더에 반영」 띠가 나타납니다. 삭제는 자동이 아니며 「보관 원본 정리」에서 미리보기를 본 뒤 직접 합니다.</small>
         <button id="btnPurge" class="btn" type="button">보관 원본 정리</button></label>
     </div>
   </details>
@@ -99,23 +98,23 @@
 
   <section id="settleBar" class="settlebar" hidden>
     <div><b id="settleTitle">변환이 끝났습니다</b><span id="settleDesc"></span></div>
-    <button id="btnSettle" class="btn primary big" type="button">결과를 폴더에 적용</button>
+    <button id="btnSettle" class="btn primary big" type="button">폴더에 반영</button>
   </section>
 
   <section id="toolbar" class="toolbar" aria-label="작업 도구" hidden>
     <div class="progress"><div class="bar"><i id="runBar" style="width:0%"></i></div><span id="runText" class="mut"></span></div>
     <div class="btns">
       <button id="btnStart" class="btn primary" type="button">변환 시작</button>
-      <button id="btnCancel" class="btn" type="button" hidden>대기 중인 것 취소</button>
+      <button id="btnCancel" class="btn" type="button" hidden>남은 작업 취소</button>
       
-      <button id="btnZip" class="btn primary" type="button" disabled>결과 모두 받기 (zip)</button>
+      <button id="btnZip" class="btn primary" type="button" disabled>전체 내려받기</button>
       <button id="btnReview" class="btn" type="button" disabled>개인정보 확인</button>
-      <button id="btnRetry" class="btn" type="button" hidden>실패한 것 다시 변환</button>
-      <button id="btnClear" class="btn ghost" type="button">새로 시작</button>
+      <button id="btnRetry" class="btn" type="button" hidden>실패 건 다시 변환</button>
+      <button id="btnClear" class="btn ghost" type="button">처음으로</button>
     </div>
-    <details class="more"><summary>더 보기</summary><div class="btns" style="justify-content:flex-start">
-      <button id="btnZipSel" class="btn" type="button" disabled>고른 것만 zip</button>
-      <button id="btnExport" class="btn" type="button" disabled>AI용 글 내보내기</button>
+    <details class="more"><summary>더보기</summary><div class="btns" style="justify-content:flex-start">
+      <button id="btnZipSel" class="btn" type="button" disabled>선택 항목 내려받기</button>
+      <button id="btnExport" class="btn" type="button" disabled>AI용 내보내기</button>
     </div><div class="filters" role="group" aria-label="걸러 보기"></div></details>
   </section>
 
@@ -123,7 +122,7 @@
     <table id="list">
       <thead><tr>
         <th class="c-sel"><input id="selAll" type="checkbox" aria-label="전체 선택"></th>
-        <th>파일</th><th>결과</th><th>개인정보</th><th>설명</th><th class="c-act">받기</th>
+        <th>파일</th><th>결과</th><th>개인정보</th><th>설명</th><th class="c-act">내려받기</th>
       </tr></thead>
       <tbody id="rows"></tbody>
     </table>
@@ -149,19 +148,19 @@
   <div id="netBody"></div>
 </div></dialog>
 
-<div id="review" class="overlay" hidden role="dialog" aria-modal="true" aria-label="민감정보 확인">
+<div id="review" class="overlay" hidden role="dialog" aria-modal="true" aria-label="개인정보 확인">
   <header class="rv-head">
-    <h2>민감정보 확인</h2>
+    <h2>개인정보 확인</h2>
     <span id="rv-legend" class="legend"></span>
-    <label>확인자 <input id="rv-who" size="10" autocomplete="off"></label>
-    <label><input type="checkbox" id="rv-onlyPend"> 미확인만</label>
+    <label class="rv-who">확인자 <input id="rv-who" size="10" autocomplete="off"></label>
+    <label class="rv-only"><input type="checkbox" id="rv-onlyPend"> 미확인만</label>
     <select id="rv-kindf" aria-label="종류"><option value="">종류 전체</option></select>
-    <button class="btn" id="rv-bulkNo" type="button" title="이 문서에서 보이는 항목 모두 「아님」">보이는 항목 모두 아님</button>
-    <button class="btn" id="rv-bulkYes" type="button" title="이 문서에서 보이는 항목 모두 「민감정보임」">보이는 항목 모두 민감정보임</button>
-    <label>민감정보 있는 문서는 <select id="rv-policy"><option value="mask">가려서 AI 에 보이기</option><option value="block">AI 에 계속 막기(변환은 허용)</option></select></label>
-    <button class="btn primary" id="rv-save" type="button">저장 (Ctrl+S)</button>
-    <button class="btn" id="rv-export" type="button" title="데스크톱판 sens apply 로 적용할 수 있는 결정 파일">결정 파일 받기</button>
-    <button class="btn" id="rv-import" type="button">결정 파일 불러오기</button>
+    <button class="btn" id="rv-bulkNo" type="button" title="이 문서에서 보이는 항목 모두 「아님」">모두 개인정보 아님</button>
+    <button class="btn" id="rv-bulkYes" type="button" title="이 문서에서 보이는 항목 모두 「민감정보임」">모두 개인정보임</button>
+    <label class="rv-pol">개인정보 있는 문서는 <select id="rv-policy"><option value="mask">가려서 AI 에 보이기</option><option value="block">AI 에 계속 막기(변환은 허용)</option></select></label>
+    <button class="btn primary" id="rv-save" type="button">저장</button>
+    <button class="btn" id="rv-export" type="button" title="데스크톱판 sens apply 로 적용할 수 있는 결정 파일">확인 결과 저장</button>
+    <button class="btn" id="rv-import" type="button">확인 결과 불러오기</button>
     <input id="rv-importFile" type="file" accept=".json,application/json" hidden>
     <button class="btn ghost" id="rv-close" type="button">닫기 ✕</button>
     <span id="rv-msg" class="mut" role="status"></span>

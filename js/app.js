@@ -235,7 +235,7 @@
   }
   function runFinished() {
     S.running = 0; S.runEnd = performance.now(); updateProgress(); renderAll();
-    const s = counts(); toast(`처리 끝 — ${s.done}개 변환${s.fail ? ` · 실패·격리 ${s.fail}개` : ''}${s.wait ? ` · 민감정보 확인 대기 ${s.wait}개` : ''}`, 6000);
+    const s = counts(); toast(`처리 끝 — ${s.done}개 변환${s.fail ? ` · 실패·격리 ${s.fail}개` : ''}${s.wait ? ` · 개인정보 확인 대기 ${s.wait}개` : ''}`, 6000);
   }
   function updateProgress() {
     const done = S.doneCount, tot = S.totalCount;
@@ -261,7 +261,7 @@
     if (it.sens && it.sens.items && it.sens.items.length || row.민감정보) {
       row.민감정보 = st.state;
       const kinds = Object.entries(st.kinds).map(([k, v]) => `${k} ${v}`).join(', ');
-      row.민감정보_항목 = kinds + (st.probably_ok ? ` (추정 비민감 ${st.probably_ok}건)` : '');
+      row.민감정보_항목 = kinds + (st.probably_ok ? ` (개인정보 아닌 항목 ${st.probably_ok}건 자동 제외)` : '');
       if (!st.total) { row.민감정보 = st.state; row.민감정보_항목 = ''; }
     }
   }
@@ -270,7 +270,8 @@
     if (!st.total) return '<span class="tag t-ok">없음</span>';
     if (st.state === R.STATES[1]) return `<button class="tag t-wait sm-open" data-open="${it.id}" type="button" title="눌러서 확인 화면 열기">확인해 주세요 (${st.pending}건)</button>`;
     if (st.state === R.STATES[2]) return `<button class="tag t-ok sm-open" data-open="${it.id}" type="button">확인함 · 개인정보 아님</button>`;
-    return `<button class="tag t-warn sm-open" data-open="${it.id}" type="button">확인함 · 있음 ${st.sensitive}건</button>`;
+    if (!st.sensitive && !st.pending) return `<button class="tag t-ok sm-open" data-open="${it.id}" type="button" title="개인정보로 보이지 않는 항목(담당 부서 등)만 있어 자동으로 걸렀습니다">없음</button>`;
+    return `<button class="tag t-warn sm-open" data-open="${it.id}" type="button">개인정보 있음 ${st.sensitive}건</button>`;
   }
   const VWORD = { PASS: ['t-pass', '✔ 정상 변환'], WARN: ['t-warn', '▲ 확인 필요'], FAIL: ['t-fail', '✖ 변환 실패'] };
   function verdictTag(it) {
@@ -335,8 +336,8 @@
       if (it.status === '변환완료' && !r.판정_이유 && r.판정 === 'PASS') reason = '<span class="mut">원본과 같습니다</span>';
       if (it.settleMsg) reason += `<br><small class="mut">${esc(it.settleMsg)}</small>`;
       const acts = [];
-      if (it.hwpx) acts.push(`<button class="btn sm primary" data-act="dl" data-id="${it.id}" type="button">HWPX 받기</button>`);
-      if (it.md) acts.push(`<button class="btn sm" data-act="detail" data-id="${it.id}" type="button">자세히</button>`);
+      if (it.hwpx) acts.push(`<button class="btn sm primary" data-act="dl" data-id="${it.id}" type="button">HWPX</button>`);
+      if (it.md) acts.push(`<button class="btn sm" data-act="detail" data-id="${it.id}" type="button">검증서</button>`);
       if (it.status === '변환완료' || it.row && it.row.원본_형식) acts.push(`<button class="btn sm" data-act="exp" data-id="${it.id}" type="button">AI용</button>`);
       return `<tr data-id="${it.id}"><td class="c-sel"><input type="checkbox" data-sel="${it.id}" ${S.selected.has(it.id) ? 'checked' : ''} aria-label="선택"></td>
 <td class="name" data-l="파일">${esc(it.rel)}</td>
@@ -364,6 +365,7 @@
       $('#settleTitle').textContent = `검증 통과 ${n}개 문서를 바꿀 수 있습니다`;
       $('#settleDesc').textContent = ` 「${S.rootH.name}」 폴더 안에서 .hwp → .hwpx 로 바뀌고, 원본 .hwp 는 「_원본보관」 폴더로 옮겨집니다(삭제 안 함).`;
     }
+    { const bd = $('#btnDemo'); if (bd && bd.disabled && !S.running && S.items.length && !pending().length) bd.textContent = '✔ 변환 완료 — 아래 결과를 확인하세요'; }
     $('#btnCancel').hidden = !S.running;
     $('#btnRetry').hidden = !S.items.some(i => i.status === '변환실패' || i.status === '격리') || !!S.running;
     const chips = [['all', '전체'], ['PASS', '정상 변환'], ['WARN', '확인 필요'], ['bad', '변환 실패'], ['wait', '개인정보 확인 대기'], ['skip', '건너뜀']];
@@ -451,7 +453,7 @@
 <div class="grid" style="display:grid;gap:8px">
 <label><input type="checkbox" id="xMd" checked> 본문.md (Markdown)</label><label><input type="checkbox" id="xJson" checked> 구조.json</label><label><input type="checkbox" id="xCh"> chunks.jsonl (RAG 조각)</label>
 <label><input type="checkbox" id="xAi" checked> <b>AI 폴더용</b> — 민감정보 「확인 필요」 문서는 쓰지 않고 목록에만 올립니다(작성자 등 문서 속성도 뺌). 끄면 사람이 읽는 용도입니다.</label></div>
-<p class="btns" style="justify-content:flex-start"><button class="btn primary" id="xGo" type="button">내보내기 zip 받기</button></p>`;
+<p class="btns" style="justify-content:flex-start"><button class="btn primary" id="xGo" type="button">내려받기</button></p>`;
     dlg.showModal();
     $('#xGo').onclick = () => {
       const formats = [$('#xMd').checked && 'md', $('#xJson').checked && 'json', $('#xCh').checked && 'chunks'].filter(Boolean);
@@ -529,7 +531,7 @@
   }
   function showDetail(it) {
     const r = it.row || {}; const dlg = $('#detail');
-    $('#detailTitle').textContent = '자세히 — ' + it.rel;
+    $('#detailTitle').textContent = '검증서 — ' + it.rel;
     const fp = (h) => h ? String(h).slice(0, 8) + '…' + String(h).slice(-4) : '';
     const V = { PASS: '원본과 같습니다. 그대로 쓰셔도 됩니다.', WARN: '일부가 다를 수 있습니다. 한글에서 한번 열어 보세요.', FAIL: '내용이 빠졌습니다. 그대로 쓰지 마세요.' }[r.판정] || '';
     const same = r.원본_SHA256 && r.변환본_SHA256;
@@ -538,7 +540,7 @@
     const tech = [['원본 크기', fmtSize(r.원본_크기)], ['변환본 크기', fmtSize(r.변환본_크기)], ['원본 형식', r.원본_형식], ['특성', r.특성], ['원본 파일 지문(SHA-256)', r.원본_SHA256], ['변환본 파일 지문(SHA-256)', r.변환본_SHA256],
       ['엔진', r.엔진 ? `${r.엔진} ${r.엔진_판}` : ''], ['변환 소요', r.변환_소요ms ? r.변환_소요ms + ' ms' : ''], ['검증 점수·판정', r.판정 ? `${r.검증점수} · ${r.판정}` : '']].filter(x => x[1]);
     $('#detailBody').innerHTML = `<dl class="kv big">${easy.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
-${same ? `<p class="fpbox"><b>파일 지문</b> 원본 <code>${esc(fp(r.원본_SHA256))}</code> · 바뀐 파일 <code>${esc(fp(r.변환본_SHA256))}</code> <button class="btn sm" id="dCopy" type="button">전체 번호 복사</button></p>` : ''}
+${same ? `<p class="fpbox"><b>파일 지문</b> 원본 <code>${esc(fp(r.원본_SHA256))}</code> · 바뀐 파일 <code>${esc(fp(r.변환본_SHA256))}</code> <button class="btn sm" id="dCopy" type="button">지문 복사</button></p>` : ''}
 <p class="btns" style="justify-content:flex-start"><button class="btn sm" id="dMd" type="button">검증서(.md) 받기</button> <button class="btn sm" id="dJson" type="button">검증서(.json) 받기</button></p>
 ${explainHtml(it)}
 <details class="more"><summary>전문가용 기록</summary><dl class="kv">${tech.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div>${mdToHtml(String(it.md || '').split('# 자세한 기록 (전문가용)').pop())}</div></details>`;
@@ -556,7 +558,7 @@ ${explainHtml(it)}
   }
   function updateNet() {
     const n = E.NET; const bad = n.external + n.blocked;
-    $('#netText').textContent = bad ? `외부 요청 ${bad}건 차단됨` : '네트워크 요청 0건';
+    $('#netText').textContent = bad ? `외부 요청 ${bad}건 차단됨` : '외부 전송 0건';
     $('#netBadge').classList.toggle('bad', !!bad); $('#netBadge').classList.toggle('ok', !bad);
   }
   async function showNet() {
@@ -666,13 +668,13 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
   (function () {
     const set = (z) => { document.documentElement.style.setProperty('--z', z); LS.set('hwpai.z.v1', z); $$('.fsz button').forEach(b => b.classList.toggle('on', +b.dataset.z === +z)); };
     $$('.fsz button').forEach(b => b.addEventListener('click', () => set(+b.dataset.z)));
-    set(+LS.get('hwpai.z.v1', 1.25) || 1.25);
+    set(1.25);   // 글자 크기 고정(크게) — 선택 단추는 없앴다
   })();
   initOpts(); wire(); renderAll();
   // 현장 시연: 주소에 ?demo 가 있을 때만 예제 HWP 를 불러오는 단추를 보인다(같은 출처 정적 파일, 외부 전송 없음)
   (function () {
     if (!new URLSearchParams(location.search).has('demo')) return;
-    const SAMPLES = [['s1.hwp', '업무계획.hwp'], ['s2.hwp', '공지문.hwp'], ['s3.hwp', '회의록.hwp'], ['s4.hwp', '개인정보_예시.hwp'], ['s5.hwp', '보도자료_1.hwp'], ['s6.hwp', '보도자료_2.hwp']];
+    const SAMPLES = [['s1.hwp', '질병청_보도참고자료(표29·그림29).hwp'], ['s2.hwp', '산업부_보도자료(표46·그림23).hwp'], ['s3.hwp', '경기도_사업계획서(표48·병합칸510).hwp'], ['s5.hwp', '군청_물품요구서(병합칸425).hwp'], ['s6.hwp', '국립국어원_업무계획(표16).hwp'], ['s4.hwp', '개인정보_예시.hwp']];
     const card = $('#demoCard'); card.hidden = false;
     $('#btnDemo').onclick = async () => {
       const b = $('#btnDemo'); b.disabled = true; b.textContent = '예제 문서를 불러오는 중…';
@@ -686,7 +688,7 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
         if (!readOpts().auto) kick();
         b.textContent = '변환 중 — 아래 표에서 결과를 확인하세요';
         const lw = $('#listWrap'); if (lw) lw.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } catch (e) { b.disabled = false; b.textContent = '▶ 예제 문서 변환해 보기'; toast('예제 문서를 불러오지 못했습니다: ' + e.message, 7000); }
+      } catch (e) { b.disabled = false; b.textContent = '▶ 예제로 체험하기'; toast('예제 문서를 불러오지 못했습니다: ' + e.message, 7000); }
     };
   })();
 
