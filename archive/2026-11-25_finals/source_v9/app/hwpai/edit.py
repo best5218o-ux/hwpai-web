@@ -155,8 +155,9 @@ def verify_replace(src: str, out: str, mapping: dict, counts: dict) -> dict:
 def report_md(src: str, out: str, res: dict, ver: dict) -> str:
     L = ["# 변경 보고서", "", f"- 원본: {os.path.basename(src)} (바꾸지 않음)", f"- 결과: {os.path.basename(out)}",
          f"- 변경 {sum(c['count'] for c in res['changes'])}곳 · 못 찾은 항목 {len(res['not_found'])}개",
-         f"- 되읽기 검증: {'통과' if ver['ok'] else '확인 필요'} (바뀐 곳 밖 글 {'동일' if ver['rest_same_as_expected'] else '다름'}"
-         f" · 표 구조 {'동일' if ver['tables_structure_same'] else '다름'} · 그림 {'동일' if ver['images_same'] else '다름'})", "",
+         (f"- 되읽기 검증: {'통과' if ver['ok'] else '확인 필요'} (바뀐 곳 밖 글 {'동일' if ver['rest_same_as_expected'] else '다름'}"
+          f" · 표 구조 {'동일' if ver['tables_structure_same'] else '다름'} · 그림 {'동일' if ver['images_same'] else '다름'})"
+          if "rest_same_as_expected" in ver else f"- 되읽기 검증: {ver.get('note', '')}"), "",
          "| 위치 | 이전 | 이후 | 횟수 | 비고 |", "|---|---|---|---|---|"]
     for c in res["changes"]:
         L.append(f"| {c['where']} | {c['before']} | {c['after']} | {c['count']} | {'여러 글 조각에 걸침(첫 조각 글자 모양)' if c['multi_run'] else ''} |")
@@ -211,6 +212,10 @@ def replace_text(path: str, mapping: dict, out: str | None = None) -> dict:
             "not_found": res["not_found"], "verify": ver, "inserted": ins["inserted"], "not_inserted": ins["not_inserted"]}
 
 
+def _flat(s: str) -> str:
+    return re.sub(r"\s+", "", (s or "").replace("\u2063", ""))
+
+
 def insert_hwpx(src: str, items: list, dst: str) -> dict:
     """표 밖 본문 문단 뒤에 새 문단을 넣는다(검증서의 「빠진 글 채우기」용).
 
@@ -236,7 +241,7 @@ def insert_hwpx(src: str, items: list, dst: str) -> dict:
                 if any(_ln(a.tag) in ("tc", "tbl", "drawText", "subList") for a in _ancestors(p, parents, root)):
                     continue  # 표·글상자 안은 건드리지 않는다
                 ts = [t for t in p.iter() if _ln(t.tag) == "t"]
-                if ts and _norm("".join(t.text or "" for t in ts)) == after:
+                if ts and _flat("".join("".join(t.itertext()) for t in ts)) == _flat(after):   # 줄바꿈·띄어쓰기 차이는 같은 글로 본다
                     cands.append((n, root, parents, p, ts))
         if len(cands) != 1:
             skipped.append({"after": it.get("after"), "text": text, "reason": "앞 문단을 찾지 못함" if not cands else f"앞 문단이 {len(cands)}곳에 있어 한 곳으로 정할 수 없음"})
@@ -245,6 +250,8 @@ def insert_hwpx(src: str, items: list, dst: str) -> dict:
         new = copy.deepcopy(p)
         nts = [t for t in new.iter() if _ln(t.tag) == "t"]
         for i, t in enumerate(nts):
+            for ch in list(t):   # 앞 문단 글 조각 안의 탭·글자 묶음과 그 뒤 글(tail)은 새 문단에 따라오지 않게 비운다
+                t.remove(ch)
             t.text = text if i == 0 else ""
         _drop_lineseg(new)
         par = parents[p]

@@ -704,7 +704,7 @@ def _compare_table(a: Table, b: Table, limit: int = 20) -> dict:
                     continue
                 nbad += 1
                 if len(diffs) < limit:
-                    diffs.append({"row": r + 1, "col": c + 1, "orig": (va or "").replace("\u2063", "")[:300], "conv": (vb or "").replace("\u2063", "")[:300],
+                    diffs.append({"row": r + 1, "col": c + 1, "orig": (va or "").replace("\u2063", "")[:2000], "conv": (vb or "").replace("\u2063", "")[:2000],
                                   "kind": "칸 없음" if vb is None else ("칸 추가" if va is None else "글 다름")})
     res["cells_bad"] = nbad
     res["cells_symbol_mapped"] = nsym
@@ -841,8 +841,8 @@ def audit(original: str, converted: str, engine_report: dict | None = None, read
         tdiff.append({"op": {"replace": "바뀜", "delete": "빠짐", "insert": "더해짐"}[op], "lost": bool(lost and na),
                       "where_orig": ua[i1][0] if i1 < i2 else (ua[i1 - 1][0] + " 뒤" if i1 else "처음"),
                       "where_conv": ub[j1][0] if j1 < j2 else (ub[j1 - 1][0] + " 뒤" if j1 else "처음"),
-                      "orig": a_txt.replace("\u2063", "")[:400], "conv": b_txt.replace("\u2063", "")[:400],
-                      "anchor_conv": (ub[j1 - 1][1].replace("\u2063", "")[:400] if j1 and ub[j1 - 1][0].startswith("본문 ") and "·" not in ub[j1 - 1][0] else "")})
+                      "orig": a_txt.replace("\u2063", "")[:2000], "conv": b_txt.replace("\u2063", "")[:2000],
+                      "anchor_conv": (ub[j1 - 1][1].replace("\u2063", "")[:2000] if j1 and ub[j1 - 1][0].startswith("본문 ") and "·" not in ub[j1 - 1][0] else "")})
     ck["text_diff_spots"] = len(tdiff)
     A.details["text_diffs"] = tdiff[:30]
     lost_spots = [x for x in tdiff if x["lost"]]

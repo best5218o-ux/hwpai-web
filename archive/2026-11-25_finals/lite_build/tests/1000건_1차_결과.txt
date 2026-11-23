@@ -1,0 +1,15 @@
+== 경량판 1,000건 Windows 실증 2026-11-23 16:05 (1차) ==
+입력 HWP: 1000
+  {"files": 1000, "resumed": 0, "wall_seconds": 574.1, "status": {"변환완료": 999, "격리": 1}, "verdict": {"PASS": 993, "WARN": 4, "FAIL": 2}}
+  이관대장: C:\Users\대전\Downloads\RESTART\hwpai_경량판_시험\outN\이관대장.csv  ·  요약: C:\Users\대전\Downloads\RESTART\hwpai_경량판_시험\outN\요약.md
+[기존판 Node.js] 걸린 시간 601.3초
+  {"files": 1000, "resumed": 0, "wall_seconds": 656.0, "status": {"변환완료": 996, "변환실패": 3, "격리": 1}, "verdict": {"PASS": 991, "WARN": 4, "FAIL": 1}}
+  이관대장: C:\Users\대전\Downloads\RESTART\hwpai_경량판_시험\outL\이관대장.csv  ·  요약: C:\Users\대전\Downloads\RESTART\hwpai_경량판_시험\outL\요약.md
+[경량판 첫 실행(엔진 준비 포함)] 걸린 시간 673.0초
+  {"files": 1000, "resumed": 0, "wall_seconds": 592.7, "status": {"변환완료": 996, "변환실패": 3, "격리": 1}, "verdict": {"PASS": 991, "WARN": 4, "FAIL": 1}}
+  이관대장: C:\Users\대전\Downloads\RESTART\hwpai_경량판_시험\outL2\이관대장.csv  ·  요약: C:\Users\대전\Downloads\RESTART\hwpai_경량판_시험\outL2\요약.md
+[경량판 두 번째 실행] 걸린 시간 610.8초
+outL 엔진 {'rhwp-py': 999, '': 1} | HWPX 바이트 동일 957 / 999 | 판정·점수 동일 996 / 1000 | 판정 {'PASS': 991, 'WARN': 4, 'FAIL': 4, '': 1}
+outL2 엔진 {'rhwp-py': 999, '': 1} | HWPX 바이트 동일 957 / 999 | 판정·점수 동일 996 / 1000 | 판정 {'PASS': 991, 'WARN': 4, 'FAIL': 4, '': 1}
+기존판 판정 {'PASS': 993, 'WARN': 4, 'FAIL': 2, '': 1}
+== 끝 ==
