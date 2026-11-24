@@ -607,7 +607,7 @@
     const tiles = cmpAll.filter(c => ['글', '표', '그림'].indexOf(c['항목']) >= 0 || parseInt(c['원본'], 10) > 0).map(c => { const [n, u] = num(c['원본']); const same = c['결과'] === '같음'; return `<div class="rt ${same ? 'ok' : 'bad'}"><u>${IC[c['항목']] || '•'}</u><b>${esc(n)}</b><span>${esc(c['항목'] === '글' ? '글자' : c['항목'])}</span><em>${same ? '✔ 같음' : '✖ 다름'}</em></div>`; }).join('');
     const cellNote = (cmpAll.find(c => c['항목'] === '표') || {})['설명'] || '';
     const hero = { PASS: ['ok', '✔', 'PASS', '원본과 같음', '그대로 쓰셔도 됩니다'], WARN: ['warn', '▲', '확인 필요', '일부가 다를 수 있음', '한글에서 한 번 열어 보세요'], FAIL: ['bad', '✖', 'FAIL', '원본과 다름', '그대로 쓰지 마세요'] }[r.판정] || ['gray', '•', esc(it.status || ''), '', ''];
-    const flow = (r.원본_크기 && r.변환본_크기) ? `<div class="rflow"><span class="a">HWP<small>${esc(fmtSize(r.원본_크기))}</small></span><i>${r.변환_소요ms ? (r.변환_소요ms / 1000).toFixed(1) + '초' : ''}</i><span class="b">HWPX<small>${esc(fmtSize(r.변환본_크기))}</small></span></div>` : '';
+    const flow = (r.원본_크기 && r.변환본_크기) ? `<div class="rflow"><span class="a">HWP<small>${esc(fmtSize(r.원본_크기))}</small></span><i><em>${r.변환_소요ms ? (r.변환_소요ms / 1000).toFixed(1) + '초' : ''}</em><s></s></i><span class="b">HWPX<small>${esc(fmtSize(r.변환본_크기))}</small></span></div>` : '';
     const pcard = `<div class="rpii ${scls}"><u>${scls === 'ok' ? '🔓' : '🔒'}</u><div><b>개인정보 ${scls === 'ok' ? '없음' : (kinds ? esc(kinds) : stxt.replace(/^[✔⚠]\s*/, ''))}</b><p>${scls === 'ok' ? 'AI에 넘겨도 되는 문서입니다' : 'AI에 넘기기 전에 사람이 한 번 확인합니다'}</p>${sbtn}</div></div>`;
     $('#detailBody').innerHTML = `<div class="rhero ${hero[0]}"><u>${hero[1]}</u><div><b>${hero[2]}</b><em>${hero[3]}</em><p>${hero[4]}</p></div></div>
 ${flow}
@@ -619,6 +619,7 @@ ${(xx && (xx['쉬운설명'] || {})['다른 부분'] || []).length ? explainHtml
 ${same ? `<p class="fpbox"><b>파일 지문</b> 원본 <code>${esc(fp(r.원본_SHA256))}</code> · 바뀐 파일 <code>${esc(fp(r.변환본_SHA256))}</code> <button class="btn sm" id="dCopy" type="button">지문 복사</button></p>` : ''}
 <p class="btns" style="justify-content:flex-start"><button class="btn sm" id="dMd" type="button">검증서(.md) 받기</button> <button class="btn sm" id="dJson" type="button">검증서(.json) 받기</button></p>
 <dl class="kv">${tech.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div>${mdToHtml(String(it.md || '').split('# 자세한 기록 (전문가용)').pop())}</div></details>`;
+    $('#detailBody').querySelectorAll('details.more').forEach(d => d.addEventListener('toggle', () => { if (d.open) { try { d.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { /* */ } } }));
     const cp = $('#dCopy'); if (cp) cp.onclick = () => { try { navigator.clipboard.writeText(`원본 ${r.원본_SHA256}\n변환본 ${r.변환본_SHA256}`); cp.textContent = '복사했습니다'; } catch (e) { cp.textContent = '복사 못 함'; } };
     const dr = $('#dReview'); if (dr) dr.onclick = () => { dlg.close(); openReview(it.id); };
     $('#dMd').onclick = () => download(new Blob([it.md || ''], { type: 'text/markdown' }), it.name + '.검증서.md');
