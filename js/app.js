@@ -528,6 +528,45 @@
     }
     closeAll(); return out.join('\n');
   }
+  // 시연(?demo)에서 「AI용」: 파일 묶음을 내려받게 하지 않고, AI가 읽게 될 모습을 바로 보여 준다(파일은 「파일로 받기」로).
+  function aiSafeHtml(md) {
+    const tbl = (t) => esc(t).replace(/&lt;(\/?)(table|tr|td|th)((?:\s+(?:colspan|rowspan)=(?:&quot;|")\d+(?:&quot;|"))*)&gt;/g, (m, c, tag, at) => '<' + c + tag + (at || '').replace(/&quot;/g, '"') + '>').replace(/&lt;br\s*\/?&gt;/g, '<br>');
+    const pic = (h) => h.replace(/!\[[^\]]*\]\([^)]*\)|\[그림:[^\]]*\]/g, '<span class="aipic">🖼 그림</span>').replace(/&lt;br\s*\/?&gt;/g, '<br>');
+    const out = []; let last = 0; const re = /<table>[\s\S]*?<\/table>/g; let m;
+    while ((m = re.exec(md))) { out.push(pic(mdToHtml(md.slice(last, m.index)))); out.push(pic(tbl(m[0]))); last = re.lastIndex; }
+    out.push(pic(mdToHtml(md.slice(last)))); return out.join('\n');
+  }
+  async function previewAI(it) {
+    const dlg = $('#detail'); $('#detailTitle').textContent = 'AI용 — ' + it.rel;
+    const st = sensStatus(it);
+    if (st && st.state === R.STATES[1]) {
+      $('#detailBody').innerHTML = `<div class="rhero warn"><u>🔒</u><div><b>잠금</b><em>개인정보 확인 전</em><p>사람이 확인하기 전에는 AI용으로 내보내지 않습니다</p></div></div><div class="rpii wait"><u>🔒</u><div><b>${esc(Object.entries(st.kinds || {}).map(([k, v]) => k + ' ' + v + '건').join(', '))}</b><p>확인을 마치면 AI용으로 내보낼 수 있습니다</p><button class="btn primary sm" id="aiReview" type="button">개인정보 확인하기</button></div></div>`;
+      $('#aiReview').onclick = () => { dlg.close(); openReview(it.id); };
+      if (!dlg.open) dlg.showModal(); return;
+    }
+    $('#detailBody').innerHTML = `<div class="rhero ok"><u>🤖</u><div><b>AI용</b><em>만드는 중…</em><p>AI가 읽기 쉬운 꼴로 바꾸고 있습니다</p></div></div>`;
+    if (!dlg.open) dlg.showModal();
+    try {
+      if (!it._ai) {
+        const buf = await it.file.arrayBuffer(); const o = readOpts();
+        const res = await S.pool.run({ type: 'export', id: 0, rel: it.rel, data: buf, formats: ['md', 'chunks'], aiFolder: false, cfg: { policy: o.policy, engine_version: S.cfg.engine_version } }, [buf], (o.timeout + 60) * 1000, S.records, S.recVer);
+        const dec = new TextDecoder(); const ks = Object.keys(res.buffers || {}); const km = ks.find(f => /\.md$/.test(f)); const kc = ks.find(f => /\.jsonl$/.test(f));
+        if (!km) throw new Error('본문을 만들지 못했습니다');
+        const md = dec.decode(new Uint8Array(res.buffers[km])); const ch = kc ? dec.decode(new Uint8Array(res.buffers[kc])).split('\n').filter(x => x.trim()).length : 0;
+        it._ai = { md, ch };
+      }
+      const md = it._ai.md; const nT = (md.match(/\*\*\[표\d+\]\*\*/g) || []).length; const nP = (md.match(/!\[[^\]]*\]\([^)]*\)|\[그림:[^\]]*\]/g) || []).length;
+      let cut = md.slice(0, 2600); const e = Math.max(cut.lastIndexOf('</table>') + 8, cut.lastIndexOf('\n\n')); if (e > 600) cut = cut.slice(0, e);
+      const N = (n) => Number(n).toLocaleString('ko-KR');
+      $('#detailBody').innerHTML = `<div class="rhero ok"><u>🤖</u><div><b>AI용</b><em>준비됨</em><p>AI가 표와 글을 그대로 읽습니다</p></div></div>
+<div class="rtiles"><div class="rt ok"><u>📝</u><b>${N(md.length)}</b><span>글자</span></div><div class="rt ok"><u>▦</u><b>${N(nT)}</b><span>표</span></div><div class="rt ok"><u>🧩</u><b>${N(it._ai.ch)}</b><span>검색 조각</span></div></div>
+<p class="rnote">AI가 읽는 모습 (앞부분)</p>
+<div class="aiprev">${aiSafeHtml(cut)}</div>
+<div class="aifmt"><span>본문.md</span><span>구조.json</span><span>chunks.jsonl</span>${nP ? `<span>그림 ${N(nP)}개</span>` : ''}</div>
+<p class="btns" style="justify-content:center"><button class="btn sm" id="aiFiles" type="button">파일로 받기</button></p>`;
+      $('#aiFiles').onclick = () => askExport([it]);
+    } catch (e) { $('#detailBody').innerHTML = `<div class="rhero gray"><u>•</u><div><b>AI용</b><p>${esc(e.message || String(e))}</p></div></div>`; }
+  }
   // 검증서 쉬운 설명: 어디가 다른지 · 왜 그런지 · 어떻게 하면 되는지 (본체 explain.py 가 만든 쉬운설명)
   function explainHtml(it) {
     let x = null; try { x = JSON.parse(it.json || 'null'); } catch (e) { /* */ }
@@ -695,7 +734,7 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
       const it = S.items.find(i => i.id === +b.dataset.id); if (!it) return;
       if (b.dataset.act === 'dl') download(it.hwpx.blob, it.dst.split('/').pop());
       else if (b.dataset.act === 'detail') showDetail(it);
-      else if (b.dataset.act === 'exp') askExport([it]);
+      else if (b.dataset.act === 'exp') { if (new URLSearchParams(location.search).has('demo')) previewAI(it); else askExport([it]); }
     });
     $('#detailClose').onclick = () => $('#detail').close(); $('#netClose').onclick = () => $('#netDlg').close();
     $('#netBadge').onclick = showNet;
