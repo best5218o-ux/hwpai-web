@@ -818,7 +818,7 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
         el.querySelector('.gfill').style.width = (gp * 100).toFixed(1) + '%'; el.querySelector('.gman').style.left = (gp * 100).toFixed(1) + '%'; const gt = el.querySelector('.gman .gcart text'); if (gt) { gt.textContent = ok ? 'HWPX' : 'HWP'; gt.setAttribute('font-size', ok ? '7.2' : '8.6'); }
       };
       st.iv = setInterval(tick, 200);
-      const POSES = [['', 2600], ['trip', 1500], ['fast', 2000], ['push', 3000], ['rest', 1500], ['', 1800], ['push', 2400], ['trip', 1500], ['fast', 2200]];
+      const POSES = [['', 4000], ['push', 4000]];   // 끌기 → 뒤에서 밀기 (넘어지기·땀 닦기는 공식 자리에 맞지 않아 뺌)
       let pk = 0; const pose = () => { if (!el.isConnected) return; const g = el.querySelector('.gman'); const done = el.querySelector('.slive').classList.contains('ok'); let ps = POSES[pk % POSES.length][0]; if ((st.gp || 0) > 0.5 && ps !== 'trip') ps = 'push';   // 절반을 넘으면 뒤에서 밀어 HWPX 까지 간다
         g.className = 'gman' + (done ? '' : (ps ? ' ' + ps : '')); st.pt = setTimeout(pose, done ? 800 : POSES[pk % POSES.length][1]); pk++; };
       pose();
