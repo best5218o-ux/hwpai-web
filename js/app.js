@@ -245,6 +245,7 @@
   }
   function runFinished() {
     S.running = 0; S.runEnd = performance.now(); updateProgress(); renderAll();
+    try { window.dispatchEvent(new Event('hwpai-run-finished')); } catch (e) { /* */ }
     const s = counts(); toast(`처리 끝 — ${s.done}개 변환${s.fail ? ` · 실패·격리 ${s.fail}개` : ''}${s.wait ? ` · 개인정보 확인 대기 ${s.wait}개` : ''}`, 6000);
   }
   function updateProgress() {
@@ -705,6 +706,53 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
     let pre = null;
     const getPre = () => { if (!pre) { pre = SAMPLES.map(([f]) => fetch('samples/' + f).then(r => { if (!r.ok) throw new Error(f + ' ' + r.status); return r.blob(); })); pre.forEach(p => p.catch(() => {})); } return pre; };
     window.addEventListener('hwpai-engine-ready', getPre, { once: true });
+    // 현장 시연 결과 안내: 단추 한 번으로 변환이 끝나면, 발표에서 말한 기능을 차례로 펼쳐 보인다(새 기능이 아니라 이미 있는 결과를 한 화면에 모아 보여 줌).
+    // ①~⑤ 는 방금 이 기기에서 한 결과, ⑥~⑨ 는 PC판이 만든 실제 결과물(같은 출처 정적 파일).
+    let demoRun = false;
+    async function buildTour() {
+      const lw = $('#listWrap'); if (!lw || $('#demoTour')) return;
+      const sec = document.createElement('section'); sec.id = 'demoTour'; sec.className = 'card tour'; lw.parentNode.insertBefore(sec, lw);
+      const add = (h) => { const d = document.createElement('div'); d.className = 'tstep'; d.innerHTML = h; sec.appendChild(d); return d; };
+      const by = (k) => S.items.find(i => i.name.indexOf(k) >= 0);
+      const secs = (((S.runEnd || performance.now()) - S.runStart) / 1000).toFixed(1); const c = counts();
+      sec.innerHTML = `<h2>단추 한 번으로 한 일</h2><p class="mut">①~⑤ 방금 이 기기에서 실제로 한 결과 · ⑥~⑨ PC판이 만든 실제 결과물</p>`;
+      add(`<h3>① 변환</h3><p><b>${c.done}건</b>을 <b>${secs}초</b>에 HWPX로 바꿨습니다. 설치 없이, 이 기기 안에서만 처리했습니다(외부 전송 0건).</p>`);
+      const a = by('산업부') || S.items.find(i => i.json);
+      if (a) {
+        let x = null; try { x = JSON.parse(a.json || 'null'); } catch (e) { /* */ }
+        const cmp = ((x && x['쉬운설명'] || {})['비교한 것'] || []).map(r => `<tr><td>${esc(r['항목'])}</td><td>${esc(r['원본'])}</td><td>${esc(r['변환본'])}</td><td>${r['결과'] === '같음' ? '✔ 같음' : '✖ 다름'}${r['설명'] ? '<br><small>' + esc(r['설명']) + '</small>' : ''}</td></tr>`).join('');
+        add(`<h3>② 원본 대조 검증</h3><p>변환 엔진과 다른 판독기로 원본을 직접 읽어 하나씩 맞춰 봤습니다. — ${esc(a.name)}</p><div class="tscroll"><table class="tcmp"><thead><tr><th>항목</th><th>원본</th><th>변환본</th><th>결과</th></tr></thead><tbody>${cmp}</tbody></table></div>`);
+        const r = a.row || {};
+        if (r.원본_SHA256) add(`<h3>③ 파일별 판정과 지문</h3><p>문서마다 판정과 파일 지문(SHA-256)을 대장에 남깁니다. 「전체 내려받기」에 이관대장(xlsx)이 함께 들어 있습니다.</p><p class="tfp">판정 <b>${esc(r.판정 || '')}</b> · 점수 ${esc(String(r.검증점수 || ''))}<br>원본 <code>${esc(String(r.원본_SHA256).slice(0, 16))}…</code><br>변환본 <code>${esc(String(r.변환본_SHA256).slice(0, 16))}…</code></p>`);
+      }
+      const pi = S.items.find(i => i.sens && i.sens.items && i.sens.items.length && i.sens.text);
+      if (pi) {
+        const t = pi.sens.text; const its = pi.sens.items.slice().sort((p, q) => p.start - q.start).slice(0, 3); let out = '', pos = Math.max(0, its[0].start - 40);
+        for (const it of its) { out += esc(t.slice(pos, it.start)) + '<mark>' + esc(t.slice(it.start, it.end)) + '</mark>'; pos = it.end; }
+        out += esc(t.slice(pos, pos + 40));
+        add(`<h3>④ 개인정보 확인</h3><p>개인정보로 보이는 부분을 색으로 표시합니다. 사람이 확인하기 전에는 AI로 넘기지 않습니다. — ${esc(pi.name)}</p><p class="tquote">${out}</p><p><button class="btn sm" id="tourReview" type="button">확인 화면 열기</button></p>`);
+        const rb = $('#tourReview'); if (rb) rb.onclick = () => $('#btnReview').click();
+      }
+      const mdStep = add(`<h3>⑤ AI용 내보내기</h3><p>AI가 읽기 쉬운 마크다운·JSON으로 내보냅니다. 만드는 중…</p>`);
+      const pc = add(`<h3>⑥ 차이를 찾아낸 검증서 <small>PC판 실물</small></h3><p>변환본의 숫자 한 곳(「15개월 연속」→「51개월 연속」)을 일부러 바꾼 뒤 검증한 결과입니다. 어디가 다른지, 왜 그런지, 어떻게 고치는지 적습니다.</p><div id="tourCert" class="tscroll"></div>`);
+      add(`<h3>⑦ 변환 전후 쪽별 나란히 비교 <small>PC판 실물</small></h3><p>원본(왼쪽)과 변환본(오른쪽)을 쪽마다 나란히 그려 견줍니다. 산업부 보도자료 39쪽 → 39쪽 일치.</p><a href="pc/visual.html" target="_blank" rel="noopener"><img src="pc/visual.jpg" alt="산업부 보도자료 1쪽의 원본과 변환본을 나란히 놓은 비교 화면" loading="lazy"></a><p><a class="btn sm" href="pc/visual.html" target="_blank" rel="noopener">보고서 열기(앞 2쪽 · 2MB)</a></p>`);
+      add(`<h3>⑧ 폴더 자동 감시 <small>PC판 화면 녹화</small></h3><p>폴더를 지정해 두면 30초마다 새 HWP를 확인해 자동으로 변환·검증하고, 원본은 보관합니다.</p><video controls muted autoplay loop playsinline preload="metadata" poster="pc/watch.jpg"><source src="pc/watch.mp4" type="video/mp4"></video>`);
+      const ai = add(`<h3>⑨ AI 도구 연결 <small>PC판 실물</small></h3><p>AI 앱이 어댑터를 도구로 불러 문서를 읽고, 표를 꺼내고, 서식은 그대로 글을 바꾸고, 양식을 채웁니다(도구 8개).</p><div id="tourAi"></div>`);
+      try { const v = sec.querySelector('video'); if (v) { v.muted = true; const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); } } catch (e) { /* */ }
+      try { sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) { /* */ }
+      // 정적 실물(같은 출처) — 받지 못해도 나머지는 그대로 보인다
+      fetch('pc/cert_fail.json').then(r => r.ok ? r.text() : Promise.reject()).then(tx => { $('#tourCert').innerHTML = `<p class="tbad">✖ 원본과 다른 곳이 있어 통과시키지 않았습니다 (판정 FAIL)</p>` + explainHtml({ json: tx }); }).catch(() => { $('#tourCert').textContent = '불러오지 못했습니다.'; });
+      fetch('pc/ai_call.json').then(r => r.ok ? r.json() : Promise.reject()).then(j => { $('#tourAi').innerHTML = `<p class="mut">실제 호출 — ${esc(j.tool)}(「${esc(j.args.query)}」) · 조각 ${j.total_chunks}개 중 찾은 것</p><pre class="tpre">${esc(String(j.text).replace(/<br>/g, '\n'))}</pre>`; }).catch(() => { $('#tourAi').textContent = ''; });
+      // ⑤ 마크다운: 작은 문서 하나를 실제로 내보내 앞부분을 보여 준다
+      try {
+        const it = by('국립국어원') || a; const buf = await it.file.arrayBuffer(); const o = readOpts();
+        const res = await S.pool.run({ type: 'export', id: 0, rel: it.rel, data: buf, formats: ['md'], aiFolder: false, cfg: { policy: o.policy, engine_version: S.cfg.engine_version } }, [buf], (o.timeout + 60) * 1000, S.records, S.recVer);
+        const k = Object.keys(res.buffers || {}).find(f => /\.md$/.test(f)); if (!k) throw new Error('md 없음');
+        const md = new TextDecoder().decode(new Uint8Array(res.buffers[k])); const mm = /\n\*\*\[표\d+\]\*\*\n\n\|[^\n]*\|[^\n]*\|[^\n]*\|[^\n]*\|\n/.exec(md); const i0 = mm ? mm.index : Math.max(0, md.indexOf('|')); const cut = md.slice(i0, i0 + 620).trim();
+        mdStep.innerHTML = `<h3>⑤ AI용 내보내기</h3><p>AI가 읽기 쉬운 마크다운·JSON·검색용 조각으로 내보냅니다. 방금 만든 마크다운의 일부입니다. — ${esc(it.name)} (${md.length.toLocaleString()}자)</p><pre class="tpre">${esc(cut)}</pre>`;
+      } catch (e) { mdStep.innerHTML = `<h3>⑤ AI용 내보내기</h3><p>AI가 읽기 쉬운 마크다운·JSON·검색용 조각으로 내보냅니다. 문서 옆 「AI용」 단추로 받을 수 있습니다.</p>`; }
+    }
+    window.addEventListener('hwpai-run-finished', () => { if (demoRun) buildTour().catch(e => console.error(e)); });
     $('#btnDemo').onclick = async () => {
       const b = $('#btnDemo'); b.disabled = true; b.textContent = '예제 문서를 불러오는 중…';
       try {
@@ -713,6 +761,7 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
           const blob = await getPre()[list.length];
           list.push({ file: new File([blob], name, { lastModified: 1763769600000 }), path: '예제문서/' + name });
         }
+        demoRun = true;
         addFiles(list, null);
         if (!readOpts().auto) kick();
         b.textContent = '변환 중 — 아래 표에서 결과를 확인하세요';

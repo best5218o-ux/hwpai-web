@@ -237,3 +237,10 @@ details.help>summary{color:var(--mut);font-size:14px;display:inline-block;cursor
 details.help>summary b{font-weight:500}
 details.help[open]{text-align:left;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px 14px}
 @media (max-width:760px){.hero-btns{display:none}}
+
+/* 현장 시연 결과 안내(?demo) */
+.tour{border:3px solid var(--acc);text-align:left}.tour h2{margin:0 0 4px}.tour .tstep{border-top:1px solid #d7deea;padding:12px 0 4px;margin-top:10px}.tour h3{margin:0 0 6px;font-size:1.1em}.tour h3 small{font-weight:600;font-size:.7em;background:#eef2f9;border-radius:999px;padding:2px 8px;margin-left:4px;white-space:nowrap}
+.tour p{margin:6px 0}.tour img,.tour video{width:100%;height:auto;border:1px solid #d7deea;border-radius:10px;display:block}.tour .tscroll{overflow-x:auto}.tour table.tcmp{display:table;border-collapse:collapse;width:100%;font-size:.92em}.tour table.tcmp tbody{display:table-row-group}.tour table.tcmp th,.tour table.tcmp td{display:table-cell;border:1px solid #d7deea;padding:5px 7px;text-align:left;vertical-align:top}.tour table.tcmp thead{display:table-header-group}.tour table.tcmp tr{display:table-row}.tour table.tcmp th{background:#eef2f9}.tour table.tcmp small{color:#5f6570}
+.tour mark{background:#ffe08a;padding:0 2px;border-radius:3px}.tour .tquote{background:#f6f7fb;border-radius:8px;padding:10px;white-space:pre-wrap;word-break:break-all}
+.tour .tpre{background:#0f1e33;color:#e6edf7;border-radius:10px;padding:10px;white-space:pre-wrap;word-break:break-all;font-size:.82em;max-height:320px;overflow:auto;margin:6px 0}
+.tour .tfp{background:#eef2f9;border-radius:8px;padding:10px;word-break:break-all}.tour .tbad{color:#b3261e;font-weight:800}
