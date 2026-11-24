@@ -281,9 +281,9 @@ body.story-open{overflow:hidden}
 .story .gauge{display:flex;align-items:flex-end;gap:6px}
 .story .gauge .gA,.story .gauge .gB{position:relative;z-index:1;flex:none;font-weight:900;font-size:.72em;border-radius:6px 10px 6px 6px;padding:8px 6px;min-width:44px;color:#fff}.story .gauge .gA{background:#3b82f6}.story .gauge .gB{background:#16a34a}
 .story .slive.ok .gB{box-shadow:0 0 0 3px #4ADE80;animation:sPop .5s cubic-bezier(.2,1.6,.4,1) both}
-.story .grail{position:relative;flex:1;height:10px;border-radius:10px;background:rgba(255,255,255,.2);margin:64px 14px 0 52px}
-.story .gfill{position:absolute;left:-52px;top:0;height:100%;border-radius:10px;background:linear-gradient(90deg,#3b82f6,#4ADE80);width:0;transition:width .25s linear;box-sizing:content-box;padding-left:52px}
-.story .gman{position:absolute;top:-71px;left:0;margin-left:-50px;transition:left .25s linear}
+.story .grail{position:relative;flex:1;height:10px;border-radius:10px;background:rgba(255,255,255,.2);margin:48px 10px 0 40px}
+.story .gfill{position:absolute;left:-40px;top:0;height:100%;border-radius:10px;background:linear-gradient(90deg,#3b82f6,#4ADE80);width:0;transition:width .25s linear;box-sizing:content-box;padding-left:40px}
+.story .gman{position:absolute;top:-53px;left:0;margin-left:-38px;transition:left .25s linear}
 .story .gman svg{display:block;overflow:visible}.story .gman .pp{opacity:0}.story .gman .pA .pull{opacity:1}.story .gman .thigh{animation:gThF .56s linear infinite}.story .gman .thigh.tB{animation-delay:-.28s}.story .gman .shin{transform-origin:0px 12px;animation:gShin .56s linear infinite}.story .gman .tB .shin{animation-delay:-.28s}.story .gman .pbob{animation:gBob2 .28s ease-in-out infinite alternate}.story .gman .gw{transform-box:fill-box;transform-origin:center;animation:sSpin .6s linear infinite}.story .gman .grope{animation:gRope .28s ease-in-out infinite alternate}
 @keyframes gThF{0%{transform:rotate(-38deg)}50%{transform:rotate(34deg)}100%{transform:rotate(-38deg)}}
 @keyframes gShin{0%{transform:rotate(6deg)}25%{transform:rotate(4deg)}50%{transform:rotate(18deg)}75%{transform:rotate(62deg)}100%{transform:rotate(6deg)}}
@@ -291,9 +291,9 @@ body.story-open{overflow:hidden}
 @keyframes gTrip{0%{transform:translate(92px,37px) rotate(0)}22%{transform:translate(98px,52px) rotate(78deg)}32%{transform:translate(98px,51px) rotate(72deg)}68%{transform:translate(98px,52px) rotate(77deg)}100%{transform:translate(92px,37px) rotate(0)}}
 @keyframes gPopT{0%,15%{opacity:0}30%,70%{opacity:1}100%{opacity:0}}.story .gman.push .pA,.story .gman.push .grope{opacity:0}.story .gman.push .pB .pushp{opacity:1}.story .gman.rest .pA .pull{opacity:0}.story .gman.rest .pA .wipe{opacity:1}.story .gman.rest .thigh,.story .gman.rest .shin{animation:none}.story .gman.rest .tF{transform:rotate(-8deg)}.story .gman.rest .tB{transform:rotate(10deg)}.story .gman.rest .pbob{animation-duration:.6s}.story .gman.rest .gw{animation-play-state:paused}.story .gman.rest .grope{opacity:0}.story .gman.rest .gropeS{opacity:1}.story .gman.rest .gfxR{opacity:1;animation:sFloat .7s ease-in-out infinite}
 
-.story .slive.ok .gman *{animation:none}.story .slive.ok .gman .pA,.story .slive.ok .gman .grope,.story .slive.ok .gman .gropeS,.story .slive.ok .gman .gfx,.story .slive.ok .gman .pB .pushp{opacity:0}.story .slive.ok .gman .pB{opacity:1}.story .slive.ok .gman .pB .cheer{opacity:1}.story .slive.ok .gman .gdocg{opacity:1}
-.story .slive.ok .gman .pB .cheer .pbob{animation:gJump .45s ease-in-out infinite alternate}.story .slive.ok .gman .cheer .tF{transform:rotate(-10deg)}.story .slive.ok .gman .cheer .tB{transform:rotate(12deg)}
-.story .gman.trip.push .pB{animation:none}
+.story .slive.ok .gman *{animation:none!important}.story .slive.ok .gman .pA,.story .slive.ok .gman .grope,.story .slive.ok .gman .gropeS,.story .slive.ok .gman .gfx,.story .slive.ok .gman .pB .pushp{opacity:0}.story .slive.ok .gman .pB{opacity:1}.story .slive.ok .gman .pB .sit{opacity:1;transform:translate(-6px,19px)}.story .slive.ok .gman .gdocg{opacity:1}
+.story .slive.ok .gman .sit .thigh{transform:rotate(-80deg)}.story .slive.ok .gman .sit .tB{transform:rotate(-70deg)}.story .slive.ok .gman .sit .shin{transform:rotate(16deg)}.story .slive.ok .gman .sit .tB .shin{transform:rotate(34deg)}
+.story .slive.ok .gB{animation:none}
 @keyframes gJump{from{transform:translateY(0)}to{transform:translateY(-7px)}}
 .story .snav{position:absolute;inset:66px 0 120px 0;display:flex;z-index:2}.story .snav button{flex:1;background:transparent;border:0}.story .snav .sprev{flex:.35}
 @media (max-height:640px){.story{font-size:15px}.story .slide{padding:8px 14px}}
