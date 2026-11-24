@@ -715,10 +715,16 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
       { t: 6000, h: `<div class="skick">② 차이를 찾아내는 검증서</div><p class="slead">숫자 <b>한 곳</b>만 달라도<br>통과시키지 않습니다</p><div class="sdiff"><div><span>원본</span>무역수지 17.6억 달러 흑자 (<mark class="g">15개월</mark> 연속 흑자)</div><div><span>변환본</span>무역수지 17.6억 달러 흑자 (<mark class="r">51개월</mark> 연속 흑자)</div></div><div class="sstamp">✖ FAIL</div><div class="schips"><span>어디가 — 본문 8번째 문단 · 표 5</span><span>왜 그런가</span><span>어떻게 고치나 — 수정안 2곳</span></div><p class="snote">변환본의 숫자를 일부러 바꾼 뒤 검증한 PC판 실제 결과 · 글 45,555자 가운데 두 글자</p>` },
       { t: 5200, h: `<div class="skick">③ 쪽별 나란히 비교</div><p class="slead">원본과 변환본을<br><b>쪽마다 나란히</b> 놓고 봅니다</p><div class="spair"><span>원본 HWP</span><span>변환본 HWPX</span></div><img class="simg" src="pc/visual_pair.jpg" alt="산업부 보도자료 1쪽의 원본과 변환본을 나란히 놓은 화면"><div class="sbar"><b>39쪽 → 39쪽</b> 일치</div><p class="snote">PC판 시각 비교 보고서 실물(산업부 보도자료)</p>` },
       { t: 5200, h: `<div class="skick">④ 개인정보 확인</div><p class="slead">개인정보로 보이는 곳을<br><b>색으로 표시</b>합니다</p><div class="sdoc"><small>담당자 휴대전화</small><mark class="y">010-0000-0000</mark></div><div class="sgate"><span>📄 문서</span><i>→</i><b>🔒 사람이 확인</b><i>→</i><span>🤖 AI</span></div><p class="snote">사람이 확인하기 전에는 AI로 넘기지 않습니다 · 예시 문서</p>` },
-      { t: 12000, v: 1, h: `<div class="skick">⑤ 폴더 자동 감시</div><p class="slead">폴더를 지정해 두면 <b>30초마다</b><br>새 HWP를 자동으로 바꿉니다</p><video class="svid" muted playsinline preload="auto" poster="pc/watch.jpg"><source src="pc/watch.mp4" type="video/mp4"></video><p class="snote">PC판 실제 화면 녹화 · 검증을 통과한 문서만 바꾸고 원본은 보관</p>` },
+      { t: 6000, h: `<div class="skick">⑤ 폴더 자동 감시</div><p class="slead">폴더를 지정해 두면 <b>30초마다</b><br>새 HWP를 자동으로 바꿉니다</p><div class="swatch"><div class="sin"><span>새 HWP</span><span>새 HWP</span><span>새 HWP</span></div><div class="sfolder"><u>📂</u><div class="sring"><b>30초</b></div><small>지정한 폴더</small></div><div class="sout"><span class="ok">HWPX ✔</span><span class="ok">HWPX ✔</span><span class="keep">🗄 원본 보관</span></div></div><div class="schips"><span>3,000건 폴더도 1초</span><span>검증 통과만 교체</span><span>작업 중 문서는 건너뜀</span></div><p class="snote">한 번 지정하면 사람 손 없이 계속 · PC판 기능</p>` },
       { t: 6000, h: `<div class="skick">⑥ AI가 바로 씁니다</div><p class="slead">AI가 어댑터를 <b>도구로 불러</b><br>HWP를 직접 읽습니다</p><div class="schat"><div class="q">7월 반도체 수출 금액과 증감률은?</div><div class="tool">search_chunks · 산업부_보도자료.hwp</div><div class="a">[표39] 반도체 수출액/증감률(억 달러, %)<br>(’20.7) 78.8(5.6) → (’21.7) <b>110.0(39.6)</b></div></div><div class="schips"><span>마크다운·JSON 내보내기</span><span>도구 8개</span><span>업무망 온AI 8문항 모두 정답</span></div><p class="snote">PC판 도구의 실제 응답 · 표 꺼내기 · 서식 그대로 글 바꾸기 · 양식 채우기</p>` },
-      { t: 0, h: `<div class="sbig sm">설치 없이,<br>이 기기 안에서만</div><div class="sgrid"><span><u>🔄</u>자동 변환</span><span><u>📋</u>대조 검증서</span><span><u>📑</u>쪽별 비교</span><span><u>🔒</u>개인정보 확인</span><span><u>📂</u>폴더 자동 감시</span><span><u>🤖</u>AI 연결</span></div><div class="slive2" id="storyFinal">이 휴대폰에서 실제 변환 중…</div><div class="sbtns"><button class="btn primary" id="storyClose" type="button">이 휴대폰의 변환 결과 보기</button><button class="btn" id="storyAgain" type="button">처음부터 다시 보기</button></div>` }
+      { t: 0, h: `<div class="sbig sm">설치 없이,<br>이 기기 안에서만</div><div class="sgrid"><span><u>🔄</u>자동 변환</span><span><u>📋</u>대조 검증서</span><span><u>📑</u>쪽별 비교</span><span><u>🔒</u>개인정보 확인</span><span><u>📂</u>폴더 자동 감시</span><span><u>🤖</u>AI 연결</span></div><div class="sbtns"><button class="btn primary" id="storyClose" type="button">이 휴대폰의 변환 결과 보기</button><button class="btn" id="storyAgain" type="button">처음부터 다시 보기</button></div>` }
     ];
+    const NARR = [12612, 12828, 10236, 6108, 7500, 7644, 10548, 10428];   // 해설 음성 길이(ms)+여유
+    let snd = null, sndOn = true;
+    function say(n) {
+      if (!snd) return; try { snd.pause(); } catch (e) { /* */ }
+      if (!sndOn) return; try { snd.src = 'pc/n' + n + '.mp3'; snd.currentTime = 0; const p = snd.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* */ }
+    }
     function liveText() {
       const tot = S.items.length, c = counts(); const done = S.items.filter(i => i.row || /실패|격리|건너/.test(i.status || '')).length;
       if (tot && !S.running && S.runEnd) return `✔ 이 휴대폰에서도 ${c.done}건 변환·검증 완료 · ${(((S.runEnd) - S.runStart) / 1000).toFixed(1)}초 · 외부 전송 0건`;
@@ -726,29 +732,40 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
     }
     function openStory() {
       if (story) { story.el.remove(); clearTimeout(story.tm); clearInterval(story.iv); }
+      if (!snd) { try { snd = new Audio(); snd.preload = 'auto'; } catch (e) { snd = null; } }
       const el = document.createElement('div'); el.id = 'story'; el.className = 'story'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', '기능 보기');
-      el.innerHTML = `<div class="sprog">${SL.map(() => '<i><b></b></i>').join('')}</div><button class="sclose" type="button" aria-label="닫기">✕</button><div class="sstage"></div><div class="slive" aria-live="polite"></div><div class="snav"><button type="button" class="sprev" aria-label="이전"></button><button type="button" class="snext" aria-label="다음"></button></div>`;
+      el.innerHTML = `<div class="sprog">${SL.map(() => '<i><b></b></i>').join('')}</div><button class="ssnd" type="button" aria-label="해설 소리 끄기">🔊</button><button class="sclose" type="button" aria-label="닫기">✕</button><div class="sstage"></div><div class="slive"><div class="gtxt" aria-live="polite"></div><div class="gauge"><span class="gA">HWP</span><div class="grail"><div class="gfill"></div><div class="gman"><svg viewBox="0 0 70 36" width="90" height="46" aria-hidden="true"><rect x="1" y="12" width="20" height="23" rx="3" fill="#3b82f6"/><text x="11" y="27" font-size="7.5" font-weight="900" fill="#fff" text-anchor="middle" font-family="system-ui,sans-serif">HWP</text><line x1="21" y1="20" x2="44" y2="17" stroke="#fff" stroke-width="1.6"/><g fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><circle cx="57" cy="7" r="4.2" fill="#fff" stroke="none"/><line x1="54" y1="12" x2="47" y2="24"/><line x1="52" y1="15" x2="44" y2="17"/><line class="gl1" x1="47" y1="24" x2="55" y2="34"/><line class="gl2" x1="47" y1="24" x2="38" y2="34"/></g></svg></div></div><span class="gB">HWPX</span></div></div><div class="snav"><button type="button" class="sprev" aria-label="이전"></button><button type="button" class="snext" aria-label="다음"></button></div>`;
       document.body.appendChild(el); document.body.classList.add('story-open');
       const st = story = { el, i: -1, tm: 0, iv: 0 };
       const stage = el.querySelector('.sstage'), bars = [...el.querySelectorAll('.sprog i b')];
-      const close = () => { clearTimeout(st.tm); clearInterval(st.iv); el.remove(); document.body.classList.remove('story-open'); story = null; const lw = $('#listWrap'); if (lw && !lw.hidden) lw.scrollIntoView({ block: 'start' }); };
+      const close = () => { clearTimeout(st.tm); clearInterval(st.iv); try { if (snd) snd.pause(); } catch (e) { /* */ } el.remove(); document.body.classList.remove('story-open'); story = null; const lw = $('#listWrap'); if (lw && !lw.hidden) lw.scrollIntoView({ block: 'start' }); };
       const go = (n) => {
-        n = Math.max(0, Math.min(SL.length - 1, n)); st.i = n; clearTimeout(st.tm); const s = SL[n];
+        n = Math.max(0, Math.min(SL.length - 1, n)); st.i = n; clearTimeout(st.tm); const s = SL[n]; const dur = s.t ? NARR[n] : 0;
         stage.innerHTML = `<div class="slide">${s.h}</div>`;
         const fit = () => { const sl = stage.firstChild; if (!sl || !sl.isConnected) return; sl.style.transform = 'translate(-50%,-50%)'; const k = Math.min(1, (stage.clientHeight - 6) / sl.scrollHeight, stage.clientWidth / sl.scrollWidth); sl.style.transform = `translate(-50%,-50%) scale(${k.toFixed(3)})`; };
-        fit(); stage.querySelectorAll('img,video').forEach(m => { m.addEventListener('load', fit); m.addEventListener('loadedmetadata', fit); }); setTimeout(fit, 300); setTimeout(fit, 1200);
+        fit(); stage.querySelectorAll('img').forEach(m => m.addEventListener('load', fit)); setTimeout(fit, 300); setTimeout(fit, 1200);
         bars.forEach((b, k) => { b.style.transition = 'none'; b.style.width = k < n ? '100%' : '0'; });
         el.classList.toggle('last', !s.t);
-        if (s.t) { void bars[n].offsetWidth; bars[n].style.transition = `width ${s.t}ms linear`; bars[n].style.width = '100%'; st.tm = setTimeout(() => go(n + 1), s.t); } else bars[n].style.width = '100%';
+        if (dur) { void bars[n].offsetWidth; bars[n].style.transition = `width ${dur}ms linear`; bars[n].style.width = '100%'; st.tm = setTimeout(() => go(n + 1), dur); } else bars[n].style.width = '100%';
+        say(n);
         stage.querySelectorAll('[data-n]').forEach(e => { const N = +e.dataset.n, t0 = performance.now(); const f = (t) => { const k = Math.min(1, (t - t0) / 900); e.textContent = Math.round(N * (1 - Math.pow(1 - k, 3))).toLocaleString('ko-KR'); if (k < 1 && e.isConnected) requestAnimationFrame(f); }; requestAnimationFrame(f); });
-        if (s.v) { const v = stage.querySelector('video'); if (v) { v.muted = true; const p = v.play(); if (p && p.catch) p.catch(() => {}); } }
         const c = stage.querySelector('#storyClose'); if (c) c.onclick = close;
         const a = stage.querySelector('#storyAgain'); if (a) a.onclick = () => go(0);
         tick();
       };
-      const tick = () => { const t = liveText(); el.querySelector('.slive').textContent = t; const f = el.querySelector('#storyFinal'); if (f) { f.textContent = t; f.classList.toggle('ok', t.charAt(0) === '✔'); } el.querySelector('.slive').classList.toggle('ok', t.charAt(0) === '✔'); };
-      st.iv = setInterval(tick, 500);
+      let gp = 0, gLast = -1, gT = performance.now();
+      const tick = () => {
+        const t = liveText(); const ok = t.charAt(0) === '✔'; el.querySelector('.gtxt').textContent = t; el.querySelector('.slive').classList.toggle('ok', ok);
+        const f = el.querySelector('#storyFinal'); if (f) { f.textContent = t; f.classList.toggle('ok', ok); }
+        const tot = S.items.length || 6; const done = S.items.filter(i => i.row || /실패|격리|건너/.test(i.status || '')).length;
+        if (done !== gLast) { gLast = done; gT = performance.now(); }
+        let tg = ok ? 1 : Math.min(0.97, (done + Math.min(0.85, (performance.now() - gT) / 5000)) / tot); gp = Math.max(gp, tg);
+        el.querySelector('.gfill').style.width = (gp * 100).toFixed(1) + '%'; el.querySelector('.gman').style.left = (gp * 100).toFixed(1) + '%';
+      };
+      st.iv = setInterval(tick, 200);
       el.querySelector('.sclose').onclick = close;
+      const sb = el.querySelector('.ssnd'); const paint = () => { sb.textContent = sndOn ? '🔊' : '🔇'; sb.setAttribute('aria-label', sndOn ? '해설 소리 끄기' : '해설 소리 켜기'); }; paint();
+      sb.onclick = () => { sndOn = !sndOn; paint(); if (sndOn) say(st.i); else { try { snd.pause(); } catch (e) { /* */ } } };
       el.querySelector('.snext').onclick = () => { if (st.i < SL.length - 1) go(st.i + 1); };
       el.querySelector('.sprev').onclick = () => go(st.i - 1);
       go(0);
