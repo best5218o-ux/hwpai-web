@@ -561,11 +561,25 @@
     const cards = `<div class="dcards"><div class="dcard ${vcls}"><span>변환</span><b>${vtxt}</b><p>${esc(V)}</p></div><div class="dcard ${scls}"><span>개인정보 (AI에 넘기기 전)</span><b>${stxt}</b><p>${esc(sdesc)}</p>${sbtn}</div></div>`;
     const tech = [['원본 크기', fmtSize(r.원본_크기)], ['변환본 크기', fmtSize(r.변환본_크기)], ['원본 형식', r.원본_형식], ['특성', r.특성], ['원본 파일 지문(SHA-256)', r.원본_SHA256], ['변환본 파일 지문(SHA-256)', r.변환본_SHA256],
       ['엔진', r.엔진 ? `${r.엔진} ${r.엔진_판}` : ''], ['변환 소요', r.변환_소요ms ? r.변환_소요ms + ' ms' : ''], ['검증 점수·판정', r.판정 ? `${r.검증점수} · ${r.판정}` : '']].filter(x => x[1]);
-    $('#detailBody').innerHTML = `${cards}
+    let xx = null; try { xx = JSON.parse(it.json || 'null'); } catch (e) { /* */ }
+    const cmpAll = ((xx && xx['쉬운설명'] || {})['비교한 것'] || []);
+    const IC = { '글': '📝', '표': '▦', '그림': '🖼', '각주': '※', '미주': '※', '수식': '∑' };
+    const num = (v) => { const m = /^([\d,]+)\s*(.*)$/.exec(String(v || '')); return m ? [Number(m[1].replace(/,/g, '')).toLocaleString('ko-KR'), m[2]] : [String(v || ''), '']; };
+    const tiles = cmpAll.filter(c => ['글', '표', '그림'].indexOf(c['항목']) >= 0 || parseInt(c['원본'], 10) > 0).map(c => { const [n, u] = num(c['원본']); const same = c['결과'] === '같음'; return `<div class="rt ${same ? 'ok' : 'bad'}"><u>${IC[c['항목']] || '•'}</u><b>${esc(n)}</b><span>${esc(c['항목'] === '글' ? '글자' : c['항목'])}</span><em>${same ? '✔ 같음' : '✖ 다름'}</em></div>`; }).join('');
+    const cellNote = (cmpAll.find(c => c['항목'] === '표') || {})['설명'] || '';
+    const hero = { PASS: ['ok', '✔', '원본과 같습니다', '그대로 쓰셔도 됩니다'], WARN: ['warn', '▲', '확인이 필요합니다', '한글에서 한 번 열어 보세요'], FAIL: ['bad', '✖', '원본과 다릅니다', '그대로 쓰지 마세요'] }[r.판정] || ['gray', '•', esc(it.status || ''), ''];
+    const flow = (r.원본_크기 && r.변환본_크기) ? `<div class="rflow"><span class="a">HWP<small>${esc(fmtSize(r.원본_크기))}</small></span><i>${r.변환_소요ms ? (r.변환_소요ms / 1000).toFixed(1) + '초' : ''}</i><span class="b">HWPX<small>${esc(fmtSize(r.변환본_크기))}</small></span></div>` : '';
+    const pcard = `<div class="rpii ${scls}"><u>${scls === 'ok' ? '🔓' : '🔒'}</u><div><b>개인정보 ${scls === 'ok' ? '없음' : (kinds ? esc(kinds) : stxt.replace(/^[✔⚠]\s*/, ''))}</b><p>${scls === 'ok' ? 'AI에 넘겨도 되는 문서입니다' : 'AI에 넘기기 전에 사람이 한 번 확인합니다'}</p>${sbtn}</div></div>`;
+    $('#detailBody').innerHTML = `<div class="rhero ${hero[0]}"><u>${hero[1]}</u><div><b>${hero[2]}</b><p>${hero[3]}</p></div></div>
+${flow}
+<div class="rtiles">${tiles}</div>
+${cellNote ? `<p class="rnote">${esc(cellNote)}</p>` : ''}
+${pcard}
+${(xx && (xx['쉬운설명'] || {})['다른 부분'] || []).length ? explainHtml(it) : ''}
+<details class="more"><summary>자세히 보기 · 검증서 받기</summary>
 ${same ? `<p class="fpbox"><b>파일 지문</b> 원본 <code>${esc(fp(r.원본_SHA256))}</code> · 바뀐 파일 <code>${esc(fp(r.변환본_SHA256))}</code> <button class="btn sm" id="dCopy" type="button">지문 복사</button></p>` : ''}
 <p class="btns" style="justify-content:flex-start"><button class="btn sm" id="dMd" type="button">검증서(.md) 받기</button> <button class="btn sm" id="dJson" type="button">검증서(.json) 받기</button></p>
-${explainHtml(it)}
-<details class="more"><summary>전문가용 기록</summary><dl class="kv">${tech.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div>${mdToHtml(String(it.md || '').split('# 자세한 기록 (전문가용)').pop())}</div></details>`;
+<dl class="kv">${tech.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl><div>${mdToHtml(String(it.md || '').split('# 자세한 기록 (전문가용)').pop())}</div></details>`;
     const cp = $('#dCopy'); if (cp) cp.onclick = () => { try { navigator.clipboard.writeText(`원본 ${r.원본_SHA256}\n변환본 ${r.변환본_SHA256}`); cp.textContent = '복사했습니다'; } catch (e) { cp.textContent = '복사 못 함'; } };
     const dr = $('#dReview'); if (dr) dr.onclick = () => { dlg.close(); openReview(it.id); };
     $('#dMd').onclick = () => download(new Blob([it.md || ''], { type: 'text/markdown' }), it.name + '.검증서.md');
@@ -699,7 +713,7 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
   (function () {
     if (!new URLSearchParams(location.search).has('demo')) return;
     // 큰 문서를 먼저 넣어 여러 일꾼이 동시에 맡게 하고, 작은 문서는 그 사이 빈 일꾼이 처리한다
-    const SAMPLES = [['s2.hwp', '산업부_보도자료(표46·그림23).hwp'], ['s1.hwp', '질병청_보도참고자료(표29·그림29).hwp'], ['s3.hwp', '경기도_사업계획서(표48·병합칸510).hwp'], ['s6.hwp', '국립국어원_업무계획(표16).hwp'], ['s5.hwp', '군청_물품요구서(병합칸425).hwp'], ['s4.hwp', '개인정보_예시.hwp']];
+    const SAMPLES = [['s2.hwp', '산업부_보도자료(표46·그림23).hwp'], ['s1.hwp', '질병청_보도참고자료(표29·그림29).hwp'], ['s3.hwp', '경기도_사업계획서(표48·병합칸510).hwp'], ['s6.hwp', '국립국어원_업무계획(표16).hwp'], ['s5.hwp', '군청_물품요구서(병합칸425).hwp'], ['s4.hwp', '과기정통부_보도자료(표12·그림5).hwp']];
     const card = $('#demoCard'); card.hidden = false;
     // 엔진을 올리는 동안 예제 파일을 미리 받아 둔다(단추를 누르면 바로 시작)
     // 엔진 파일을 받는 동안 회선을 나눠 쓰지 않도록, 예제는 엔진이 준비된 직후(또는 단추를 누를 때) 받는다
@@ -710,13 +724,13 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
     // 보여 주는 수치·그림은 같은 예제 문서를 PC판으로 미리 돌린 실제 결과(pc/ 폴더). 그동안 이 기기에서도 실제 변환이 돌아가고, 끝나면 아래 띠에 결과를 적는다.
     let demoRun = false, story = null;
     const SL = [
-      { t: 5200, h: `<div class="shero"><div class="sdocI a"><b>HWP</b><i></i><i></i><i></i></div><div class="sarrow"><span></span></div><div class="sdocI b"><b>HWPX</b><i></i><i></i><i></i><em>✔</em></div></div><p class="slead">바꾸고, <b>제대로 바뀌었는지</b>까지<br>확인합니다</p><div class="sfiles">${['산업부 보도자료', '질병청 보도참고자료', '경기도 사업계획서', '국립국어원 업무계획', '군청 물품요구서', '개인정보 예시'].map((n, i) => `<div class="sfile" style="animation-delay:${(0.5 + i * 0.55).toFixed(2)}s"><span class="sx">HWP</span><span class="sy">HWPX ✔</span><i>${n}</i></div>`).join('')}</div><p class="snote">복잡한 실제 정부 문서 · 표 46개 · 병합 칸 510개 · 그림 29개</p><p class="shint">화면을 누르면 다음으로 넘어갑니다</p>` },
+      { t: 5200, h: `<div class="shero"><div class="sdocI a"><b>HWP</b><i></i><i></i><i></i></div><div class="sarrow"><span></span></div><div class="sdocI b"><b>HWPX</b><i></i><i></i><i></i><em>✔</em></div></div><p class="slead">바꾸고, <b>제대로 바뀌었는지</b>까지<br>확인합니다</p><div class="sfiles">${['산업부 보도자료', '질병청 보도참고자료', '경기도 사업계획서', '국립국어원 업무계획', '군청 물품요구서', '과기정통부 보도자료'].map((n, i) => `<div class="sfile" style="animation-delay:${(0.5 + i * 0.55).toFixed(2)}s"><span class="sx">HWP</span><span class="sy">HWPX ✔</span><i>${n}</i></div>`).join('')}</div><p class="snote">실제 정부 문서 6건 · 표 111개짜리 보도자료 · 병합 칸 510개짜리 계획서</p><p class="shint">화면을 누르면 다음으로 넘어갑니다</p>` },
       { t: 5200, h: `<div class="skick">① 원본 대조 검증</div><p class="slead">변환 엔진과 <b>다른 판독기</b>로<br>원본을 직접 읽어 맞춰 봅니다</p><div class="stiles"><div><u>📝</u><b data-n="45555">0</b><span>글자</span><em>✔ 같음</em></div><div><u>▦</u><b data-n="111">0</b><span>표</span><em>✔ 같음</em></div><div><u>🖼</u><b data-n="23">0</b><span>그림</span><em>✔ 같음</em></div></div><div class="sbar">표 칸 <b>5,746개</b> 중 다른 칸 <b>0개</b></div><p class="snote">산업부 보도자료 · 실제 검증 결과 · 문서마다 판정과 파일 지문을 대장(엑셀)에 기록</p>` },
       { t: 6000, h: `<div class="skick">② 차이를 찾아내는 검증서</div><p class="slead">숫자 <b>한 곳</b>만 달라도<br>통과시키지 않습니다</p><div class="sdiff"><div><span>원본</span>무역수지 17.6억 달러 흑자 (<mark class="g">15개월</mark> 연속 흑자)</div><div><span>변환본</span>무역수지 17.6억 달러 흑자 (<mark class="r">51개월</mark> 연속 흑자)</div></div><div class="sstamp">✖ FAIL</div><div class="schips"><span>어디가 — 본문 8번째 문단 · 표 5</span><span>왜 그런가</span><span>어떻게 고치나 — 수정안 2곳</span></div><p class="snote">변환본의 숫자를 일부러 바꾼 뒤 검증한 PC판 실제 결과 · 글 45,555자 가운데 두 글자</p>` },
-      { t: 5200, h: `<div class="skick">③ 쪽별 나란히 비교</div><p class="slead">원본과 변환본을<br><b>쪽마다 나란히</b> 놓고 봅니다</p><div class="spair"><span>원본 HWP</span><span>변환본 HWPX</span></div><img class="simg" src="pc/visual_pair.jpg" alt="산업부 보도자료 1쪽의 원본과 변환본을 나란히 놓은 화면"><div class="sbar"><b>39쪽 → 39쪽</b> 일치</div><p class="snote">PC판 시각 비교 보고서 실물(산업부 보도자료)</p>` },
-      { t: 5200, h: `<div class="skick">④ 개인정보 확인</div><p class="slead">개인정보로 보이는 곳을<br><b>색으로 표시</b>합니다</p><div class="sdoc"><small>담당자 휴대전화</small><mark class="y">010-0000-0000</mark></div><div class="sgate"><span>📄 문서</span><i>→</i><b>🔒 사람이 확인</b><i>→</i><span>🤖 AI</span></div><p class="snote">사람이 확인하기 전에는 AI로 넘기지 않습니다 · 예시 문서</p>` },
+      { t: 5200, h: `<div class="skick">③ 쪽별 나란히 비교</div><p class="slead">원본과 변환본을<br><b>쪽마다 나란히</b> 놓고 봅니다</p><div class="spair"><span>원본 HWP</span><span>변환본 HWPX</span></div><div class="simgw"><img class="simg" src="pc/visual_pair.jpg" alt="산업부 보도자료 1쪽의 원본과 변환본을 나란히 놓은 화면"><i class="sscanv"></i></div><div class="sbar"><b>39쪽 → 39쪽</b> 일치</div><p class="snote">PC판 시각 비교 보고서 실물(산업부 보도자료)</p>` },
+      { t: 5200, h: `<div class="skick">④ 개인정보 확인</div><p class="slead">개인정보로 보이는 곳을<br><b>색으로 표시</b>합니다</p><div class="sdoc"><small>사업 담당 · 주무관 · 전화번호</small><mark class="y">010-0000-0000</mark><i class="sscan"></i></div><div class="sgate"><span>📄 문서</span><i>→</i><b>🔒 사람이 확인</b><i>→</i><span>🤖 AI</span></div><p class="snote">사람이 확인하기 전에는 AI로 넘기지 않습니다 · 경기도 사업계획서(번호는 가상)</p>` },
       { t: 6000, h: `<div class="skick">⑤ 폴더 자동 감시</div><p class="slead">폴더를 지정해 두면 <b>30초마다</b><br>새 HWP를 자동으로 바꿉니다</p><div class="swatch"><div class="sin"><span>새 HWP</span><span>새 HWP</span><span>새 HWP</span></div><div class="sfolder"><u>📂</u><div class="sring"><b>30초</b></div><small>지정한 폴더</small></div><div class="sout"><span class="ok">HWPX ✔</span><span class="ok">HWPX ✔</span><span class="keep">🗄 원본 보관</span></div></div><div class="schips"><span>3,000건 폴더도 1초</span><span>검증 통과만 교체</span><span>작업 중 문서는 건너뜀</span></div><p class="snote">한 번 지정하면 사람 손 없이 계속 · PC판 기능</p>` },
-      { t: 6000, h: `<div class="skick">⑥ AI가 바로 씁니다</div><p class="slead">AI가 어댑터를 <b>도구로 불러</b><br>HWP를 직접 읽습니다</p><div class="schat"><div class="q">7월 반도체 수출 금액과 증감률은?</div><div class="tool">search_chunks · 산업부_보도자료.hwp</div><div class="a">[표39] 반도체 수출액/증감률(억 달러, %)<br>(’20.7) 78.8(5.6) → (’21.7) <b>110.0(39.6)</b></div></div><div class="schips"><span>마크다운·JSON 내보내기</span><span>도구 8개</span><span>업무망 온AI 8문항 모두 정답</span></div><p class="snote">PC판 도구의 실제 응답 · 표 꺼내기 · 서식 그대로 글 바꾸기 · 양식 채우기</p>` },
+      { t: 6000, h: `<div class="skick">⑥ AI가 바로 씁니다</div><p class="slead">AI가 어댑터를 <b>도구로 불러</b><br>HWP를 직접 읽습니다</p><div class="schat"><div class="q">7월 반도체 수출 금액과 증감률은?</div><div class="tool">search_chunks · 산업부_보도자료.hwp <i class="sdots"><b></b><b></b><b></b></i></div><div class="a">[표39] 반도체 수출액/증감률(억 달러, %)<br>(’20.7) 78.8(5.6) → (’21.7) <b>110.0(39.6)</b></div></div><div class="schips"><span>마크다운·JSON 내보내기</span><span>도구 8개</span><span>업무망 온AI 8문항 모두 정답</span></div><p class="snote">PC판 도구의 실제 응답 · 표 꺼내기 · 서식 그대로 글 바꾸기 · 양식 채우기</p>` },
       { t: 0, h: `<div class="sbig sm">설치 없이,<br>이 기기 안에서만</div><div class="sgrid"><span><u>🔄</u>자동 변환</span><span><u>📋</u>대조 검증서</span><span><u>📑</u>쪽별 비교</span><span><u>🔒</u>개인정보 확인</span><span><u>📂</u>폴더 자동 감시</span><span><u>🤖</u>AI 연결</span></div><div class="sbtns"><button class="btn primary" id="storyClose" type="button">이 휴대폰의 변환 결과 보기</button><button class="btn" id="storyAgain" type="button">처음부터 다시 보기</button></div>` }
     ];
     const NARR = [12612, 12828, 10236, 6108, 7500, 7644, 10548, 10428];   // 해설 음성 길이(ms)+여유
@@ -731,14 +745,36 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
       return `이 휴대폰에서 실제 변환 중… ${done} / ${tot || 6}`;
     }
     function openStory() {
-      if (story) { story.el.remove(); clearTimeout(story.tm); clearInterval(story.iv); }
+      if (story) { story.el.remove(); clearTimeout(story.tm); clearTimeout(story.pt); clearInterval(story.iv); }
       if (!snd) { try { snd = new Audio(); snd.preload = 'auto'; } catch (e) { snd = null; } }
       const el = document.createElement('div'); el.id = 'story'; el.className = 'story'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', '기능 보기');
-      el.innerHTML = `<div class="sprog">${SL.map(() => '<i><b></b></i>').join('')}</div><button class="ssnd" type="button" aria-label="해설 소리 끄기">🔊</button><button class="sclose" type="button" aria-label="닫기">✕</button><div class="sstage"></div><div class="slive"><div class="gtxt" aria-live="polite"></div><div class="gauge"><span class="gA">HWP</span><div class="grail"><div class="gfill"></div><div class="gman"><svg viewBox="0 0 70 36" width="90" height="46" aria-hidden="true"><rect x="1" y="12" width="20" height="23" rx="3" fill="#3b82f6"/><text x="11" y="27" font-size="7.5" font-weight="900" fill="#fff" text-anchor="middle" font-family="system-ui,sans-serif">HWP</text><line x1="21" y1="20" x2="44" y2="17" stroke="#fff" stroke-width="1.6"/><g fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><circle cx="57" cy="7" r="4.2" fill="#fff" stroke="none"/><line x1="54" y1="12" x2="47" y2="24"/><line x1="52" y1="15" x2="44" y2="17"/><line class="gl1" x1="47" y1="24" x2="55" y2="34"/><line class="gl2" x1="47" y1="24" x2="38" y2="34"/></g></svg></div></div><span class="gB">HWPX</span></div></div><div class="snav"><button type="button" class="sprev" aria-label="이전"></button><button type="button" class="snext" aria-label="다음"></button></div>`;
+      el.innerHTML = `<div class="sprog">${SL.map(() => '<i><b></b></i>').join('')}</div><button class="ssnd" type="button" aria-label="해설 소리 끄기">🔊</button><button class="sclose" type="button" aria-label="닫기">✕</button><div class="sstage"></div><div class="slive"><div class="gtxt" aria-live="polite"></div><div class="gauge"><span class="gA">HWP</span><div class="grail"><div class="gfill"></div><div class="gman"><svg viewBox="0 0 124 64" width="124" height="64" aria-hidden="true">
+<g class="gcart"><rect x="3" y="12" width="26" height="33" rx="4" fill="#3b82f6"/><path d="M21 12h4a4 4 0 0 1 4 4v4h-8z" fill="#93c5fd"/><rect class="gdocg" x="3" y="12" width="26" height="33" rx="4" fill="#22c55e" opacity="0"/><text x="16" y="33" font-size="8.5" font-weight="900" fill="#fff" text-anchor="middle" font-family="system-ui,sans-serif">HWP</text><rect x="1" y="45" width="30" height="4" rx="2" fill="#94a3b8"/><g class="gw"><circle cx="9" cy="53" r="5" fill="#1e293b" stroke="#e2e8f0" stroke-width="2"/><path d="M9 49v8M5 53h8" stroke="#e2e8f0" stroke-width="1.4"/></g><g class="gw gw2"><circle cx="24" cy="53" r="5" fill="#1e293b" stroke="#e2e8f0" stroke-width="2"/><path d="M24 49v8M20 53h8" stroke="#e2e8f0" stroke-width="1.4"/></g></g>
+<path class="grope" d="M31 30 L76 27" stroke="#fde68a" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+<path class="gropeS" d="M31 30 Q52 50 74 52" stroke="#fde68a" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0"/>
+<g class="gbody pA" stroke-linecap="round" stroke-linejoin="round">
+<g class="glegB"><path d="M88 40 L78 50 L72 58" fill="none" stroke="#1e293b" stroke-width="7"/><path d="M72 58h-7" stroke="#111827" stroke-width="5"/></g>
+<g class="glegF"><path d="M88 40 L98 49 L100 59" fill="none" stroke="#273449" stroke-width="7"/><path d="M100 59h8" stroke="#111827" stroke-width="5"/></g>
+<path d="M86 41 L96 20" stroke="#f97316" stroke-width="13" fill="none"/><path d="M88.5 33.5 L96 37" stroke="#fde047" stroke-width="2.6"/><path d="M91 28 L98.5 31.5" stroke="#fde047" stroke-width="2.6"/>
+<g class="garmP"><path d="M95 23 L84 26 L76 27" fill="none" stroke="#ea580c" stroke-width="6"/><circle cx="76" cy="27" r="3.4" fill="#fcd5b5" stroke="none"/></g>
+<g class="garmC" opacity="0"><path d="M95 23 L104 12 L106 3" fill="none" stroke="#ea580c" stroke-width="6"/><path d="M95 23 L88 11 L88 2" fill="none" stroke="#ea580c" stroke-width="6"/></g>
+<g class="garmW" opacity="0"><path d="M95 23 L104 18 L101 9" fill="none" stroke="#ea580c" stroke-width="6"/><path d="M95 23 L90 33 L86 40" fill="none" stroke="#ea580c" stroke-width="6"/></g>
+<circle cx="100" cy="12" r="6.6" fill="#fcd5b5" stroke="none"/><path d="M93 11a7.4 7.4 0 0 1 14.6-1.6l2.6 .9v2.2h-17.4z" fill="#facc15" stroke="none"/><path d="M99.6 3.4v6.4" stroke="#ca8a04" stroke-width="1.6"/><circle cx="103.4" cy="13.4" r=".9" fill="#1e293b" stroke="none"/>
+</g>
+<g class="pB" transform="translate(-112 0)" opacity="0"><g class="gbody" stroke-linecap="round" stroke-linejoin="round">
+<g class="glegB"><path d="M88 40 L78 50 L72 58" fill="none" stroke="#1e293b" stroke-width="7"/><path d="M72 58h-7" stroke="#111827" stroke-width="5"/></g>
+<g class="glegF"><path d="M88 40 L98 49 L100 59" fill="none" stroke="#273449" stroke-width="7"/><path d="M100 59h8" stroke="#111827" stroke-width="5"/></g>
+<path d="M86 41 L97 21" stroke="#f97316" stroke-width="13" fill="none"/><path d="M88.5 33.5 L96 37" stroke="#fde047" stroke-width="2.6"/><path d="M91 28 L98.5 31.5" stroke="#fde047" stroke-width="2.6"/>
+<path d="M96 24 L107 24 L114 22" fill="none" stroke="#ea580c" stroke-width="6"/><path d="M96 27 L107 31 L114 32" fill="none" stroke="#ea580c" stroke-width="6"/><circle cx="114" cy="22" r="3.2" fill="#fcd5b5" stroke="none"/><circle cx="114" cy="32" r="3.2" fill="#fcd5b5" stroke="none"/>
+<circle cx="101" cy="12" r="6.6" fill="#fcd5b5" stroke="none"/><path d="M94 11a7.4 7.4 0 0 1 14.6-1.6l2.6 .9v2.2h-17.4z" fill="#facc15" stroke="none"/><path d="M100.6 3.4v6.4" stroke="#ca8a04" stroke-width="1.6"/><circle cx="104.4" cy="13.4" r=".9" fill="#1e293b" stroke="none"/>
+</g></g>
+<text class="gfx gfxT" x="104" y="34" font-size="13" font-weight="900" fill="#fde047" font-family="system-ui,sans-serif" opacity="0">앗!</text>
+<text class="gfx gfxR" x="110" y="12" font-size="12" opacity="0">💦</text>
+<text class="gfx gfxF" x="58" y="50" font-size="11" opacity="0">💨</text></svg></div></div><span class="gB">HWPX</span></div></div><div class="snav"><button type="button" class="sprev" aria-label="이전"></button><button type="button" class="snext" aria-label="다음"></button></div>`;
       document.body.appendChild(el); document.body.classList.add('story-open');
       const st = story = { el, i: -1, tm: 0, iv: 0 };
       const stage = el.querySelector('.sstage'), bars = [...el.querySelectorAll('.sprog i b')];
-      const close = () => { clearTimeout(st.tm); clearInterval(st.iv); try { if (snd) snd.pause(); } catch (e) { /* */ } el.remove(); document.body.classList.remove('story-open'); story = null; const lw = $('#listWrap'); if (lw && !lw.hidden) lw.scrollIntoView({ block: 'start' }); };
+      const close = () => { clearTimeout(st.tm); clearTimeout(st.pt); clearInterval(st.iv); try { if (snd) snd.pause(); } catch (e) { /* */ } el.remove(); document.body.classList.remove('story-open'); story = null; const lw = $('#listWrap'); if (lw && !lw.hidden) lw.scrollIntoView({ block: 'start' }); };
       const go = (n) => {
         n = Math.max(0, Math.min(SL.length - 1, n)); st.i = n; clearTimeout(st.tm); const s = SL[n]; const dur = s.t ? NARR[n] : 0;
         stage.innerHTML = `<div class="slide">${s.h}</div>`;
@@ -760,9 +796,12 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
         const tot = S.items.length || 6; const done = S.items.filter(i => i.row || /실패|격리|건너/.test(i.status || '')).length;
         if (done !== gLast) { gLast = done; gT = performance.now(); }
         let tg = ok ? 1 : Math.min(0.97, (done + Math.min(0.85, (performance.now() - gT) / 5000)) / tot); gp = Math.max(gp, tg);
-        el.querySelector('.gfill').style.width = (gp * 100).toFixed(1) + '%'; el.querySelector('.gman').style.left = (gp * 100).toFixed(1) + '%';
+        el.querySelector('.gfill').style.width = (gp * 100).toFixed(1) + '%'; el.querySelector('.gman').style.left = (gp * 100).toFixed(1) + '%'; const gt = el.querySelector('.gman text'); if (gt) gt.textContent = ok ? 'HWPX' : 'HWP';
       };
       st.iv = setInterval(tick, 200);
+      const POSES = [['', 2600], ['trip', 1500], ['fast', 2000], ['push', 3000], ['rest', 1500], ['', 1800], ['push', 2400], ['trip', 1500], ['fast', 2200]];
+      let pk = 0; const pose = () => { if (!el.isConnected) return; const g = el.querySelector('.gman'); const done = el.querySelector('.slive').classList.contains('ok'); g.className = 'gman' + (done ? '' : (POSES[pk % POSES.length][0] ? ' ' + POSES[pk % POSES.length][0] : '')); st.pt = setTimeout(pose, done ? 800 : POSES[pk % POSES.length][1]); pk++; };
+      pose();
       el.querySelector('.sclose').onclick = close;
       const sb = el.querySelector('.ssnd'); const paint = () => { sb.textContent = sndOn ? '🔊' : '🔇'; sb.setAttribute('aria-label', sndOn ? '해설 소리 끄기' : '해설 소리 켜기'); }; paint();
       sb.onclick = () => { sndOn = !sndOn; paint(); if (sndOn) say(st.i); else { try { snd.pause(); } catch (e) { /* */ } } };
