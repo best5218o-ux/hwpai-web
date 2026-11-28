@@ -355,3 +355,20 @@ body.story-open{overflow:hidden}
 .rnote{color:#166534}.aiprev,.aiprev th,.aiprev td,.aiprev p,.aiprev b{color:#1b1d21}.aiprev .aipic{color:#075985}.aifmt span{color:#0b2a6f}
 @media (prefers-color-scheme:dark){.rpii{background:#e2e8f0}}
 #detailBody details.more>summary{cursor:pointer;padding:12px 4px;font-weight:800;border-top:1px solid var(--bd);margin-top:8px}
+
+/* ---- 2026-11-27 검수 조치(일반 화면). 시연 화면(html.is-demo)의 모양은 그대로 둔다 ---- */
+#detailTitle{min-width:0;overflow-wrap:anywhere;word-break:break-word}   /* 띄어쓰기 없는 긴 파일 이름에도 「닫기」가 화면 안에 있게 */
+.help a,.skip,.dlg a{color:var(--acc)}   /* 어두운 화면에서 링크가 보이게 */
+.xwait{border:1px solid var(--wait);background:var(--waitbg);color:var(--fg);border-radius:8px;padding:10px 12px;margin:0 0 10px;line-height:1.5}
+.xwait .btn{margin-top:6px;display:block}
+.rv-cur,#rv-next{display:none}
+@media (max-width:760px){
+ #list tr.bad td.reason{display:block;flex:1 0 100%;font-size:13px;color:var(--fg)}   /* 변환 실패·격리·건너뜀 사유는 휴대폰에서도 보인다 */
+ #optArcWrap,#optKeepWrap{display:none!important}   /* 폴더 제자리 교체가 없는 화면에서는 쓸 수 없는 설정 */
+ html:not(.is-demo) .rv-head .rv-cur{display:block;flex:1 0 100%;font-size:13px;font-weight:700;word-break:break-all;order:-1}
+ html:not(.is-demo) .rv-head h2{order:-2}
+ html:not(.is-demo) #rv-next:not([hidden]){display:inline-flex;flex:1 1 100%;justify-content:center}
+ html:not(.is-demo) #rv-msg{display:block!important;flex:1 0 100%;font-size:13px}
+ html:not(.is-demo) #rv-msg:empty{display:none!important}
+}
+@media (max-width:360px){html:not(.is-demo) .logo{font-size:34px;letter-spacing:-1.5px;white-space:nowrap}}   /* 320px 에서 「어댑/터」로 끊기지 않게 */

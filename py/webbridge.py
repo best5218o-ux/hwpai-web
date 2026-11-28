@@ -12,6 +12,8 @@ import os
 import shutil
 import time
 
+os.environ.setdefault("HWPAI_SENS_STORE", "0")   # 웹판: 확인 결과는 브라우저 저장소가 원본이다. 본체의 사용자 폴더 공용 저장소(2026-11-27 추가)는 쓰지 않는다
+
 ROOT = "/work"
 LOG = ROOT + "/gradelog"
 _cfg: dict = {}
@@ -234,6 +236,18 @@ def finalize(job: str, rows_json: str, order_json: str, wall: float) -> str:
     stats = {"files": len(rows) - blocked, "resumed": 0, "wall_seconds": round(wall, 1)}
     stats.update(batch.summarize(rows))
     batch.write_summary(out, stats, rows)
+    try:   # 웹판에 없는 명령(hwpai.bat · sens review · ask · MCP) 안내를 화면 단추 안내로 바꾼다
+        import re as _re
+        sp = os.path.join(out, "요약.md")
+        with open(sp, encoding="utf-8") as f:
+            t = f.read()
+        t2 = _re.sub(r"(\*\*확인 대기 \d+건\*\*) — [^\n]*",
+                     r"\1 — 확인 전에는 AI용으로 내보내지 않습니다. 변환은 이 기기 안에서 이미 끝났습니다. 확인: 화면의 「개인정보 확인」 단추", t)
+        if t2 != t:
+            with open(sp, "w", encoding="utf-8") as f:
+                f.write(t2)
+    except Exception:
+        pass
     try:
         from hwpai.xlsx import ledger_xlsx
         ledger_xlsx(os.path.join(out, "이관대장.xlsx"), batch.COLUMNS, rows,

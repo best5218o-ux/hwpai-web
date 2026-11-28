@@ -89,7 +89,7 @@
       for (const n of names) {
         const m = byName[n]; if (!m) throw new Error('payload 목록에 ' + n + ' 없음');
         for (const c of m.chunks) await loadScript(c);
-        const parts = chunkStore[n].map(b64ToU8);
+        const parts = [b64ToU8(chunkStore[n].join(''))];   // 조각을 이어 붙인 뒤에 푼다(조각 길이가 4의 배수가 아니어도 되게 — 2026-11-27 수정)
         let total = 0; parts.forEach(p => total += p.length);
         const gz = new Uint8Array(total); let o = 0; parts.forEach(p => { gz.set(p, o); o += p.length; });
         delete chunkStore[n];

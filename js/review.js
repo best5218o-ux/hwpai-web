@@ -109,17 +109,24 @@
     const c = document.querySelector('.ritem.cur'); if (c) c.scrollIntoView({ block: 'nearest' });
   }
   function markCur() { document.querySelectorAll('.ritem').forEach(e => e.classList.toggle('cur', +e.dataset.i === ci)); const cm = document.querySelector('mark.cur'); if (cm) cm.scrollIntoView({ block: 'nearest' }); }
-  function set(i, v) { const d = P.docs[di]; d.dec[d.items[i].key] = v; draw(); }
-  function draw() { drawDocs(); drawText(); drawItems(); const cm = document.querySelector('mark.cur'); if (cm) cm.scrollIntoView({ block: 'nearest' }); if (P.docs[di]) $('#rv-policy').value = P.docs[di].policy || 'block'; }
+  function set(i, v) { const d = P.docs[di]; d.dec[d.items[i].key] = v; P.dirty = true; draw(); }
+  function drawCur() {   // 휴대폰 폭: 문서 목록 칸이 없으므로 지금 문서 이름과 「다음 문서」를 머리에 보인다
+    const c = $('#rv-cur'), nx = $('#rv-next'); if (!c || !nx) return; const d = P.docs[di];
+    c.textContent = d ? `${P.docs.length > 1 ? (di + 1) + ' / ' + P.docs.length + ' · ' : ''}${d.name} · 미확인 ${d.items.filter(it => !dec(d, it)).length}건` : '';
+    nx.hidden = P.docs.length < 2;
+  }
+  function draw() { drawDocs(); drawCur(); drawText(); drawItems(); const cm = document.querySelector('mark.cur'); if (cm) cm.scrollIntoView({ block: 'nearest' }); if (P.docs[di]) $('#rv-policy').value = P.docs[di].policy || 'block'; }
   function move(n) { const d = P.docs[di]; if (!d) return; const v = visible(d).map(([, i]) => i); if (!v.length) return; let p = v.indexOf(ci); p = p < 0 ? 0 : Math.min(v.length - 1, Math.max(0, p + n)); ci = v[p]; draw(); }
-  function bulk(v) { const d = P.docs[di]; if (!d) return; visible(d).forEach(([it]) => { d.dec[it.key] = v; }); draw(); }
+  function bulk(v) { const d = P.docs[di]; if (!d) return; visible(d).forEach(([it]) => { d.dec[it.key] = v; }); P.dirty = true; draw(); }
   function outDocs() {
     return P.docs.map(d => ({ id: d.id, sha256: d.sha256, name: d.name, policy: d.policy || 'block', items: d.items,
       decisions: Object.fromEntries(Object.entries(d.dec).filter(([, v]) => v === 'sensitive' || v === 'not_sensitive')) }));
   }
   function save() {
     handlers.onSave(outDocs(), $('#rv-who').value || '');
-    $('#rv-msg').textContent = '저장했습니다 — 이 브라우저 안에서만 쓰입니다(값은 저장하지 않음).';
+    P.dirty = false;
+    const left = P.docs.filter(d => d.items.some(it => !dec(d, it))).length;
+    $('#rv-msg').textContent = '저장했습니다 — 이 브라우저 안에서만 쓰입니다(값은 저장하지 않음).' + (left ? ` 확인할 문서가 ${left}개 남았습니다.` : '');
     draw();
   }
   function exportFile() {
@@ -132,7 +139,7 @@
       const data = JSON.parse(await file.text()); let n = 0;
       for (const x of (data.docs || [])) {
         const d = P.docs.find(q => q.sha256 === x.sha256);
-        if (d) { Object.assign(d.dec, x.decisions || {}); if (x.policy) d.policy = x.policy; n++; }
+        if (d) { Object.assign(d.dec, x.decisions || {}); if (x.policy) d.policy = x.policy; n++; P.dirty = true; }
       }
       $('#rv-msg').textContent = `결정 파일에서 ${n}개 문서의 결정을 가져왔습니다 — 확인 후 「저장」을 누르세요.`;
       draw();
@@ -154,7 +161,8 @@
     if (wired) return; wired = true;
     $('#rv-bulkNo').onclick = () => bulk('not_sensitive'); $('#rv-bulkYes').onclick = () => bulk('sensitive');
     $('#rv-onlyPend').onchange = $('#rv-kindf').onchange = draw;
-    $('#rv-policy').onchange = () => { if (P.docs[di]) P.docs[di].policy = $('#rv-policy').value; };
+    $('#rv-policy').onchange = () => { if (P.docs[di]) { P.docs[di].policy = $('#rv-policy').value; P.dirty = true; } };
+    { const nx = $('#rv-next'); if (nx) nx.onclick = () => { if (!P.docs.length) return; const n = P.docs.length; let k = di; for (let s = 1; s <= n; s++) { const j = (di + s) % n; if (P.docs[j].items.some(it => !dec(P.docs[j], it))) { k = j; break; } if (s === 1) k = j; } di = k; ci = 0; $('#rv-msg').textContent = ''; draw(); }; }
     $('#rv-save').onclick = save; $('#rv-export').onclick = exportFile;
     $('#rv-import').onclick = () => $('#rv-importFile').click();
     $('#rv-importFile').onchange = (e) => { if (e.target.files[0]) importFile(e.target.files[0]); e.target.value = ''; };
@@ -175,6 +183,10 @@
   }
   function close() {
     if (!P) return;
+    if ($('#review').hidden) return;
+    // 고른 것을 저장하지 않고 닫으면 사라진다 — 한 번 묻는다(시연 화면은 그대로)
+    if (P.dirty && !document.documentElement.classList.contains('is-demo') && !confirm('저장하지 않은 선택이 있습니다. 저장하지 않고 닫을까요?')) return;
+    P.dirty = false;
     $('#review').hidden = true; document.body.style.overflow = '';
     if (handlers && handlers.onClose) handlers.onClose();
     if (prevFocus && prevFocus.focus) try { prevFocus.focus(); } catch (e) { /* */ }

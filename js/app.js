@@ -15,6 +15,9 @@
     cfg: { policy: 'review', engine_version: '?' }, info: null, assetMode: '', verified: 0, doneCount: 0, totalCount: 0,
   };
   window.__hwpai = S; // 시험용
+  const DEMO = new URLSearchParams(location.search).has('demo');   // 현장 시연 화면(?demo)은 결선 때 모습 그대로 둔다
+  if (DEMO) document.documentElement.classList.add('is-demo');
+  S.gen = 0;   // 취소·처음으로 를 누를 때마다 올린다(그 전에 맡긴 일을 가려낸다)
 
   // ---------------------------------------------------------------- 알림
   let toastT = 0;
@@ -64,7 +67,7 @@
       S.info = info; S.cfg.engine_version = info.version; S.ready = true;
       txt.textContent = '엔진 준비됨'; $('#engine').classList.add('ready');
       try { window.dispatchEvent(new Event('hwpai-engine-ready')); } catch (e) { /* */ }
-      $('#engineInfo').textContent = `rhwp ${info.version} (WebAssembly) · Python ${info.python} (Pyodide) · hwpai 검증서 판 1.1 · 일꾼 ${opts.jobs}개 · 파일 읽기 방식: ${S.assetMode === 'payload' ? 'file:// 내장 묶음' : '같은 위치 정적 파일'}${S.verified ? ' · 엔진 파일 SHA-256 대조 ' + S.verified + '건 일치' : ''}`;
+      $('#engineInfo').textContent = `rhwp ${info.version} (WebAssembly) · Python ${info.python} (Pyodide) · hwpai 검증서 판 1.2 · 일꾼 ${opts.jobs}개 · 파일 읽기 방식: ${S.assetMode === 'payload' ? 'file:// 내장 묶음' : '같은 위치 정적 파일'}${S.verified ? ' · 엔진 파일 SHA-256 대조 ' + S.verified + '건 일치' : ''}`;
       bar.style.width = '100%';
       setTimeout(() => { $('#engine').classList.add('done'); }, 600);
       renderAll();
@@ -198,23 +201,32 @@
     for (const [re, m] of map) if (re.test(t)) return m;
     return '';
   }
-  async function processItem(it) {
+  // 취소된 건: 이번 실행의 건수에서 빼고 「대기」로 돌린다(빼지 않으면 '처리 중'에서 끝나지 않는다 — 2026-11-27 수정)
+  function cancelItem(it) {
+    if (!S.items.includes(it)) return;
+    it.status = '대기'; S.running = Math.max(0, S.running - 1); S.totalCount = Math.max(0, S.totalCount - 1);
+    if (S.totalCount <= 0 || S.doneCount >= S.totalCount) { if (S.doneCount > 0) runFinished(); else { S.running = 0; S.totalCount = 0; S.runEnd = performance.now(); updateProgress(); renderAll(); } }
+    else { scheduleRender(); updateProgress(); }
+  }
+  async function processItem(it, gen) {
     const o = readOpts();
     it.status = '처리중'; it.t0 = performance.now(); scheduleRender();
     let buf;
     try { buf = await it.file.arrayBuffer(); }
-    catch (e) { finish(it, { row: { 원본: it.rel, 상태: '격리', 판정_이유: '읽기 실패: ' + e.message, 처리시각: new Date().toISOString() } }); return; }
+    catch (e) { if (gen !== S.gen) { cancelItem(it); return; } finish(it, { row: { 원본: it.rel, 상태: '격리', 판정_이유: '읽기 실패: ' + e.message, 처리시각: new Date().toISOString() } }); return; }
+    if (gen !== S.gen) { cancelItem(it); return; }   // 파일을 읽는 사이에 취소됨
     try {
       const res = await S.pool.run({ type: 'process', rel: it.rel, dst: it.dst, data: buf, opts: { timeout: o.timeout, password: o.password, include_hwpx: o.include_hwpx }, cfg: { policy: o.policy, engine_version: S.cfg.engine_version } },
         [buf], (o.timeout + 60) * 1000, S.records, S.recVer);
       finish(it, res);
     } catch (e) {
-      if (e.kind === 'cancel') { it.status = '대기'; scheduleRender(); return; }
+      if (e.kind === 'cancel') { cancelItem(it); return; }
       const kind = e.kind === 'timeout' ? '시간초과' : e.kind === 'crash' ? '엔진중단' : '엔진오류';
       finish(it, { row: { 원본: it.rel, 원본_크기: it.size, 상태: '변환실패', 판정: 'FAIL', 판정_이유: `${kind}: ${String(e.message).slice(0, 200)}`, 처리시각: new Date().toISOString() } });
     }
   }
   function finish(it, res) {
+    if (!S.items.includes(it)) return;   // 「처음으로」로 비운 뒤 늦게 끝난 건 — 세지 않는다
     const row = res.row || {}; it.row = row; it.sens = res.sens || null; it.status = row.상태 || '변환실패';
     const bufs = res.buffers || {};
     if (bufs[it.dst]) { const u = new Uint8Array(bufs[it.dst]); it.hwpx = { blob: new Blob([u], { type: 'application/octet-stream' }), crc: Z.crc32(u), size: u.length }; }
@@ -240,13 +252,13 @@
     // 단, 가장 작은 파일 하나는 마지막 일꾼 몫으로 앞에 넣어 첫 결과가 바로 보이게 한다
     const w = Math.max(1, readOpts().jobs || 1);
     if (ord.length > w && w >= 2) ord.splice(w - 1, 0, ord.pop());
-    for (const it of ord) processItem(it);
+    for (const it of ord) processItem(it, S.gen);
     updateProgress(); renderAll();
   }
   function runFinished() {
     S.running = 0; S.runEnd = performance.now(); updateProgress(); renderAll();
     try { window.dispatchEvent(new Event('hwpai-run-finished')); } catch (e) { /* */ }
-    const s = counts(); toast(`처리 끝 — ${s.done}개 변환${s.fail ? ` · 실패·격리 ${s.fail}개` : ''}${s.wait ? ` · 개인정보 확인 대기 ${s.wait}개` : ''}`, 6000);
+    const s = counts(); toast(`처리 끝 — ${s.done}개 변환${(s.fail + s.fail2) ? ` · 변환 실패 ${s.fail + s.fail2}개` : ''}${s.wait ? ` · 개인정보 확인 대기 ${s.wait}개` : ''}`, 6000);
   }
   function updateProgress() {
     const done = S.doneCount, tot = S.totalCount;
@@ -338,6 +350,8 @@
     $('#summary').innerHTML = S.items.length ? [mk('', 'all', c.total, '전체'), mk('pass', 'PASS', c.pass, '정상 변환'), mk('warn', 'WARN', c.warn, '확인 필요'), mk('fail', 'bad', c.fail2 + c.fail, '변환 실패'), mk('wait', 'wait', c.wait, '개인정보 확인 대기')].join('') : '';
     $$('#summary .stat').forEach(b => b.onclick = () => { S.filter = b.dataset.f; renderAll(); });
   }
+  // 내보내기 대상: 변환을 마쳤거나 이미 HWPX 인 문서(손상·HWP 아님·차단 건은 읽을 수 없으니 단추를 두지 않는다)
+  const canExport = (it) => it.status === '변환완료' || (it.status === '건너뜀' && !!(it.row && it.row.원본_형식)) || (DEMO && !!(it.row && it.row.원본_형식));
   function renderRows() {
     const tb = $('#rows'); const vis = S.items.filter(passFilter);
     const html = vis.map(it => {
@@ -349,8 +363,9 @@
       const acts = [];
       if (it.hwpx) acts.push(`<button class="btn sm primary" data-act="dl" data-id="${it.id}" type="button">HWPX</button>`);
       if (it.md) acts.push(`<button class="btn sm" data-act="detail" data-id="${it.id}" type="button">검증서</button>`);
-      if (it.status === '변환완료' || it.row && it.row.원본_형식) acts.push(`<button class="btn sm" data-act="exp" data-id="${it.id}" type="button">AI용</button>`);
-      return `<tr data-id="${it.id}"><td class="c-sel"><input type="checkbox" data-sel="${it.id}" ${S.selected.has(it.id) ? 'checked' : ''} aria-label="선택"></td>
+      if (canExport(it)) acts.push(`<button class="btn sm" data-act="exp" data-id="${it.id}" type="button">${DEMO ? 'AI용' : '내보내기'}</button>`);
+      const badRow = !!it.row && !(it.status === '변환완료' && r.판정 === 'PASS');   // 휴대폰 폭에서도 사유를 보인다
+      return `<tr data-id="${it.id}"${badRow ? ' class="bad"' : ''}><td class="c-sel"><input type="checkbox" data-sel="${it.id}" ${S.selected.has(it.id) ? 'checked' : ''} aria-label="선택"></td>
 <td class="name" data-l="파일">${esc(it.rel)}</td>
 <td data-l="결과">${it.status === '변환완료' && it.row && VWORD[it.row.판정] ? verdictTag(it) : statusTag(it)}</td>
 <td data-l="개인정보">${sensTag(it)}</td><td class="reason" data-l="설명">${reason}</td><td class="c-act" data-l="동작">${acts.join(' ')}</td></tr>`;
@@ -366,7 +381,7 @@
     const c = counts();
     const doneAny = S.items.some(i => i.hwpx);
     $('#btnZip').disabled = !doneAny || !!S.running; $('#btnZipSel').disabled = !S.selected.size || !!S.running;
-    $('#btnExport').disabled = !S.items.some(i => i.row && i.row.원본_형식 && i.status !== '대기') || !S.ready;
+    $('#btnExport').disabled = !S.items.some(canExport) || !S.ready;
     $('#btnReview').disabled = !S.items.some(i => i.sens && i.sens.items && i.sens.items.length);
     $('#btnReview').textContent = c.wait ? `개인정보 확인 (${c.wait})` : '개인정보 보기';
     $('#btnStart').hidden = !pending().length || !!S.running; $('#btnStart').disabled = !S.ready;
@@ -410,7 +425,7 @@
     const recs = Object.values(S.records).filter(r => shas.has(r.sha256));
     if (recs.length) entries.push(te('민감확인_결정.json', JSON.stringify(decisionFile(recs), null, 1)));
     entries.push(te('웹판_변환정보.json', JSON.stringify({
-      tool: 'hwpai 웹 (브라우저 전용)', engine: S.info && ('rhwp-wasm ' + S.info.version), python: S.info && S.info.python, audit_version: '1.1',
+      tool: 'hwpai 웹 (브라우저 전용)', engine: S.info && ('rhwp-wasm ' + S.info.version), python: S.info && S.info.python, audit_version: '1.2',
       created: new Date().toISOString(), files: rows.length, note: '원본은 브라우저 밖으로 나가지 않았고, 이 zip 은 이 브라우저에서 만들어졌습니다. 격리(_격리) 사본은 만들지 않습니다.',
     }, null, 1)));
     return Z.makeZip(entries);
@@ -433,11 +448,15 @@
     toast('내보내는 중…', 20000);
     for (const it of items) {
       n++; $('#runText').textContent = `내보내기 ${n} / ${items.length}`;
+      // 개인정보 확인을 기다리는 문서는 「AI 폴더용」 체크와 상관없이 내보내지 않는다(2026-11-27 수정: 체크만 끄면 번호가 그대로 나가던 것)
+      { const st0 = sensStatus(it); if (st0 && st0.state === R.STATES[1]) { rows.push({ file: it.name, status: '확인대기', why: 'wait' }); continue; } }
       let buf; try { buf = await it.file.arrayBuffer(); } catch (e) { rows.push({ file: it.name, status: '실패', reason: '읽기 실패' }); continue; }
       const o = readOpts();
       try {
         const res = await S.pool.run({ type: 'export', id: 0, rel: it.rel, data: buf, formats, aiFolder, cfg: { policy: o.policy, engine_version: S.cfg.engine_version } }, [buf], (o.timeout + 60) * 1000, S.records, S.recVer);
-        res.file = it.name; rows.push(res);
+        res.file = it.name;
+        if (res.status === '확인대기' || res.status === '차단') { const st1 = sensStatus(it); res.why = (st1 && st1.state === R.STATES[1]) ? 'wait' : (st1 && st1.sensitive) ? 'block' : (!st1 ? 'unread' : 'policy'); }
+        rows.push(res);
         if (res.status === '쓴') {
           const stem = (it.rel.replace(/\.[^./]+$/, ''));
           let base = stem.split('/').pop(), name = base, k = 2; while (used.has(name.toLowerCase())) { name = base + ' (' + k + ')'; k++; } used.add(name.toLowerCase());
@@ -449,24 +468,30 @@
         }
       } catch (e) { rows.push({ file: it.name, status: '실패', reason: e.message.slice(0, 200) }); }
     }
-    const wait = rows.filter(r => r.status === '확인대기' || r.status === '차단');
-    if (wait.length) entries.push(te('내보내기/확인대기_목록.md', '# 확인 대기 — AI 폴더에 쓰지 않은 문서\n\n민감정보 확인을 마치면 다시 내보내세요. 내용은 이 목록에 적지 않습니다.\n\n' + wait.map(r => `- ${r.file} (${r.status})`).join('\n') + '\n'));
-    entries.push(te('내보내기/내보내기_안내.txt', (aiFolder ? 'AI 폴더용 내보내기 — 민감정보 확인이 끝난 문서만 포함했습니다(확인 필요 문서는 확인대기_목록.md 에 이름만 올렸습니다).\n' : '사람이 읽는 용도의 내보내기 — AI 폴더에 옮기기 전에 민감정보 확인을 마치세요.\n') + `형식: ${formats.join(', ')}\n`));
+    const held = rows.filter(r => r.status === '확인대기' || r.status === '차단');
+    const wait = held.filter(r => r.why === 'wait'), blocked = held.filter(r => r.why === 'block' || r.why === 'policy'), unread = held.filter(r => r.why === 'unread');
+    const WHY = { wait: '개인정보 확인 대기', block: '개인정보 있음 — AI에 막기로 확인함', policy: '개인정보 설정에 따라 막음', unread: '읽지 못한 문서' };
+    if (held.length) entries.push(te('내보내기/확인대기_목록.md', '# 내보내지 않은 문서\n\n개인정보 확인을 마치면 다시 내보내세요. 내용은 이 목록에 적지 않습니다.\n\n' + held.map(r => `- ${r.file} (${WHY[r.why] || r.status})`).join('\n') + '\n'));
+    entries.push(te('내보내기/내보내기_안내.txt', (aiFolder ? 'AI 폴더용 내보내기 — 개인정보 확인이 끝난 문서만 포함했습니다(내보내지 않은 문서는 확인대기_목록.md 에 이름만 올렸습니다).\n' : '사람이 읽는 용도의 내보내기 — 개인정보 확인을 기다리는 문서는 넣지 않았습니다. 작성자 등 문서 속성이 들어 있으니 AI 폴더에는 「AI 폴더용」으로 다시 내보낸 것을 쓰세요.\n') + `형식: ${formats.join(', ')}\n`));
     const w = rows.filter(r => r.status === '쓴').length, fl = rows.filter(r => r.status === '실패').length;
-    if (!w) { toast(`내보낸 문서가 없습니다${wait.length ? ' — 민감정보 확인 대기 ' + wait.length + '개는 확인 뒤에 내보낼 수 있습니다.' : ''}${fl ? ' (실패 ' + fl + ')' : ''}`, 7000); updateProgress(); return; }
+    const heldMsg = [wait.length ? `개인정보 확인 대기 ${wait.length}개(확인 뒤에 내보낼 수 있습니다)` : '', blocked.length ? `AI에 막기로 확인한 문서 ${blocked.length}개(「개인정보 확인」에서 「가려서 AI 에 보이기」로 바꾸면 내보냅니다)` : '', unread.length ? `읽지 못한 문서 ${unread.length}개` : '', fl ? `실패 ${fl}개` : ''].filter(Boolean).join(' · ');
+    if (!w) { toast(`내보낸 문서가 없습니다${heldMsg ? ' — ' + heldMsg : ''}`, 9000); updateProgress(); return; }
     download(Z.makeZip(entries), (S.outName || (items.length === 1 ? items[0].name.replace(/\.[^.]+$/, '') : 'hwpai')) + '_내보내기.zip');
-    toast(`내보내기 ${w}개${wait.length ? ' · 확인 대기로 제외 ' + wait.length + '개' : ''}${fl ? ' · 실패 ' + fl + '개' : ''}`, 7000);
+    toast(`내보내기 ${w}개${heldMsg ? ' · 제외: ' + heldMsg : ''}`, heldMsg ? 9000 : 7000);
     updateProgress();
   }
   function askExport(items) {
     const dlg = $('#detail'); const sel = items.length;
+    const nWait = items.filter(i => { const s = sensStatus(i); return s && s.state === R.STATES[1]; }).length;
+    const waitNote = nWait ? `<div class="xwait" id="xWaitNote"><b>🔒 개인정보 확인 대기 ${nWait}개 문서는 내보내지 않습니다.</b> 확인을 마치면 내보낼 수 있습니다(아래 선택과 상관없음). <button class="btn sm primary" id="xReview" type="button">개인정보 확인하기</button></div>` : '';
     $('#detailTitle').textContent = 'Markdown·JSON 내보내기';
-    $('#detailBody').innerHTML = `<p>${sel}개 문서를 내보냅니다. 본문.md(제목 수준·표·그림 참조·각주), 구조.json(스키마 hwpai-structure/1), chunks.jsonl(RAG 조각)과 그림 파일이 문서마다 폴더로 들어갑니다.</p>
+    $('#detailBody').innerHTML = `${waitNote}<p>${sel - nWait}개 문서를 내보냅니다. 본문.md(제목 수준·표·그림 참조·각주), 구조.json(스키마 hwpai-structure/1), chunks.jsonl(RAG 조각)과 그림 파일이 문서마다 폴더로 들어갑니다.</p>
 <div class="grid" style="display:grid;gap:8px">
 <label><input type="checkbox" id="xMd" checked> 본문.md (Markdown)</label><label><input type="checkbox" id="xJson" checked> 구조.json</label><label><input type="checkbox" id="xCh"> chunks.jsonl (RAG 조각)</label>
-<label><input type="checkbox" id="xAi" checked> <b>AI 폴더용</b> — 민감정보 「확인 필요」 문서는 쓰지 않고 목록에만 올립니다(작성자 등 문서 속성도 뺌). 끄면 사람이 읽는 용도입니다.</label></div>
+<label><input type="checkbox" id="xAi" checked> <b>AI 폴더용</b> — 작성자 등 문서 속성을 빼고, 「개인정보 있음」으로 확인한 문서는 가리거나 뺍니다. 끄면 사람이 읽는 용도입니다(개인정보 확인 대기 문서는 어느 쪽이든 내보내지 않습니다).</label></div>
 <p class="btns" style="justify-content:flex-start"><button class="btn primary" id="xGo" type="button">내려받기</button></p>`;
     dlg.showModal();
+    { const xr = $('#xReview'); if (xr) xr.onclick = () => { dlg.close(); const f = items.find(i => { const s = sensStatus(i); return s && s.state === R.STATES[1]; }); openReview(f && f.id); }; }
     $('#xGo').onclick = () => {
       const formats = [$('#xMd').checked && 'md', $('#xJson').checked && 'json', $('#xCh').checked && 'chunks'].filter(Boolean);
       if (!formats.length) { toast('형식을 하나 이상 고르세요'); return; }
@@ -607,8 +632,8 @@
     const tiles = cmpAll.filter(c => ['글', '표', '그림'].indexOf(c['항목']) >= 0 || parseInt(c['원본'], 10) > 0).map(c => { const [n, u] = num(c['원본']); const same = c['결과'] === '같음'; return `<div class="rt ${same ? 'ok' : 'bad'}"><u>${IC[c['항목']] || '•'}</u><b>${esc(n)}</b><span>${esc(c['항목'] === '글' ? '글자' : c['항목'])}</span><em>${same ? '✔ 같음' : '✖ 다름'}</em></div>`; }).join('');
     const cellNote = (cmpAll.find(c => c['항목'] === '표') || {})['설명'] || '';
     const hero = { PASS: ['ok', '✔', 'PASS', '원본과 같음', '그대로 쓰셔도 됩니다'], WARN: ['warn', '▲', '확인 필요', '일부가 다를 수 있음', '한글에서 한 번 열어 보세요'], FAIL: ['bad', '✖', 'FAIL', '원본과 다름', '그대로 쓰지 마세요'] }[r.판정] || ['gray', '•', esc(it.status || ''), '', ''];
-    const flow = (r.원본_크기 && r.변환본_크기) ? `<div class="rflow"><span class="a">HWP<small>${esc(fmtSize(r.원본_크기))}</small></span><i><em>${r.변환_소요ms ? (r.변환_소요ms / 1000).toFixed(1) + '초' : ''}</em><s></s></i><span class="b">HWPX<small>${esc(fmtSize(r.변환본_크기))}</small></span></div>` : '';
-    const pcard = `<div class="rpii ${scls}"><u>${scls === 'ok' ? '🔓' : '🔒'}</u><div><b>개인정보 ${scls === 'ok' ? '없음' : (kinds ? esc(kinds) : stxt.replace(/^[✔⚠]\s*/, ''))}</b><p>${scls === 'ok' ? 'AI에 넘겨도 되는 문서입니다' : 'AI에 넘기기 전에 사람이 한 번 확인합니다'}</p>${sbtn}</div></div>`;
+    const flow = (r.원본_크기 && r.변환본_크기) ? `<div class="rflow"><span class="a">HWP<small>${esc(fmtSize(r.원본_크기))}</small></span><i><em>${r.변환_소요ms ? (r.변환_소요ms < 50 ? '0.1초 미만' : Math.max(0.1, r.변환_소요ms / 1000).toFixed(1) + '초') : ''}</em><s></s></i><span class="b">HWPX<small>${esc(fmtSize(r.변환본_크기))}</small></span></div>` : '';
+    const pcard = `<div class="rpii ${scls}"><u>${scls === 'ok' ? '🔓' : '🔒'}</u><div><b>개인정보 ${scls === 'ok' ? '없음' : (kinds ? esc(kinds) : stxt.replace(/^[✔⚠]\s*/, ''))}</b><p>${scls === 'ok' ? 'AI에 넘겨도 되는 문서입니다' : (st && st.state === R.STATES[3]) ? (st.policy === 'mask' ? '사람이 확인했습니다 — AI에는 가려서 넘깁니다' : '사람이 확인했습니다 — AI에는 넘기지 않습니다(막기)') : 'AI에 넘기기 전에 사람이 한 번 확인합니다'}</p>${sbtn}</div></div>`;
     $('#detailBody').innerHTML = `<div class="rhero ${hero[0]}"><u>${hero[1]}</u><div><b>${hero[2]}</b><em>${hero[3]}</em><p>${hero[4]}</p></div></div>
 ${flow}
 <div class="rtiles">${tiles}</div>
@@ -689,6 +714,8 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
     $('#fileInput').onchange = (e) => { addFiles(Array.from(e.target.files).map(f => ({ file: f, path: f.name })), null); e.target.value = ''; };
     $('#dirInput').onchange = (e) => { addFiles(Array.from(e.target.files).map(f => ({ file: f, path: f.webkitRelativePath || f.name })), null); e.target.value = ''; };
     if (ST && ST.supported()) { $('#rwCard').hidden = false; $('#optKeepWrap').hidden = false; }
+    else { const aw = $('#optArcWrap'); if (aw) aw.hidden = true; }   // 폴더 쓰기를 못 하는 브라우저(휴대폰 등)에서는 쓸 수 없는 항목
+    if (!DEMO) $('#btnExport').textContent = '내보내기';
     $('#pickRW').onclick = async () => {
       try {
         const h = await window.showDirectoryPicker({ mode: 'readwrite' });
@@ -713,16 +740,16 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
     $('#btnPurge').onclick = () => openPurge();
     $('#btnStart').onclick = () => kick();
     $('#btnCancel').onclick = () => {
-      S.pool.cancelQueued(() => true); S.cancelled = true;
-      for (const it of S.items) if (it.status === '큐') it.status = '대기';
+      S.gen++; S.pool.cancelQueued(() => true); S.cancelled = true;   // 빠진 건수는 cancelItem 이 센다
       toast('대기 중인 파일을 취소했습니다. 진행 중인 파일은 끝까지 처리합니다.'); renderAll();
     };
     $('#btnZip').onclick = () => zipAll(false); $('#btnZipSel').onclick = () => zipAll(true);
-    $('#btnExport').onclick = () => askExport(S.selected.size ? S.items.filter(i => S.selected.has(i.id)) : S.items.filter(i => i.row && i.row.원본_형식 && i.status !== '대기'));
+    $('#btnExport').onclick = () => askExport((S.selected.size ? S.items.filter(i => S.selected.has(i.id)) : S.items).filter(canExport));
     $('#btnReview').onclick = () => openReview();
     $('#btnRetry').onclick = () => { for (const it of S.items) if (it.status === '변환실패' || it.status === '격리') { it.status = '대기'; it.row = null; it.sens = null; } renderAll(); kick(); };
     $('#btnClear').onclick = () => {
       if (S.running && !confirm('처리 중입니다. 목록을 비우면 진행 중인 결과가 사라집니다. 비울까요?')) return;
+      S.gen++;
       if (S.running) { S.pool.cancelQueued(() => true); }
       S.items = []; S.selected.clear(); S.running = 0; S.doneCount = S.totalCount = 0; S.outName = ''; renderAll(); updateProgress();
     };
@@ -735,7 +762,7 @@ ${(n.log.length || w.length) ? `<pre>${esc(n.log.concat(w).slice(-40).join('\n')
       const it = S.items.find(i => i.id === +b.dataset.id); if (!it) return;
       if (b.dataset.act === 'dl') download(it.hwpx.blob, it.dst.split('/').pop());
       else if (b.dataset.act === 'detail') showDetail(it);
-      else if (b.dataset.act === 'exp') { if (new URLSearchParams(location.search).has('demo')) previewAI(it); else askExport([it]); }
+      else if (b.dataset.act === 'exp') { if (DEMO) previewAI(it); else askExport([it]); }
     });
     $('#detailClose').onclick = () => $('#detail').close(); $('#netClose').onclick = () => $('#netDlg').close();
     $('#netBadge').onclick = showNet;
