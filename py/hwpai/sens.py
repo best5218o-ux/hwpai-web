@@ -85,20 +85,46 @@ def sha256_file(path: str) -> str:
     return h.hexdigest()
 
 
+def shared_root() -> str | None:
+    """이 PC 사용자의 공용 확인 저장소. 2026-11-27 추가.
+    이전에는 확인 결과가 실행한 자리마다 따로 남았다(명령창=그때의 작업 폴더, 화면=결과 폴더, AI 앱 연결=AI 앱이 띄운 자리).
+    그래서 화면이나 명령창에서 사람이 「민감정보 아님」으로 확인해도 AI 앱 연결(MCP)에서는 계속 「확인 필요」로 막혔다.
+    확인 결과를 사용자 폴더 한곳에도 함께 적어, 어디서 확인했든 같은 문서(SHA-256)는 같은 결과를 쓰게 한다.
+    HWPAI_SENS_STORE 로 위치를 바꾸고, 값을 0 으로 주면 공용 저장소를 쓰지 않는다(이전 동작)."""
+    env = os.environ.get("HWPAI_SENS_STORE")
+    if env is not None:
+        return None if env.strip() in ("", "0") else env
+    la = os.environ.get("LOCALAPPDATA")
+    return os.path.join(la, "hwpai", "hwpai_등급기록") if la else os.path.join(os.path.expanduser("~"), ".hwpai", "hwpai_등급기록")
+
+
 class Store:
     def __init__(self, root: str):
         self.root = root
         self.dir = os.path.join(root, "민감확인")
+        sr = shared_root()
+        self.shared = os.path.join(sr, "민감확인") if sr else None
+        if self.shared and os.path.normcase(os.path.abspath(self.shared)) == os.path.normcase(os.path.abspath(self.dir)):
+            self.shared = None
 
     def _p(self, sha: str) -> str:
         return os.path.join(self.dir, sha + ".json")
 
-    def load(self, sha: str) -> dict | None:
+    @staticmethod
+    def _read(path: str) -> dict | None:
         try:
-            with open(self._p(sha), encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 return json.load(f)
         except (OSError, ValueError):
             return None
+
+    def load(self, sha: str) -> dict | None:
+        """이 저장소의 기록과 공용 저장소의 기록 중 나중에 확인한 것."""
+        a = self._read(self._p(sha))
+        b = self._read(os.path.join(self.shared, sha + ".json")) if self.shared else None
+        if a and b:
+            return a if str(a.get("time", "")) >= str(b.get("time", "")) else b
+        return a or b
 
     def save(self, sha: str, items: list[dict], decisions: dict, policy: str = "block", reviewer: str | None = None,
              source_name: str = "") -> dict:
@@ -113,13 +139,19 @@ class Store:
                          "decision": decisions.get(k)})
         rec = {"sha256": sha, "name_hint": os.path.basename(source_name), "reviewer": who, "time": now, "policy": policy,
                "items": rows, "tool": "hwpai sens 1"}
-        with open(self._p(sha), "w", encoding="utf-8") as f:
-            json.dump(rec, f, ensure_ascii=False, indent=1)
-        with open(os.path.join(self.dir, "민감확인_기록.jsonl"), "a", encoding="utf-8") as f:
-            for r in rows:
-                f.write(json.dumps({"time": now, "reviewer": who, "doc_sha256": sha,
-                                    "item_sha256": hashlib.sha256((sha + r["key"]).encode()).hexdigest(),
-                                    "kind": r["kind"], "decision": r["decision"], "policy": policy}, ensure_ascii=False) + "\n")
+        for d in [self.dir] + ([self.shared] if self.shared else []):
+            try:   # 공용 저장소에 못 써도(권한 등) 이 저장소의 기록은 남는다
+                os.makedirs(d, exist_ok=True)
+                with open(os.path.join(d, sha + ".json"), "w", encoding="utf-8") as f:
+                    json.dump(rec, f, ensure_ascii=False, indent=1)
+                with open(os.path.join(d, "민감확인_기록.jsonl"), "a", encoding="utf-8") as f:
+                    for r in rows:
+                        f.write(json.dumps({"time": now, "reviewer": who, "doc_sha256": sha,
+                                            "item_sha256": hashlib.sha256((sha + r["key"]).encode()).hexdigest(),
+                                            "kind": r["kind"], "decision": r["decision"], "policy": policy}, ensure_ascii=False) + "\n")
+            except OSError:
+                if d == self.dir:
+                    raise
         return rec
 
 
@@ -133,12 +165,12 @@ def _whoami() -> str:
 def doc_text(path: str) -> str:
     from . import read
     from .grade import set_active, active
-    from .render import plain_text
+    from .render import scan_text
     saved = active()
     set_active(None)  # 검출용 읽기는 게이트를 거치지 않는다(게이트 자신이 부른다)
     try:
         from .meta import read_meta, meta_block
-        return plain_text(read(path)) + meta_block(read_meta(path))
+        return scan_text(read(path)) + meta_block(read_meta(path))
     finally:
         set_active(saved)
 
@@ -256,7 +288,8 @@ def apply_decisions(store: Store, data: dict, files_by_sha: dict | None = None) 
 
 def cmd_sens(a):
     from .sens_view import render_review_html
-    store = Store(a.store or os.path.join(os.getcwd(), "hwpai_등급기록"))
+    from .grade import writable_logdir
+    store = Store(a.store or writable_logdir(None))   # 기본: 사용자 데이터 폴더(실행한 폴더마다 기록이 흩어지지 않게)
     files = _files(a.path) if getattr(a, "path", None) else []
     if a.action == "scan":
         counts = {s: 0 for s in STATES}

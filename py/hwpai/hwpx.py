@@ -357,8 +357,15 @@ def _zip_read(path: str, name: str) -> bytes:
         return zz.read(name)
 
 
+MAX_XML_PART = int(__import__("os").environ.get("HWPAI_MAX_XML_MB", "256")) << 20   # XML 파트 하나의 풀린 크기 한도
+
+
 def read_hwpx(path: str, autonum_mark: bool = False) -> Document:
     with zipfile.ZipFile(path) as z:
+        big = [i for i in z.infolist() if i.filename.lower().endswith((".xml", ".hpf")) and i.file_size > MAX_XML_PART]
+        if big:   # 작은 파일이 수 GB 로 풀리는 압축 폭탄·손상 파일 — 읽기 전에 멈춘다
+            from .hwp5 import HwpError
+            raise HwpError(f"HWPX 안 {big[0].filename} 이 너무 큽니다({big[0].file_size >> 20}MB, 한도 {MAX_XML_PART >> 20}MB). 한도는 HWPAI_MAX_XML_MB 로 바꿀 수 있습니다.")
         p = HwpxParser(z, autonum_mark)
         blocks = p.parse()
         prv = ""

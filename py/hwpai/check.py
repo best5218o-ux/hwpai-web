@@ -17,15 +17,15 @@ import os
 import re
 
 PII = [
-    ("주민등록번호", re.compile(r"(?<!\d)(\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\s?-\s?([1-4])\d{6}(?!\d)")),
+    ("주민등록번호", re.compile(r"(?<!\d)(\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\s{0,3}-\s{0,3}([1-4])\d{6}(?!\d)")),
     ("주민등록번호", re.compile(r"(?<!\d)(\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[1-4]\d{6}(?!\d)")),  # 하이픈 없는 13자리 — find_pii 가 문맥·검사자리로 거른다
-    ("외국인등록번호", re.compile(r"(?<!\d)(\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\s?-\s?([5-8])\d{6}(?!\d)")),
+    ("외국인등록번호", re.compile(r"(?<!\d)(\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\s{0,3}-\s{0,3}([5-8])\d{6}(?!\d)")),
     ("휴대전화", re.compile(r"(?<!\d)\(?01[016789]\)?\s{0,2}[-.]?\s{0,2}\d{3,4}\s{0,2}[-.]?\s{0,2}\d{4}(?!\d)")),
     ("일반전화", re.compile(r"(?<![\d(])\(?0(2|[3-6][1-5])(?:\)\s?|[-.\s])\d{3,4}[-.\s]\d{4}(?!\d)")),
     ("인터넷전화", re.compile(r"(?<![\d(])\(?070(?:\)\s?|[-.\s]?)\d{3,4}[-.\s]?\d{4}(?!\d)")),
     ("이메일", re.compile(r"[\w.+-]+@[\w-]+(\.[\w-]+)+")),
     ("계좌번호 꼴", re.compile(r"(?<![\d-])\d{3,6}-\d{2,6}-\d{2,7}(-\d{1,3})?(?![\d-])")),
-    ("여권번호 꼴", re.compile(r"(?<![A-Z0-9])[MSROD]\d{8}(?![0-9])")),
+    ("여권번호 꼴", re.compile(r"(?<![A-Z0-9])[MSROD](?:\d{8}|\d{3}[A-Z]\d{4})(?![0-9])")),   # 뒤쪽: 2021-12 이후 차세대 전자여권(M123A4567)
 ]
 # 라벨 뒤의 값 — 성명·생년월일 (표 칸은 라벨과 값이 붙어 나오므로 라벨 기준으로 찾는다)
 # 값 자리만 가린다. 가림은 넓게 잡는다(잘못 가려도 안전, 놓치면 위험).
@@ -83,7 +83,20 @@ def _name_like(text: str, m) -> bool:
     return True
 
 
+# 붙임표로 쓰이는 글자들(‐ ‑ ‒ – — ― − － ﹣ · ・ ∼ ~)과 전각 숫자를 1:1 로 ASCII 로 바꾼다 — 글자 수가 같아 위치가 어긋나지 않는다
+_DASHES = "\u2010\u2011\u2012\u2013\u2014\u2015\u2212\uff0d\ufe63\u00b7\u30fb\u223c~"
+_FOLD = str.maketrans(_DASHES + "０１２３４５６７８９", "-" * len(_DASHES) + "0123456789")
+
+
 def find_pii(text: str) -> list[dict]:
+    raw, text = text, text.translate(_FOLD)
+    out = _find_pii(text)
+    for it in out:   # 화면·가림에는 원문 글자를 그대로 쓴다
+        it["text"] = raw[it["pos"]:it["pos"] + len(it["text"])]
+    return out
+
+
+def _find_pii(text: str) -> list[dict]:
     out = []
     for kind, rx in PII:
         for m in rx.finditer(text):
@@ -141,20 +154,26 @@ def mask(text: str, names: set[str] | None = None) -> str:
         return f
     for kind, rx in LABELED:
         text = rx.sub(lab(kind), text)
+    def sub(rx, f, t):   # 찾기는 붙임표·전각 숫자를 접은 글에서, 바꾸기는 원문의 그 자리만
+        fold, out, pos = t.translate(_FOLD), [], 0
+        for m in rx.finditer(fold):
+            out += [t[pos:m.start()], f(m)]
+            pos = m.end()
+        return "".join(out) + t[pos:]
     for kind, rx in PII:
         if kind == "이메일":
-            text = rx.sub(lambda m: m.group(0)[0] + "***@" + m.group(0).split("@", 1)[1], text)
+            text = sub(rx, lambda m: m.group(0)[0] + "***@" + m.group(0).split("@", 1)[1], text)
         elif kind in ("주민등록번호", "외국인등록번호"):
-            text = rx.sub(lambda m: m.group(0)[:m.group(0).index("-") + 2 if "-" in m.group(0) else 7] + "******", text)
+            text = sub(rx, lambda m: m.group(0)[:m.group(0).index("-") + 2 if "-" in m.group(0) else 7] + "******", text)
         else:
-            text = rx.sub(rep, text)
+            text = sub(rx, rep, text)
     return text
 
 
 def check_doc(path: str) -> dict:
     from . import read
     from .model import Image, Table, walk_tables
-    from .render import plain_text
+    from .render import plain_text, scan_text
     res = {"file": os.path.basename(path)}
     try:
         doc = read(path)
@@ -162,7 +181,7 @@ def check_doc(path: str) -> dict:
         res.update(verdict="투입 불가", reasons=[f"판독 실패: {type(e).__name__}: {e}"], score=0)
         return res
     text = plain_text(doc)
-    pii = find_pii(text)
+    pii = find_pii(scan_text(doc))   # 머리말·꼬리말·표 캡션까지 본다(AI 출력에 실리는 글 전체)
     tail = text[-600:]
     disc = [m.group(0) for m in DISCLOSE.finditer(tail)]
     # 「공개」 단어가 본문에도 흔하므로 끝부분의 마지막 표시만 쓴다

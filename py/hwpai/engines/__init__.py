@@ -134,7 +134,8 @@ class RhwpWasmEngine(Engine):
     def _start(self):
         self.proc = subprocess.Popen([self.node, self.script, self.core], stdin=subprocess.PIPE,
                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-                                     encoding="utf-8", bufsize=1)
+                                     encoding="utf-8", bufsize=1,
+                                     env=dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8"))   # 일꾼이 파이썬일 때(경량판) 한글 경로를 UTF-8 로 주고받게
         self.q: queue.Queue = queue.Queue()
         threading.Thread(target=self._pump, args=(self.proc, self.q), daemon=True).start()
         threading.Thread(target=self._drain_err, args=(self.proc,), daemon=True).start()
@@ -171,9 +172,34 @@ class RhwpWasmEngine(Engine):
         return self.convert(None, dst, timeout=timeout, op="empty", text=text)
 
     def convert(self, src, dst, timeout=120.0, password=None, op=None, text=None):
-        r = self._convert_inner(src, dst, timeout, password, op, text)
+        up, upnote = (None, None)
+        if src and op is None:
+            up, upnote = _upconvert_old(src)
+            if upnote and not up:
+                return {"ok": False, "kind": "engine_error", "error": upnote}
+        try:
+            r = self._convert_inner(up or src, dst, timeout, password, op, text)
+        finally:
+            if up:
+                _rm(up)
+        if not r.get("ok") and src and op is None and not up and r.get("kind") == "engine_error":
+            # 0.9.2: 끊기거나 깨진 HWP 3.0 문서 — 온전히 읽히는 문단까지만 살려 다시 변환한다
+            up, upnote = _salvage_v3(src)
+            if up:
+                try:
+                    r2 = self._convert_inner(up, dst, timeout, password, op, text)
+                finally:
+                    _rm(up)
+                if r2.get("ok"):
+                    r = r2
+                else:
+                    upnote = None
+            else:
+                upnote = None
         if r.get("ok") and src and op is None:
             notes = apply_all(src, dst)
+            if upnote:
+                notes = [upnote] + list(notes or [])
             if notes:
                 r["notes"] = list(r.get("notes") or []) + notes
         return r
@@ -291,6 +317,96 @@ class RhwpCliEngine(Engine):
         os.replace(part, dst)
         return {"ok": True, "ms": ms, "bytes": os.path.getsize(dst), "loss": None}
 
+
+
+def _upconvert_old(src: str):
+    """0.9.2: HWP 2.0·2.1 문서는 엔진이 읽지 못한다. 3.0 형식으로 올린 임시 파일을 만들어 넘긴다.
+    돌려주는 값: (임시 파일 경로 또는 None, 알림 또는 None). 2.x 가 아니면 (None, None)."""
+    try:
+        with open(src, "rb") as f:
+            head = f.read(23)
+            f.seek(0)
+            head4k = f.read(4096)
+    except OSError:
+        return None, None
+    if b"<HWPML" in head4k:
+        return _hml_version_fix(src, head4k)
+    if not head.startswith(b"HWP Document File V") or head.startswith(b"HWP Document File V3"):
+        return None, None
+    ver = head[19:23].decode("ascii", "replace")
+    if not head.startswith((b"HWP Document File V2.00", b"HWP Document File V2.10", b"HWP Document File V1.")):
+        return None, f"HWP {ver} 문서는 지원하지 않습니다(지원: HWP 1.x·2.0·2.1·3.0·5.x)"
+    try:
+        from ..hwp3 import upconvert_v2
+        data = upconvert_v2(src)
+    except Exception as e:
+        return None, f"HWP {ver} 문서를 3.0 형식으로 올리지 못했습니다: {e}"
+    import tempfile
+    fd, tmp = tempfile.mkstemp(prefix="hwpai_v2_", suffix=".hwp")
+    with os.fdopen(fd, "wb") as f:
+        f.write(data)
+    cutnote = ""
+    try:
+        from ..hwp3 import salvage_note
+        if salvage_note(src):
+            cutnote = " — 원본 문서가 중간에 끊겨 있어 온전히 읽히는 문단까지만 변환했습니다"
+    except Exception:
+        pass
+    return tmp, (f"HWP {ver} 문서를 HWP 3.0 형식으로 올린 뒤 변환했습니다" + cutnote
+                 + ((" — 1.20 은 글자·문단·쪽 모양까지 옮기고(한글 2024 정답지 13건과 같음), 줄 나눔은 한글이 다시 계산합니다"
+                     if ver.startswith("1.2") else " — 1.10 은 글과 문단만 옮기고 글자·문단 모양은 기본값입니다(한글 2024 도 열지 못해 정답 없음)")
+                    if ver.startswith("1.") else ""))
+
+
+
+_HML_ENGINE_VERSIONS = ("2.1", "2.9", "2.91")
+
+
+def _hml_version_fix(src: str, head4k: bytes):
+    """엔진은 HWPML 2.1·2.9·2.91 표기만 받는다. 그 밖의 2.x 표기(예: 2.8)는 표기만 2.9 로 바꾼 임시 파일을 넘긴다.
+    내용은 손대지 않는다 — 결과는 검증서가 원본 HML 과 직접 대조한다."""
+    import re, tempfile
+    from ..hml1 import is_hml1, to_hml29
+    if is_hml1(head4k):
+        with open(src, "rb") as f:
+            xml, lost = to_hml29(f.read())
+        fd, tmp = tempfile.mkstemp(prefix="hwpai_hml1_", suffix=".hml")
+        with os.fdopen(fd, "wb") as f:
+            f.write(xml)
+        return tmp, ("HWPML 1.x(한글 97 시절 HML) 문서를 HWPML 2.9 로 옮긴 뒤 변환했습니다"
+                     + (f" — 그림·그리기 개체 {lost}개는 모양을 옮기지 못했습니다(글상자 안 글은 문단으로 옮김)" if lost else ""))
+    m = re.search(rb'<HWPML\b[^>]*?\bVersion="([^"]*)"', head4k)
+    if not m:
+        return None, None
+    ver = m.group(1).decode("ascii", "replace")
+    if ver in _HML_ENGINE_VERSIONS or not re.fullmatch(r"2\.\d{1,2}", ver):
+        return None, None
+    with open(src, "rb") as f:
+        data = f.read()
+    a, b = m.span(1)
+    fd, tmp = tempfile.mkstemp(prefix="hwpai_hml_", suffix=".hml")
+    with os.fdopen(fd, "wb") as f:
+        f.write(data[:a] + b"2.9" + data[b:])
+    return tmp, f"HWPML {ver} 문서를 2.9 표기로 바꿔 변환했습니다(내용은 그대로)"
+
+def _salvage_v3(src: str):
+    """끊긴 HWP 3.0 문서를 읽히는 데까지 잘라 임시 파일로 만든다. (경로 또는 None, 알림 또는 None)"""
+    try:
+        with open(src, "rb") as f:
+            if not f.read(23).startswith(b"HWP Document File V3"):
+                return None, None
+        from ..hwp3 import upconvert_v2, salvage_note
+        cut = salvage_note(src)
+        if not cut:
+            return None, None
+        data = upconvert_v2(src)
+    except Exception:
+        return None, None
+    import tempfile
+    fd, tmp = tempfile.mkstemp(prefix="hwpai_v3_", suffix=".hwp")
+    with os.fdopen(fd, "wb") as f:
+        f.write(data)
+    return tmp, "원본 문서가 중간에 끊겨 있어 온전히 읽히는 문단까지만 변환했습니다"
 
 
 def _retry_without_empty_script(eng, src, dst, timeout, password):

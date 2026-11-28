@@ -15,7 +15,7 @@
 실패 격리: 파일 하나의 손상·시간 초과·엔진 비정상 종료가 나머지에 번지지 않는다(엔진 일꾼 재시작).
 
 특수 문서 처리 경로
-  HWP 3.0        엔진(rhwp)이 변환. 원본 독립 판독은 hwpai 미지원 → 검증서 WARN(미검증) 표시
+  HWP 3.0        엔진(rhwp)이 변환. 원본은 hwp3.py 가 따로 읽어 글·표·그림을 대조한다(0.9.2). 열기 암호 3.0 은 대조 불가 → WARN
   열기 암호      --password(모든 파일 공통) 또는 --password-file(CSV: 상대경로,암호)로 엔진이 열어 변환.
                  암호가 없으면 격리(사유: 열기 암호). 원본 미리보기 글은 대장에 남지 않는다(보안).
   배포용 문서    엔진이 변환. 검증은 hwpai 가 배포용 본문(ViewText)을 풀어 대조
@@ -42,7 +42,8 @@ COLUMNS = ["순번", "원본", "원본_SHA256", "원본_크기", "원본_형식"
            "변환_소요ms", "변환본", "변환본_SHA256", "변환본_크기", "엔진_손실보고", "검증점수", "판정",
            "판정_이유", "검증서", "처리시각", "민감정보", "민감정보_항목", "제자리교체", "보관위치", "삭제예정일"]
 STATUS_DONE, STATUS_SKIP, STATUS_FAIL, STATUS_QUAR = "변환완료", "건너뜀", "변환실패", "격리"
-SRC_EXT = (".hwp", ".hwpx")
+SRC_EXT = (".hwp", ".hwpx", ".hml", ".hwt", ".hwtx")     # 0.9.2: HML(XML형)·서식 파일도 받는다
+OLD_EXT = (".frm", ".h20", ".k20", ".bak")                # 옛 한글 문서가 쓰던 확장자 — 머리 서명이 맞을 때만 받는다
 OUT_SUFFIX = "_hwpx변환"  # 결과 폴더 = 〈원본 폴더〉_hwpx변환 (원본 폴더 밖)
 
 
@@ -76,6 +77,14 @@ def _now() -> str:
     return _dt.datetime.now().astimezone().isoformat(timespec="seconds")
 
 
+def _is_old_hwp(path: str) -> bool:
+    try:
+        with open(path, "rb") as f:
+            return f.read(19) == b"HWP Document File V"
+    except OSError:
+        return False
+
+
 def scan(src: str, include_hwpx: bool) -> list[str]:
     if os.path.isfile(src):
         return [os.path.basename(src)]
@@ -84,7 +93,7 @@ def scan(src: str, include_hwpx: bool) -> list[str]:
         dns[:] = sorted(d for d in dns if not d.startswith((".", "_검증서", "_격리")))
         for f in sorted(fns):
             ext = os.path.splitext(f)[1].lower()
-            if ext == ".hwp" or (ext == ".hwpx"):
+            if ext in SRC_EXT or (ext in OLD_EXT and _is_old_hwp(os.path.join(dp, f))):
                 out.append(os.path.relpath(os.path.join(dp, f), src))
     return out
 
@@ -144,7 +153,8 @@ class Ledger:
     def write_csv(self, order: list[str]):
         with self.lock:
             rows = [self.rows[r] for r in order if r in self.rows]
-            rows += [v for k, v in self.rows.items() if k not in set(order)]
+            in_order = set(order)   # 한 번만 만든다(줄마다 다시 만들면 문서 수의 제곱에 비례해 느려진다)
+            rows += [v for k, v in self.rows.items() if k not in in_order]
             tmp = self.csvp + ".part"
             with open(tmp, "w", encoding="utf-8-sig", newline="") as f:  # 엑셀에서 바로 열리게 BOM
                 w = csv.DictWriter(f, COLUMNS, extrasaction="ignore")
@@ -372,6 +382,7 @@ class BatchConverter:
         stats = {"files": len(files), "resumed": 0}
         done = [0]
         dirty = [False]   # 마지막 중간 저장 뒤 대장에 새로 적힌 줄이 있는가
+        clock = threading.Lock()   # 진행 수·이어하기 수는 여러 스레드가 함께 센다
         step = max(25, len(files) // 40)  # 문서가 많을수록 중간 저장 간격을 늘린다(매번 전체를 다시 쓰면 문서 수의 제곱에 비례해 느려짐)
 
         def work(rel):
@@ -395,23 +406,27 @@ class BatchConverter:
                     row.update(upd)
                     if upd.get("제자리교체") == "완료":
                         resumed = False  # 대장에 새로 적는다
-            if resumed:
-                stats["resumed"] += 1
-            else:
+            if not resumed:
                 row.pop("_total_ms", None)
                 ledger.add(row)
-                dirty[0] = True
-            done[0] += 1
+            with clock:
+                if resumed:
+                    stats["resumed"] += 1
+                else:
+                    dirty[0] = True
+                done[0] += 1
+                n_done = done[0]
+                flush = (n_done % step == 0 and dirty[0]) or n_done == len(files)
+                if flush:
+                    dirty[0] = False
             if self.on_row:
                 try:
-                    self.on_row(done[0], len(files), row)
+                    self.on_row(n_done, len(files), row)
                 except Exception:
                     pass
-            if (done[0] % step == 0 and dirty[0]) or done[0] == len(files):
-                if dirty[0] or done[0] == len(files):
-                    ledger.write_csv(files)
-                dirty[0] = False
-                self.log(f"  {done[0]}/{len(files)} 처리 ({time.time() - t0:.0f}초)")
+            if flush:
+                ledger.write_csv(files)
+                self.log(f"  {n_done}/{len(files)} 처리 ({time.time() - t0:.0f}초)")
             return row
 
         try:
@@ -474,7 +489,7 @@ def write_summary(outdir: str, s: dict, rows: list[dict]):
     sn = s.get("sensitive") or {}
     if sn:
         L += [f"- 민감정보(변환 검증 판정과 별도): " + ", ".join(f"{k} {v}" for k, v in sn.items()),
-              f"- **확인 대기 {sn.get('확인 필요', 0)}건** — 확인 전에는 AI(ask·MCP)에 보내지 않습니다. 변환은 이 컴퓨터 안에서 이미 끝났습니다. 확인: `python -m hwpai sens review <문서|폴더>`", ""]
+              f"- **확인 대기 {sn.get('확인 필요', 0)}건** — 확인 전에는 AI(ask·MCP)에 보내지 않습니다. 변환은 이 컴퓨터 안에서 이미 끝났습니다. 확인: 화면(hwpai.bat)의 「개인정보 확인」 단추, 또는 명령창에서 `hwpai.bat sens review <문서|폴더>`", ""]
     if s["fail_kinds"]:
         L += ["## 변환하지 못한 파일 — 사유별", ""] + [f"- {k}: {v}" for k, v in s["fail_kinds"].items()] + [""]
     if s["reason_codes"]:

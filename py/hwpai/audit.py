@@ -21,6 +21,7 @@
 """
 from __future__ import annotations
 
+import html as _html
 import collections
 import difflib
 import hashlib
@@ -620,7 +621,7 @@ def sniff(path: str) -> dict:
         size = os.path.getsize(path)
         info["size"] = size
         with open(path, "rb") as f:
-            head = f.read(64)
+            head = f.read(160)
     except OSError as e:
         info["error"] = str(e)
         return info
@@ -659,8 +660,15 @@ def sniff(path: str) -> dict:
         info.update(format="hwp5", version=".".join(str(b) for b in reversed(fh[32:36])),
                     encrypted=bool(flags & 2), distribute=bool(flags & 4), drm=bool(flags & 16))
         return info
-    if head.startswith(b"HWP Document File V3") or head.startswith(b"HWP Document File V2"):
+    if head.startswith(b"HWP Document File V3"):
         info["format"] = "hwp3"
+        info["version"] = "3.00"
+        info["encrypted"] = len(head) >= 128 and struct.unpack_from("<H", head, 30 + 96)[0] != 0
+        return info
+    if head.startswith((b"HWP Document File V2", b"HWP Document File V1")):
+        info["format"] = "hwp2"
+        info["version"] = head[19:23].decode("ascii", "replace")
+        info["encrypted"] = len(head) >= 128 and struct.unpack_from("<H", head, 30 + 96)[0] != 0
         return info
     if head.lstrip().startswith(b"<?xml") or b"<HWPML" in head:
         info["format"] = "hml"
@@ -668,7 +676,55 @@ def sniff(path: str) -> dict:
     return info
 
 
+def _broken_xml_parts(path: str) -> list[str]:
+    """HWPX 패키지 안 XML 파트(*.xml·*.hpf·*.rdf) 가운데 올바른 XML 이 아닌 것의 이름."""
+    import xml.etree.ElementTree as ET
+    bad = []
+    try:
+        with zipfile.ZipFile(path) as z:
+            for n in z.namelist():
+                if n.lower().endswith((".xml", ".hpf", ".rdf")):
+                    try:
+                        ET.fromstring(z.read(n))
+                    except ET.ParseError as e:
+                        bad.append(f"{n}: {str(e)[:60]}")
+    except Exception as e:
+        bad.append(f"zip: {type(e).__name__}")
+    return bad
+
+
+_SYM_CAT = ("Co", "So", "Cn", "Cs")
+
+
+def _nsym(s: str) -> int:
+    """기호·사용자 정의 문자 수(loose 가 빼는 글자). 코드가 바뀌어도 개수는 같아야 한다."""
+    return sum(1 for c in (s or "") if c == "\ufffd" or unicodedata.category(c) in _SYM_CAT)
+
+
+_DIGITS = re.compile(r"\d+")
+
+
+def _num_changed(a: str, b: str) -> bool:
+    """원본 쪽 숫자 묶음 가운데 변환본 쪽에 없는 것이 있는가(숫자가 바뀌었거나 빠짐)."""
+    return bool(collections.Counter(_DIGITS.findall(a)) - collections.Counter(_DIGITS.findall(b)))
+
+
 # ---------------------------------------------------------------- 표 대조
+def _blocks_text(blocks) -> str:
+    """칸 안 블록의 글(표 속 표·글상자 포함)을 한 줄로."""
+    out = []
+    for b in blocks:
+        if isinstance(b, Paragraph):
+            out.append(b.text)
+        elif isinstance(b, Table):
+            out.extend(_blocks_text(c.blocks) for c in sorted(b.cells, key=lambda c: (c.row, c.col)))
+        elif isinstance(b, (TextBox, Note, HeaderFooter)):
+            out.append(_blocks_text(b.blocks))
+        elif isinstance(b, Equation):
+            out.append(b.script)
+    return " ".join(out)
+
+
 def _table_sig(t: Table) -> str:
     g = grid_of(t, " ")
     first = norm(" ".join(g[0])) if g else ""
@@ -699,7 +755,7 @@ def _compare_table(a: Table, b: Table, limit: int = 20) -> dict:
             va = ga[r][c] if r < len(ga) and c < len(ga[r]) else None
             vb = gb[r][c] if r < len(gb) and c < len(gb[r]) else None
             if norm(va or "") != norm(vb or "") or (va is None) != (vb is None):
-                if va is not None and vb is not None and loose(va) == loose(vb):
+                if va is not None and vb is not None and loose(va) == loose(vb) and _nsym(va) <= _nsym(vb):
                     nsym += 1
                     continue
                 nbad += 1
@@ -763,6 +819,12 @@ def audit(original: str, converted: str, engine_report: dict | None = None, read
         A.verdict, A.reasons = "FAIL", fails
         return A
 
+    # 변환본 패키지 안 XML 파트가 하나라도 깨졌으면 한글에서 열리지 않는다 — 글 대조가 통과해도 FAIL
+    broken = _broken_xml_parts(converted)
+    ck["conv_xml_broken"] = len(broken)
+    if broken:
+        fail("CONV_STRUCTURE", f"변환본 HWPX 안 XML {len(broken)}개가 깨져 있음(한글에서 열리지 않을 수 있음) — {broken[0]}")
+
     # ---- 원본 읽기
     so = sniff(original)
     ck["original_format"] = so.get("format")
@@ -770,7 +832,7 @@ def audit(original: str, converted: str, engine_report: dict | None = None, read
     try:
         orig = read(original)
     except Exception as e:
-        reason = {"hwp3": "HWP 3.0 문서", "hml": "HML 문서"}.get(so.get("format"))
+        reason = {"hwp3": f"HWP 3.0 문서 — {e}", "hwp2": f"HWP 2.x 문서 — {e}", "hml": f"HML 문서 — {e}"}.get(so.get("format"))
         if so.get("encrypted"):
             reason = "열기 암호 문서"
         elif so.get("drm"):
@@ -783,6 +845,35 @@ def audit(original: str, converted: str, engine_report: dict | None = None, read
         kinds = collections.Counter(x.get("kind") or x.get("code") or "?" for x in engine_report.get("losses", []))
         warn("ENGINE_LOSS", "변환 엔진이 손실을 보고함: " + ", ".join(f"{k}×{v}" for k, v in kinds.most_common(6)))
 
+    _h3a, _h3b = (list(walk_tables(orig.blocks)), list(walk_tables(conv.blocks))) if orig is not None and so.get("format") in ("hwp3", "hwp2") else ([], [])
+    if _h3a and len(_h3a) == len(_h3b):
+        # 0.9.2: HWP 3.0 은 칸 주소 없이 좌표만 저장한다. 원본 판독(hwp3.py)의 격자 규칙은 한글 2024 저장본 표 137개와
+        # 모두 일치했지만 좌표에서 계산한 값이므로, 칸 수가 같고 칸마다의 글이 모두 같으면 병합 구조 차이는
+        # 「손실」(FAIL)이 아니라 사람이 볼 것(WARN)으로 돌린다. 글·칸이 다르면 종전대로 TABLE_SPAN·TABLE_CELL FAIL.
+        approx = 0
+        for x, y in zip(_h3a, _h3b):
+            ax = sorted(x.cells, key=lambda c: (c.row, c.col))
+            by = sorted(y.cells, key=lambda c: (c.row, c.col))
+            if len(ax) != len(by) or [(c.row, c.col, c.rowspan, c.colspan) for c in ax] == [(c.row, c.col, c.rowspan, c.colspan) for c in by]:
+                continue
+            pool: dict = {}
+            for d in by:
+                pool.setdefault(norm(_blocks_text(d.blocks)), []).append(d)
+            match = [pool.get(norm(_blocks_text(c.blocks)), []) for c in ax]
+            if all(match) and sum(len(v) for v in pool.values()) == len(ax) and all(
+                    sum(1 for c in ax if norm(_blocks_text(c.blocks)) == k) == len(v) for k, v in pool.items()):
+                used: dict = {}
+                for c in ax:                      # 같은 글의 칸끼리, 읽는 순서대로 짝짓는다
+                    k = norm(_blocks_text(c.blocks))
+                    d = pool[k][used.get(k, 0)]
+                    used[k] = used.get(k, 0) + 1
+                    c.row, c.col, c.rowspan, c.colspan = d.row, d.col, d.rowspan, d.colspan
+                x.nrows, x.ncols = y.nrows, y.ncols
+                approx += 1
+        if approx:
+            ck["hwp3_grid_approx"] = approx
+            warn("TABLE_GRID_HWP3", f"표 {approx}개의 병합 구조가 원본 판독과 다름 — 칸 수와 칸마다의 글은 같음. "
+                                    f"한글에서 변환본을 열어 표의 줄·칸 모양을 원본과 견주어 확인")
     conv_raw = plain_text(conv, with_hf=True)   # 결선 보완 B3: 머리말·꼬리말 글도 대조 글에 넣는다
     conv_text = norm(conv_raw)
     ck["conv_chars"] = len(conv_text)
@@ -807,6 +898,24 @@ def audit(original: str, converted: str, engine_report: dict | None = None, read
     if orig.warnings:
         warn("ORIG_READ_WARN", f"원본 판독 경고 {len(orig.warnings)}건: {orig.warnings[0][:120]}")
 
+    # ---- 바탕쪽(HML): 본문 판독 범위 밖이라 따로 견준다
+    if so.get("format") == "hml":
+        try:
+            from .hml import masterpage_texts
+            import zipfile as _zf
+            want = masterpage_texts(original)
+            got = []
+            with _zf.ZipFile(converted) as z:
+                for n in sorted(z.namelist()):
+                    if re.search(r"(^|/)masterpage\d*\.xml$", n, re.I):
+                        x = z.read(n).decode("utf-8", "replace")
+                        got.append(re.sub(r"\s+", "", "".join(_html.unescape(re.sub(r"<[^>]+>", "", t)) for t in re.findall(r"<hp:t(?:\s[^>]*)?>(.*?)</hp:t>", x, re.S))))
+            ck["masterpages"] = [len(want), len(got)]
+            if sorted(got) != want:
+                warn("MASTERPAGE_DIFF", f"바탕쪽이 다름: 원본 {len(want)}개 / 변환 {len(got)}개 (개수가 같으면 바탕쪽 안의 글이 다름)")
+        except Exception as e:
+            warn("MASTERPAGE_DIFF", f"바탕쪽을 견주지 못함: {type(e).__name__}")
+
     # ---- 1 글
     orig_raw = plain_text(orig, with_hf=True)
     orig_text = norm(orig_raw)
@@ -828,7 +937,7 @@ def audit(original: str, converted: str, engine_report: dict | None = None, read
         if norm(a_txt) == norm(b_txt):  # 문단 나뉨만 다름
             continue
         na, nb = loose(a_txt), loose(b_txt)
-        if na == nb:  # 자동 번호 캐시값 또는 기호 문자 코드만 다름
+        if na == nb and _nsym(a_txt) <= _nsym(b_txt):  # 자동 번호 캐시값 또는 기호 문자 코드만 다름(기호 개수는 그대로)
             kind = "autonum" if _num_free(a_txt) == _num_free(b_txt) else "symbol"
             sym_spots.append({"kind": kind, "where_orig": ua[i1][0] if i1 < i2 else "",
                               "orig": a_txt.replace("\u2063", "")[:80], "conv": b_txt.replace("\u2063", "")[:80]})
@@ -836,9 +945,13 @@ def audit(original: str, converted: str, engine_report: dict | None = None, read
         # 빠짐 판단은 자리 맞춘 쪽만이 아니라 변환본 전체에서 찾는다 — 자리만 옮겨졌거나(캡션·머리말 위치)
         # 판독 모델 차이로 반복된 글(묶음 캡션)은 손실이 아니다
         # 같은 글이 문서에 여러 번 나오면 개수로 본다(반복 문구 하나가 빠진 것도 잡는다)
-        lost = bool(na) and na not in nb and (
-            conv_loose.count(na) < orig_loose.count(na) if na in conv_loose else _covered(na, conv_grams) < 0.9)
-        tdiff.append({"op": {"replace": "바뀜", "delete": "빠짐", "insert": "더해짐"}[op], "lost": bool(lost and na),
+        if na == nb:   # 글은 같은데 기호가 줄었다 — 「코드만 바뀜」이 아니라 빠진 것
+            lost = True
+        else:
+            lost = bool(na) and na not in nb and (
+                conv_loose.count(na) < orig_loose.count(na) if na in conv_loose
+                else (_covered(na, conv_grams) < 0.9 or (op == "replace" and _num_changed(na, nb))))
+        tdiff.append({"op": {"replace": "바뀜", "delete": "빠짐", "insert": "더해짐"}[op], "lost": bool(lost and (na or _nsym(a_txt))),
                       "where_orig": ua[i1][0] if i1 < i2 else (ua[i1 - 1][0] + " 뒤" if i1 else "처음"),
                       "where_conv": ub[j1][0] if j1 < j2 else (ub[j1 - 1][0] + " 뒤" if j1 else "처음"),
                       "orig": a_txt.replace("\u2063", "")[:2000], "conv": b_txt.replace("\u2063", "")[:2000],
@@ -871,6 +984,11 @@ def audit(original: str, converted: str, engine_report: dict | None = None, read
         # 표 칸·순서 차이가 아닌, 표 밖 글이 다를 때만 경고(표는 아래에서 따로 판정)
         if tdiff:
             warn("TEXT_DIFF", f"글 미세 차이 {len(tdiff)}곳 (재현율 {r:.3f}) — 첫 차이: {tdiff[0]['where_orig']}")
+    # 글 대조는 공백을 빼고 한다 — 띄어쓰기가 사라져도 위 판정은 모른다. 빈칸 수를 따로 견준다.
+    sp_o, sp_c = (sum(c in " \u00a0\u3000" for c in t) for t in (orig_raw, conv_raw))
+    ck["spaces"] = [sp_o, sp_c]
+    if sp_o != sp_c and abs(sp_o - sp_c) > max(2, sp_o // 200):
+        warn("SPACING_DIFF", f"띄어쓰기(빈칸) 수가 다름: 원본 {sp_o} / 변환 {sp_c} — 글자는 같아도 낱말이 붙었거나 떨어졌을 수 있음")
 
     # ---- 2 표
     ta, tb = list(walk_tables(orig.blocks)), list(walk_tables(conv.blocks))

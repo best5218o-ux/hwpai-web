@@ -26,7 +26,7 @@ import time
 
 GRADES = ("공개", "민감", "기밀")
 LOG_NAME = "등급_기록.jsonl"
-TOOL_VERSION = "hwpai 0.9.0 · 검증서 판 1.1 · 등급 게이트 3"
+TOOL_VERSION = "hwpai 0.9.2 · 검증서 판 1.2 · 등급 게이트 3"
 POLICIES = ("review", "pii", "pii-strict", "deny")  # review(기본): 개인정보 꼴은 차단이 아니라 「확인 요청」 — 변환은 하고 AI 노출만 확인 뒤에 허용 · 나머지는 이전 「차단형」  # pii(기본): 미표기 문서는 개인정보 미검출(유선·인터넷 전화번호만 있으면 허용) 시 허용 · pii-strict: 유선·인터넷 전화번호도 차단 · deny: 등급 없으면 차단
 EXPOSURE_TOOLS = ("ask", "export_ai")  # AI 에 문서 내용을 보이는 길 — MCP 모드는 전부 노출로 본다
 LOW_RISK = ("일반전화", "인터넷전화")  # 유선·070 전화번호 — 기관이 문서에 공개한 업무 연락처로 본다(pii 정책). 개인 집 전화와 구분 못 함 → 필요하면 pii-strict
@@ -103,8 +103,8 @@ def _scan_pii(path: str):
                 text = f.read()
         else:
             from . import read
-            from .render import plain_text
-            text = plain_text(read(path))
+            from .render import scan_text
+            text = scan_text(read(path))
         return find_pii(text)
     except Exception:
         return None
@@ -165,7 +165,9 @@ class Gate:
         self.default = default
         self.exception = exception
         self.mode = mode
-        self.logdir = writable_logdir(os.path.dirname(logdir) if logdir else os.getcwd())  if not logdir else writable_logdir(logdir, os.path.basename(logdir))
+        # 기록 위치를 따로 주지 않으면 사용자 데이터 폴더(%LOCALAPPDATA%\\hwpai\\hwpai_등급기록)에 둔다.
+        # 2026-11-27: 이전 기본값은 「실행한 폴더」여서 명령을 돌린 폴더마다(배포 폴더 안에도) hwpai_등급기록 이 생겼다.
+        self.logdir = writable_logdir(None) if not logdir else writable_logdir(logdir, os.path.basename(logdir))
         self._seen: dict = {}  # 같은 파일은 한 번만 판정·기록 (읽기·변환·검증이 여러 번 불러도)
         from .sens import Store
         self.store = Store(self.logdir)  # 민감정보 확인 결과(문서 SHA-256 기준 재사용)
@@ -203,6 +205,10 @@ class Gate:
                                                         strict=self.policy == "pii-strict")
         else:
             allowed, decision, reason = decide(grade, exc, self.mode)
+            if allowed and decision == "예외허용" and tool in EXPOSURE_TOOLS:
+                # 2026-11-27: 민감 등급 예외는 이 컴퓨터 안 처리(변환·검증 등)에만 쓴다. 문서 내용을 AI 서비스로 보내는 길(ask·AI 폴더 내보내기)에는
+                # 예외를 받지 않는다(국가 사이버보안 기본지침: 상용 서비스로는 공개등급 업무정보만 처리)
+                allowed, decision, reason = False, "차단", "민감 등급 — 예외는 이 컴퓨터 안 처리에만 적용, AI 로는 보내지 않음"
         self._log(rel, abs_path, grade, decision, reason, tool)
         res = {"allowed": allowed, "decision": decision, "grade": grade, "reason": reason,
                "suffix": output_suffix(decision), **extra}

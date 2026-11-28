@@ -122,7 +122,7 @@ def scrub_hwpx(src: str, dst: str, fields=("creator", "lastsaveby", "keyword", "
         raw["Contents/content.hpf"] = x.encode("utf-8")
     with zipfile.ZipFile(dst + ".part", "w") as o:
         for i in infos:
-            o.writestr(i, raw[i.filename], compress_type=zipfile.ZIP_STORED if i.filename == "mimetype" else zipfile.ZIP_DEFLATED)
+            o.writestr(i, raw[i.filename], compress_type=i.compress_type)   # 원래 압축 방식 그대로(저장 방식 그림을 다시 압축하면 커진다 — C96)
     os.replace(dst + ".part", dst)
     return {"out": dst, "cleared": cleared}
 

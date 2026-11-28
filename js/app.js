@@ -77,7 +77,7 @@
   }
 
   // ---------------------------------------------------------------- 파일 모으기
-  const isHwp = (n) => /\.(hwp|hwpx)$/i.test(n);
+  const isHwp = (n) => /\.(hwp|hwpx|hml|hwt|hwtx)$/i.test(n);   // 0.9.2: 옛 한글(1.x·2.x·3.0)은 .hwp, HML(HWPML)·서식 파일도 받는다
   function readAllEntries(reader) {
     return new Promise((resolve, reject) => {
       const all = [];

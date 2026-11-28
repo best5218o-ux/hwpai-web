@@ -5,7 +5,19 @@ from __future__ import annotations
 import os
 
 
-ERRORS: list = []   # 뒤처리 중 삼킨 오류(웹·점검에서 원인을 볼 수 있게 남긴다)
+import threading
+
+ERRORS: list = []   # 뒤처리 중 삼킨 오류(최근 200건만 둔다 — 감시·화면처럼 오래 도는 실행에서 끝없이 늘지 않게)
+_TL = threading.local()   # 지금 이 스레드가 뒤처리 중인 문서의 오류(apply_all 이 알림으로 돌려준다)
+_TMP_SUFFIXES = (".tmp", ".fix", ".fix2", ".ls", ".bf0", ".sv", ".cp", ".mf", ".stored", ".p5", ".sp", ".trk")
+
+
+def _err(msg: str) -> None:
+    ERRORS.append(msg)
+    del ERRORS[:-200]
+    cur = getattr(_TL, "errs", None)
+    if cur is not None:
+        cur.append(msg)
 
 
 def _rm(p):
@@ -28,7 +40,7 @@ def _restore_extensionless_images(src, dst):
         zin = zipfile.ZipFile(dst)
         hpf = zin.read("Contents/content.hpf").decode("utf-8")
     except Exception as _e:
-        ERRORS.append(f"{type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"{type(_e).__name__}: {str(_e)[:80]}")
         return 0
     todo = re.findall(r'<opf:item id="image(\d+)" href="" media-type="application/octet-stream" isEmbeded="0"/>', hpf)
     if not todo:
@@ -155,7 +167,7 @@ def _restore_symbol_codepoints(src, dst):
         os.replace(tmp, dst)
         return cnt[0]
     except Exception as _e:
-        ERRORS.append(f"{type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"{type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -197,7 +209,7 @@ def _fix_note_autonum(dst):
         os.replace(tmp, dst)
         return cnt[0]
     except Exception as _e:
-        ERRORS.append(f"{type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"{type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -242,7 +254,7 @@ def _fix_equation_child_order(dst):
         os.replace(tmp, dst)
         return total
     except Exception as _e:
-        ERRORS.append(f"{type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"{type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -280,7 +292,7 @@ def _fix_negative_out_margin(dst):
         os.replace(tmp, dst)
         return total
     except Exception as _e:
-        ERRORS.append(f"{type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"{type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -319,7 +331,7 @@ def _field_extra_props(src):
         finally:
             ole.close()
     except Exception as _e:
-        ERRORS.append(f"fieldprops {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"fieldprops {type(_e).__name__}: {str(_e)[:80]}")
     return out
 
 
@@ -331,7 +343,7 @@ def _fix_field_ids(dst, src=None):
     확인된 7종만 채우고, 이미 있으면 건드리지 않는다. 채운 개수를 돌려준다."""
     import re, zipfile, os
     _cid = {"MEMO": b"%%me", "HYPERLINK": b"%hlk", "CLICK_HERE": b"%clk", "FORMULA": b"%fmu",
-            "BOOKMARK": b"%bmk", "DATE": b"%dte", "PATH": b"%pat"}
+            "BOOKMARK": b"%bmk", "DATE": b"%dte", "PATH": b"%pat", "MAILMERGE": b"%mmg"}
     props = _field_extra_props(src) if src else {}
     pat = re.compile(r'<hp:fieldBegin\b([^>]*?)(?:/>()|>(.*?)</hp:fieldBegin>)', re.S)
     pend = re.compile(r'<hp:fieldEnd\b([^>]*?)/>')
@@ -396,7 +408,7 @@ def _fix_field_ids(dst, src=None):
         os.replace(tmp, dst)
         return sum(v.count(b"fieldid=") for v in patched.values())
     except Exception as _e:
-        ERRORS.append(f"{type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"{type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -426,7 +438,7 @@ def _fix_script_manifest_ids(dst):
         os.replace(tmp, dst)
         return 1
     except Exception as _e:
-        ERRORS.append(f"script-manifest {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"script-manifest {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -463,7 +475,7 @@ def _hwp_char_counts(src, codes):
         finally:
             ole.close()
     except Exception as _e:
-        ERRORS.append(f"charcount {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"charcount {type(_e).__name__}: {str(_e)[:80]}")
         return None
 
 
@@ -491,7 +503,7 @@ def _fix_soft_hyphen(src, dst):
         os.replace(tmp, dst)
         return shy
     except Exception as _e:
-        ERRORS.append(f"softhyphen {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"softhyphen {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -536,7 +548,7 @@ def _fix_caret_position(src, dst):
         os.replace(tmp, dst)
         return 1
     except Exception as _e:
-        ERRORS.append(f"caret {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"caret {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -617,7 +629,7 @@ def _fix_note_suffix(src, dst):
         os.replace(tmp, dst)
         return total[0]
     except Exception as _e:
-        ERRORS.append(f"notesuffix {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"notesuffix {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -650,7 +662,7 @@ def _fix_column_enums(dst):
         os.replace(tmp, dst)
         return total
     except Exception as _e:
-        ERRORS.append(f"colenum {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"colenum {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -720,7 +732,7 @@ def _fix_column_widths(src, dst):
         os.replace(tmp, dst)
         return total
     except Exception as _e:
-        ERRORS.append(f"colwidth {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"colwidth {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -787,7 +799,7 @@ def _fix_equation_sizes(dst):
         os.replace(tmp, dst)
         return total[0]
     except Exception as _e:
-        ERRORS.append(f"eqsize {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"eqsize {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -833,7 +845,7 @@ def _fix_foreign_lineseg(dst):
         os.replace(tmp, dst)
         return total
     except Exception as _e:
-        ERRORS.append(f"foreignlineseg {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"foreignlineseg {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -874,7 +886,7 @@ def _fix_shadow_margin(dst):
         os.replace(tmp, dst)
         return total[0]
     except Exception as _e:
-        ERRORS.append(f"shadowmargin {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"shadowmargin {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -906,7 +918,7 @@ def _fix_revision_sign_field(dst):
         os.replace(tmp, dst)
         return total
     except Exception as _e:
-        ERRORS.append(f"{type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"{type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -923,7 +935,7 @@ def _fix_last_page_number_pos(src, dst):
         import olefile
         ole = olefile.OleFileIO(src)
     except Exception as _e:
-        ERRORS.append(f"{type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"{type(_e).__name__}: {str(_e)[:80]}")
         return 0
     fixes = {}   # section index -> [(문단순서 번호, 마지막 pgnp 값)] , 문단 순서 목록은 별도
     per_section = {}
@@ -965,7 +977,7 @@ def _fix_last_page_number_pos(src, dst):
             per_section[si] = paras
             si += 1
     except Exception as _e:
-        ERRORS.append(f"{type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"{type(_e).__name__}: {str(_e)[:80]}")
         return 0
     finally:
         ole.close()
@@ -984,7 +996,7 @@ def _apply_pgnp_fix(dst, per_section):
     try:
         zin = zipfile.ZipFile(dst)
     except Exception as _e:
-        ERRORS.append(f"{type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"{type(_e).__name__}: {str(_e)[:80]}")
         return 0
     patched = {}
     total = 0
@@ -1066,7 +1078,7 @@ def _strip_linesegarray(dst):
         os.replace(tmp, dst)
         return n
     except Exception as _e:
-        ERRORS.append(f"lineseg {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"lineseg {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -1117,7 +1129,7 @@ def _fix_borderfill_zero(dst):
         os.replace(tmp, dst)
         return n
     except Exception as _e:
-        ERRORS.append(f"bf0 {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"bf0 {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -1162,7 +1174,7 @@ def _align_schema_values(dst):
         os.replace(tmp, dst)
         return total
     except Exception as _e:
-        ERRORS.append(f"sv {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"sv {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -1219,7 +1231,7 @@ def _fix_compose(dst):
         os.replace(tmp, dst)
         return total
     except Exception as _e:
-        ERRORS.append(f"compose {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"compose {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -1261,7 +1273,7 @@ def _drop_dangling_manifest(dst):
         os.replace(tmp, dst)
         return k[0]
     except Exception as _e:
-        ERRORS.append(f"mf {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"mf {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -1296,7 +1308,7 @@ def _store_incompressible(dst):
         os.replace(tmp, dst)
         return len(bad)
     except Exception as _e:
-        ERRORS.append(f"stored {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"stored {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -1326,6 +1338,302 @@ def _rewrite_parts(dst, fn, names_re=r"Contents/(section|masterPage)\d+\.xml", e
     return True
 
 
+
+def _old_format_version(src):
+    """원본이 옛 HWP(1.x·2.0·2.1·3.0)이면 '1.x'·'2.0'·'2.1'·'3.0', 아니면 None."""
+    try:
+        with open(src, "rb") as f:
+            head = f.read(24)
+    except OSError:
+        return None
+    if not head.startswith(b"HWP Document File V"):
+        return None
+    v = head[19:23].decode("ascii", "replace")
+    if v.startswith("1."):
+        return "1.x"
+    return v[:3] if v in ("2.00", "2.10", "3.00") else None
+
+
+def _p_spans(x):
+    """문단(<hp:p …>…</hp:p>)의 (시작, 끝) 목록 — 겹친 문단도 짝을 맞춘다."""
+    import re
+    spans, stack = [], []
+    for m in re.finditer(r'<hp:p\b[^>]*>|</hp:p>', x):
+        if m.group(0).startswith("</"):
+            if stack:
+                spans.append((stack.pop(), m.end()))
+        else:
+            stack.append(m.start())
+    return spans
+
+
+def _drop_own_lineseg(x, start, end):
+    """[start,end) 문단 끝의 자기 줄 배치(linesegarray)를 지운다 — 글이 늘어 저장 줄 위치가 맞지 않게 된 문단.
+    한글은 줄 배치가 없는 문단을 열 때 다시 계산한다."""
+    seg = x[start:end]
+    i = seg.rfind("<hp:linesegarray>")
+    if i >= 0 and seg.endswith("</hp:linesegarray></hp:p>"):
+        return x[:start] + seg[:i] + "</hp:p>" + x[end:]
+    return x
+
+
+_FONT_CAT = []
+
+
+def _old_font_catalog():
+    """old_font_catalog.json 의 {'언어|글꼴': [종류, 안쪽 XML]} — 한글 2024 정답지에서 모은 옛 형식 글꼴 선언."""
+    if not _FONT_CAT:
+        import json
+        import os
+        try:
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "old_font_catalog.json"), encoding="utf-8") as f:
+                _FONT_CAT.append(json.load(f).get("fonts", {}))
+        except (OSError, ValueError):
+            _FONT_CAT.append({})
+    return _FONT_CAT[0]
+
+
+def _fix_old_format(src, dst):
+    """옛 형식(1.x·2.0·2.1·3.0) 변환본을 한글 2024 가 같은 원본을 열어 저장한 HWPX 와 같은 꼴로 맞춘다.
+    근거: 한글 2024 자동 저장 정답지(옛 실물 39건 + 탐침 문서 4건, 2026-11-28).
+      · 개체 공통: flowWithText=1, 글자처럼 취급이면 affectLSpacing = 2.x 에서 1 · 3.0 에서 0,
+        어울림(SQUARE)인 표·그림은 textFlow=LARGEST_ONLY, numberingType 표=TABLE·그림·그리기=PICTURE·수식=EQUATION
+        (연결이 걸린 상자는 TABLE), 그림·그리기의 rotateimage=1, 표 repeatHeader=1, 글자처럼 취급하지 않는 표 noAdjust=0,
+        그리기 개체에 그림자 없음 요소, 타원의 호 속성(arcType=NORMAL 등).
+      · 날짜 코드: DATE 필드(Prop 8, Command, DateNation KOR, DateFormat) + 오늘 날짜 글 + 필드 끝.
+      · 메일 머지: MAILMERGE 필드(Fiexde·Prop·Command·FieldType USER_DEFINE·FieldValue) + {{이름}} 글 + 필드 끝.
+    고친 곳 수를 돌려준다. 옛 형식이 아니면 0."""
+    import re
+    ver = _old_format_version(src)
+    if not ver:
+        return 0
+    from .hwp3 import date_format_hangul, date_text
+    v2 = ver.startswith("2")
+    k = [0]
+    seq = [0]
+    objs = r"tbl|pic|rect|ellipse|polygon|equation|line|arc|curve|container|connectLine|textart|ole"
+
+    def setattr_(tag, name, val):
+        if re.search(r'\b%s="' % name, tag):
+            new = re.sub(r'\b%s="[^"]*"' % name, f'{name}="{val}"', tag, count=1)
+        else:
+            new = tag[:-1] + f' {name}="{val}">' if not tag.endswith("/>") else tag[:-2] + f' {name}="{val}"/>'
+        if new != tag:
+            k[0] += 1
+        return new
+
+    def fix_obj_open(m):
+        tag, name = m.group(0), m.group(1)
+        if name == "tbl":
+            tag = setattr_(tag, "numberingType", "TABLE")
+            tag = setattr_(tag, "repeatHeader", "1")
+        elif name == "equation":
+            tag = setattr_(tag, "numberingType", "EQUATION")
+        elif name in ("pic", "ellipse") or (name == "rect" and 'href=""' in tag):
+            tag = setattr_(tag, "numberingType", "PICTURE")
+        elif name == "rect":
+            tag = setattr_(tag, "numberingType", "TABLE")
+        if name in ("tbl", "pic") and 'textWrap="SQUARE"' in tag:
+            tag = setattr_(tag, "textFlow", "LARGEST_ONLY")
+        if name == "ellipse":
+            for a, v in (("intervalDirty", "0"), ("hasArcPr", "0"), ("arcType", "NORMAL")):
+                if f' {a}="' not in tag:
+                    tag = setattr_(tag, a, v)
+        return tag
+
+    def fix_pos(m):
+        tag = m.group(0)
+        tag = setattr_(tag, "flowWithText", "1")
+        tac = 'treatAsChar="1"' in tag
+        tag = setattr_(tag, "affectLSpacing", "1" if (tac and v2) else "0")
+        return tag
+
+    def fix_section(n, x):
+        # 1) 개체 머리
+        x = re.sub(r'<hp:(%s)\b[^>]*>' % objs, fix_obj_open, x)
+        x = re.sub(r'<hp:pos\b[^>]*/>', fix_pos, x)
+        x = re.sub(r'(<hp:rotationInfo\b[^>]*?)rotateimage="0"', lambda m: (k.__setitem__(0, k[0] + 1), m.group(1) + 'rotateimage="1"')[1], x)
+        # 표: 글자처럼 취급하지 않는 표는 noAdjust=0 (정답지 21건 — 글자처럼 취급하는 표의 1/0 조건은 미확인이라 두지 않음)
+        def tbl_noadj(m):
+            seg = m.group(0)
+            if 'treatAsChar="0"' in seg and 'noAdjust="1"' in seg[:seg.find(">")]:
+                k[0] += 1
+                return seg.replace('noAdjust="1"', 'noAdjust="0"', 1)
+            return seg
+        x = re.sub(r'<hp:tbl\b[^>]*>(?:(?!<hp:tbl\b).)*?<hp:pos\b[^>]*/>', tbl_noadj, x, flags=re.S)
+        # 그리기 개체(사각형·타원·다각형)에 그림자 없음 요소: lineShape(·fillBrush) 바로 뒤
+        def add_shadow(m):
+            head = m.group(0)
+            if "<hp:shadow " in head:
+                return head
+            k[0] += 1
+            return head + '<hp:shadow type="NONE" color="#B2B2B2" offsetX="0" offsetY="0" alpha="0"/>'
+        x = re.sub(r'(?<=</hp:renderingInfo>)<hp:lineShape\b[^>]*/>(?:<hc:fillBrush>.*?</hc:fillBrush>)?(?=<hp:drawText|<hc:pt|<hc:center|<hp:sz)',
+                   add_shadow, x, flags=re.S)
+        # 그림 테두리 굵기: 한글 2024 는 옛 문서 그림의 테두리 선을 굵기 1 로 적는다(정답지 그림 72개 전부)
+        def pic_line(m):
+            seg = m.group(0)
+            if 'width="12" style="SOLID"' in seg:
+                k[0] += 1
+                return seg.replace('width="12" style="SOLID"', 'width="1" style="SOLID"', 1)
+            return seg
+        x = re.sub(r'<hp:pic\b(?:(?!<hp:pic\b|</hp:pic>).)*?<hp:lineShape\b[^>]*/>', pic_line, x, flags=re.S)
+        # 사각형·타원(3.0 그리기 개체): 선 끝 FLAT, 화살표 머리·꼬리 채움 1 (정답지 13개 전부)
+        def draw_line(m):
+            seg = m.group(0)
+            new = re.sub(r'endCap="\w+"', 'endCap="FLAT"', seg, count=1)
+            new = re.sub(r'headfill="\d"', 'headfill="1"', new, count=1)
+            new = re.sub(r'tailfill="\d"', 'tailfill="1"', new, count=1)
+            if new != seg:
+                k[0] += 1
+            return new
+        x = re.sub(r'(?<=</hp:renderingInfo>)<hp:lineShape\b[^>]*/>(?=(?:<hc:fillBrush>.*?</hc:fillBrush>)?(?:<hp:shadow\b[^>]*/>)?(?:<hp:drawText\b|<hc:pt0\b|<hc:center\b))',
+                   draw_line, x, flags=re.S)
+        # 캡션: 한글 2024 는 width=8504(기본 캡션 폭), lastWidth=개체 폭을 적는다(정답지 캡션 20개 전부)
+        def cap(m):
+            head, w, attrs = m.group(1), m.group(2), m.group(3)
+            a2 = re.sub(r'\bwidth="0"', 'width="8504"', attrs, count=1)
+            a2 = re.sub(r'\blastWidth="0"', f'lastWidth="{w}"', a2, count=1)
+            if a2 != attrs:
+                k[0] += 1
+            return f'{head}<hp:caption {a2}>'
+        x = re.sub(r'(<hp:sz width="(\d+)"[^>]*/><hp:pos\b[^>]*/><hp:outMargin\b[^>]*/>(?:<hp:inMargin\b[^>]*/>)?)<hp:caption ([^>]*)>', cap, x)
+        # 2) 필드
+        out = []
+        last = 0
+        for m in re.finditer(r'<hp:ctrl><hp:fieldBegin\b([^>]*)>(.*?)</hp:fieldBegin></hp:ctrl>', x, re.S):
+            a, body = m.group(1), m.group(2)
+            ty = re.search(r'\btype="(\w+)"', a)
+            cmd = re.search(r'<hp:stringParam name="Command">(.*?)</hp:stringParam>', body, re.S)
+            if not ty or not cmd or ty.group(1) not in ("DATE", "MAILMERGE") or 'name="FieldType"' in body or 'name="DateFormat"' in body:
+                continue
+            import html as _h
+            c = _h.unescape(cmd.group(1))
+            seq[0] += 1
+            fid = 1258700000 + seq[0]
+            a2 = re.sub(r'\bid="\d+"', f'id="{fid}"', a)
+            if ty.group(1) == "DATE":
+                fmt = c[1:] if c.startswith(":") else c
+                params = ('<hp:parameters cnt="4" name=""><hp:integerParam name="Prop">8</hp:integerParam>'
+                          f'<hp:stringParam name="Command">{_h.escape(c, quote=False)}</hp:stringParam>'
+                          '<hp:stringParam name="DateNation">KOR</hp:stringParam>'
+                          f'<hp:stringParam name="DateFormat">{_h.escape(date_format_hangul(fmt), quote=False)}</hp:stringParam></hp:parameters>')
+                text = date_text(fmt)
+            else:
+                e = _h.escape(c, quote=False)
+                params = ('<hp:parameters cnt="5" name=""><hp:booleanParam name="Fiexde">1</hp:booleanParam>'
+                          '<hp:integerParam name="Prop">8</hp:integerParam>'
+                          f'<hp:stringParam name="Command">{e}</hp:stringParam>'
+                          '<hp:stringParam name="FieldType">USER_DEFINE</hp:stringParam>'
+                          f'<hp:stringParam name="FieldValue">{e}</hp:stringParam></hp:parameters>')
+                text = "{{" + c + "}}"
+            new = (f'<hp:ctrl><hp:fieldBegin{a2}>{params}</hp:fieldBegin></hp:ctrl>'
+                   f'<hp:t>{_h.escape(text, quote=False)}</hp:t><hp:ctrl><hp:fieldEnd beginIDRef="{fid}"/></hp:ctrl>')
+            out.append((m.start(), m.end(), new))
+        if out:
+            pieces, pos = [], 0
+            for st, en, new in out:
+                pieces.append(x[pos:st]); pieces.append(new); pos = en
+            pieces.append(x[pos:])
+            x = "".join(pieces)
+            k[0] += len(out)
+            # 글이 늘어난 문단의 줄 배치를 지운다(안쪽 문단부터)
+            for st, en in sorted(_p_spans(x), key=lambda t: t[0], reverse=True):
+                seg = x[st:en]
+                own = seg
+                if 'beginIDRef="12587' in own and 'fieldBegin id="12587' in own:
+                    inner = [(a, b) for a, b in _p_spans(seg) if a > 0]
+                    if not any('beginIDRef="12587' in seg[a:b] for a, b in inner):
+                        x = _drop_own_lineseg(x, st, en)
+        # 1.x 원본에는 줄 배치(줄 나눔 위치)가 저장돼 있지 않다. 엔진이 지어낸 줄 배치를 실으면 한글이
+        # 그대로 믿어 쪽 수가 늘어난다(정답지 9건: 3→4, 54→61 …). 줄 배치를 빼면 한글이 다시 계산해
+        # 9건 모두 원본을 연 쪽 수와 같다(2026-11-28 한글 2024 자동 저장 j03·j04 대조).
+        if ver == "1.x":
+            n0 = x.count("<hp:linesegarray>")
+            x = re.sub(r'<hp:linesegarray>.*?</hp:linesegarray>', '', x, flags=re.S)
+            k[0] += n0
+        return x
+
+    # 표 자체의 테두리: 한글 2024 는 옛 문서의 모든 표에 실선 0.12mm 네 변 + 대각선 정의(0.1mm) 테두리를 건다
+    _TBL_BF = ('threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0">'
+               '<hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/>'
+               '<hh:leftBorder type="SOLID" width="0.12 mm" color="#000000"/><hh:rightBorder type="SOLID" width="0.12 mm" color="#000000"/>'
+               '<hh:topBorder type="SOLID" width="0.12 mm" color="#000000"/><hh:bottomBorder type="SOLID" width="0.12 mm" color="#000000"/>'
+               '<hh:diagonal type="SOLID" width="0.1 mm" color="#000000"/></hh:borderFill>')
+    bf_id = [None]
+
+    def fix_fonts(x):
+        # 글꼴 선언: 한글 2024 는 자기 글꼴(HFT) 목록에 있는 이름은 type=HFT + typeInfo(글꼴 계열)로,
+        # 없는 이름은 TTF + 대체 글꼴(substFont)로 적는다. 대체 글꼴이 빠지면 한글이 다른 글꼴로 바꿔 그려
+        # 글자 폭이 달라지고 줄이 더 나뉜다(v21_05 표 머리칸 1줄→2줄, 쪽 6→7). 정답지 39건에서 모은 표로만 고친다.
+        import html as _h
+        cat = _old_font_catalog()
+        if not cat:
+            return x
+
+        def one_face(fm):
+            lang = fm.group(1)
+
+            def one(m):
+                ent = cat.get(f"{lang}|{_h.unescape(m.group(2))}")
+                if not ent:
+                    return m.group(0)
+                typ, inner = ent
+                new = f'<hh:font id="{m.group(1)}" face="{m.group(2)}" type="{typ}" isEmbedded="0"' + (f'>{inner}</hh:font>' if inner else '/>')
+                if new != m.group(0):
+                    k[0] += 1
+                return new
+            return re.sub(r'<hh:font id="(\d+)" face="([^"]*)" type="\w+" isEmbedded="0"(?:/>|>.*?</hh:font>)', one, fm.group(0), flags=re.S)
+        return re.sub(r'<hh:fontface lang="(\w+)".*?</hh:fontface>', one_face, x, flags=re.S)
+
+    def fix_header(x):
+        x = fix_fonts(x)
+        ids = [int(i) for i in re.findall(r'<hh:borderFill id="(\d+)"', x)]
+        for m in re.finditer(r'<hh:borderFill id="(\d+)" (.*?</hh:borderFill>)', x, re.S):
+            if m.group(2) == _TBL_BF:
+                bf_id[0] = m.group(1)
+                return x
+        nid = (max(ids) + 1) if ids else 1
+        bf_id[0] = str(nid)
+        x = x.replace("</hh:borderFills>", f'<hh:borderFill id="{nid}" {_TBL_BF}</hh:borderFills>', 1)
+        x = re.sub(r'<hh:borderFills itemCnt="(\d+)">', lambda m: f'<hh:borderFills itemCnt="{int(m.group(1)) + 1}">', x, count=1)
+        return x
+
+    def fix_part(n, x):
+        if n.endswith("header.xml"):
+            return fix_header(x)
+        x = fix_section(n, x)
+        if bf_id[0] and "<hp:tbl " in x:
+            def tb(m):
+                t = m.group(0)
+                if f'borderFillIDRef="{bf_id[0]}"' not in t:
+                    k[0] += 1
+                    return re.sub(r'borderFillIDRef="\d+"', f'borderFillIDRef="{bf_id[0]}"', t, count=1)
+                return t
+            x = re.sub(r'<hp:tbl\b[^>]*>', tb, x)
+        return x
+
+    try:
+        import zipfile
+        with zipfile.ZipFile(dst) as z:
+            if "Contents/header.xml" in z.namelist() and "<hp:tbl " in "".join(
+                    z.read(nm).decode("utf-8", "replace") for nm in z.namelist() if re.fullmatch(r"Contents/section\d+\.xml", nm)):
+                bf_id[0] = None
+            else:
+                bf_id[0] = False
+        if bf_id[0] is False:
+            bf_id[0] = None
+            _rewrite_parts(dst, lambda n, x: fix_fonts(x), names_re=r"Contents/header\.xml")
+            _rewrite_parts(dst, fix_part)
+        else:
+            _rewrite_parts(dst, lambda n, x: fix_header(x), names_re=r"Contents/header\.xml")
+            _rewrite_parts(dst, fix_part)
+        return k[0]
+    except Exception as _e:
+        _err(f"oldfmt {type(_e).__name__}: {str(_e)[:80]}")
+        return 0
+
+
 def _fix_cur_size_zero(dst):
     """C122(5차, 끄려면 HWPAI_CURSZ=0): 한글 2024 는 개체 현재 크기(hp:curSz)에서 「원래 크기(hp:orgSz)와 같은 차원」을 0 으로 적는다
     (보류·새·대량 실패 표본 6,546개 개체에서 예외 0). HWPX 에서 0 은 「원래 크기와 같음」이다(엔진 HWPX 판독기도 0 을 orgSz 로 채움).
@@ -1348,7 +1656,7 @@ def _fix_cur_size_zero(dst):
         _rewrite_parts(dst, lambda n, x: pat.sub(rep, x))
         return k[0]
     except Exception as _e:
-        ERRORS.append(f"cursz {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"cursz {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -1435,7 +1743,7 @@ def _fix_ole_chart(dst):
         _rewrite_parts(dst, lambda n, x: new.get(n, x), names_re=r"Contents/section\d+\.xml", extra=extra)
         return cnt[0]
     except Exception as _e:
-        ERRORS.append(f"olechart {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"olechart {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -1501,7 +1809,7 @@ def _fix_font_local_names(dst, src=None):
         _rewrite_parts(dst, lambda n, x: re.sub(r'(<hh:font\b[^>]*?\bface=")([^"]*)"', rep, x), names_re=r"Contents/header\.xml")
         return k[0]
     except Exception as _e:
-        ERRORS.append(f"fontko {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"fontko {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -1549,7 +1857,7 @@ def _fix_negative_cell_height(dst):
         _rewrite_parts(dst, fix)
         return k[0]
     except Exception as _e:
-        ERRORS.append(f"cellhneg {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"cellhneg {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -1639,7 +1947,7 @@ def _split_sections(dst):
         os.replace(tmp, dst)
         return grew
     except Exception as _e:
-        ERRORS.append(f"secsplit {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"secsplit {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -1742,7 +2050,7 @@ def _fix_clickhere_guide(dst):
         _rewrite_parts(dst, lambda n, x: hd2 if n == "Contents/header.xml" else new.get(n, x), names_re=r"Contents/(header|section\d+)\.xml")
         return total[0]
     except Exception as _e:
-        ERRORS.append(f"clickguide {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"clickguide {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
@@ -1853,14 +2161,32 @@ def _restore_table_geometry(src, dst):
         _rewrite_parts(dst, lambda n, x: new.get(n, x), names_re=r"Contents/section\d+\.xml")
         return k
     except Exception as _e:
-        ERRORS.append(f"tblgeo {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"tblgeo {type(_e).__name__}: {str(_e)[:80]}")
         return 0
 
 
 
 def apply_all(src, dst):
-    """뒤처리를 정해진 순서로 모두 적용하고 사용자에게 보여 줄 알림 목록을 돌려준다(데스크톱 엔진 래퍼·웹 시험판 공통)."""
+    """뒤처리를 정해진 순서로 모두 적용하고 사용자에게 보여 줄 알림 목록을 돌려준다(데스크톱 엔진 래퍼·웹 시험판 공통).
+    중간에 삼킨 오류가 있으면 알림 끝에 적고(이관대장·검증서에서 보이게), 남은 임시 파일을 지운다."""
+    _TL.errs = []
+    try:
+        notes = _apply_all(src, dst)
+    finally:
+        errs, _TL.errs = _TL.errs, None
+        for sfx in _TMP_SUFFIXES:
+            _rm(dst + sfx)
+    if errs:
+        notes.append(f"뒤처리 {len(errs)}단계가 오류로 적용되지 않음(변환본은 엔진 출력 그대로) — 예: {errs[0][:120]}")
+    return notes
+
+
+def _apply_all(src, dst):
     notes = []
+    if os.environ.get("HWPAI_OLDFMT", "1") == "1":
+        n = _fix_old_format(src, dst)
+        if n:
+            notes.append(f"옛 형식 문서의 개체 속성·날짜·메일머지 필드 {n}곳을 한글 2024 가 여는 꼴로 맞춤(C123)")
     n = _restore_extensionless_images(src, dst)
     if n:
         notes.append(f"확장자 없는 그림 {n}개를 원본 BinData 에서 복원해 넣음(C86)")
@@ -1937,7 +2263,7 @@ def apply_all(src, dst):
         from . import tracked as _tr
         n, sk, why = _tr.apply(src, dst)
     except Exception as _e:
-        ERRORS.append(f"tracked {type(_e).__name__}: {str(_e)[:80]}")
+        _err(f"tracked {type(_e).__name__}: {str(_e)[:80]}")
         n, sk, why = 0, 0, ""
     if n or sk or why:
         notes.append(f"변경 추적 {n}개 문단의 삭제·삽입 이력을 한컴 표기(deleteBegin/insertBegin)로 실음" + (f", 글이 맞지 않아 건너뛴 문단 {sk}개" if sk else "") + (f" — {why}" if why else "") + "(C95)")

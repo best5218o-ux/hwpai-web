@@ -167,16 +167,29 @@ def _rename_viewtext(path: str, workdir: str | None = None) -> str | None:
     return dst
 
 
+def _pop_fallback(_tr, dst: str) -> bool:
+    """「다시 변환 필요」 표시 목록에서 이 변환본 것만 꺼낸다.
+    2026-11-27 수정: 이전에는 목록 전체를 비웠다. 동시에 여러 문서를 변환하면(--jobs 2 이상, 끌어놓기·화면 기본값)
+    다른 스레드가 내 표시를 지워 다시 변환이 생략되고, 같은 문서의 결과가 실행마다 달라졌다(0a606aa5243d: PASS/FAIL 번갈아)."""
+    hit = False
+    while True:
+        try:
+            _tr.NEED_FALLBACK.remove(dst)
+            hit = True
+        except ValueError:
+            return hit
+
+
 def convert_hwp(eng, src: str, dst: str, workdir: str | None = None, **kw) -> dict:
     """제품 변환 경로 한 곳: 엔진 입력 사본 고르기 → 변환(뒤처리 포함) → 변경 추적 전체 구조 모드가 안 되면 최종 본문으로 다시 변환.
     batch.py(데스크톱·웹 공통)와 시험 도구가 같은 함수를 쓴다."""
     from . import tracked as _tr
     vt = hidden_copy(src, workdir)
     try:
-        del _tr.NEED_FALLBACK[:]
+        _pop_fallback(_tr, dst)
         r = eng.convert(vt or src, dst, **kw)
-        if r.get("ok") and vt and os.path.exists(vt + ".hidden_tc") and dst in _tr.NEED_FALLBACK:
-            del _tr.NEED_FALLBACK[:]
+        need = _pop_fallback(_tr, dst)   # 내 변환본의 표시만 꺼낸다(다른 스레드 것은 건드리지 않는다)
+        if r.get("ok") and vt and os.path.exists(vt + ".hidden_tc") and need:
             vt2 = _rename_viewtext(vt, workdir)
             if vt2:
                 try:

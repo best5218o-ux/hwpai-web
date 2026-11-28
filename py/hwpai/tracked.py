@@ -138,7 +138,7 @@ def read_tracked(src: str):
 # 변경 종류(DocInfo 변경 추적 레코드 첫 u32) → 한컴 HWPX hh:trackChange@type. 한컴 저장본(0195 등)과 대조해 확인:
 # 16 Insert·17 Delete 는 본문 insertBegin/deleteBegin 표식, 18 CharShape 는 hp:run@charTcId, 19 ParaShape 는 hp:p@paraTcId 로 쓴다.
 # 이전 판은 18·19 를 Insert 로 보고 삽입 표식을 달았다(잘못) — C95 정정.
-NEED_FALLBACK: list = []   # 전체 구조 모드가 안 된 변환본(다시 변환해야 함) — viewtext.convert_hwp 가 비운다
+NEED_FALLBACK: list = []   # 전체 구조 모드가 안 된 변환본(다시 변환해야 함) — viewtext.convert_hwp 가 자기 변환본 것만 꺼낸다(스레드 공유)
 _KIND = {0x10: "Insert", 0x11: "Delete", 0x12: "CharShape", 0x13: "ParaShape"}
 _MARKED = ("Insert", "Delete")
 
@@ -493,7 +493,7 @@ def apply(src: str, dst: str):
             s = s[:a] + new + s[b:]
         newx[n] = s
     tcxml = "".join(f'<hh:trackChange type="{d["kind"]}" date="{d["date"]}" authorID="{d["author"]}" hide="{d["hide"]}" id="{k + 1}"/>' for k, d in enumerate(defs))
-    authxml = "".join(f'<hh:trackChangeAuthor name="{escape(a["name"])}" mark="{a["mark"]}" id="{k + 1}"/>' for k, a in enumerate(authors or [{"name": "user", "mark": 1}]))
+    authxml = "".join(f'<hh:trackChangeAuthor name="{escape(a["name"], {chr(34): "&quot;"})}" mark="{a["mark"]}" id="{k + 1}"/>' for k, a in enumerate(authors or [{"name": "user", "mark": 1}]))
     blk = f'<hh:trackChanges itemCnt="{len(defs)}">{tcxml}</hh:trackChanges><hh:trackChangeAuthors itemCnt="{max(len(authors), 1)}">{authxml}</hh:trackChangeAuthors>'
     if "<hh:trackChanges" not in header and "</hh:refList>" in header:
         header = header.replace("</hh:refList>", blk + "</hh:refList>", 1)
@@ -736,7 +736,7 @@ def apply_full(src, dst, defs, authors, hp):
         for n in secnames:
             newx[n] = re.sub(r"<hp:linesegarray>.*?</hp:linesegarray>", "", newx.get(n, xmls[n]), flags=re.S)
     tcxml = "".join(f'<hh:trackChange type="{d["kind"]}" date="{d["date"]}" authorID="{d["author"]}" hide="{d["hide"]}" id="{k + 1}"/>' for k, d in enumerate(defs))
-    authxml = "".join(f'<hh:trackChangeAuthor name="{escape(a["name"])}" mark="{a["mark"]}" id="{k + 1}"/>' for k, a in enumerate(authors or [{"name": "user", "mark": 1}]))
+    authxml = "".join(f'<hh:trackChangeAuthor name="{escape(a["name"], {chr(34): "&quot;"})}" mark="{a["mark"]}" id="{k + 1}"/>' for k, a in enumerate(authors or [{"name": "user", "mark": 1}]))
     blk = f'<hh:trackChanges itemCnt="{len(defs)}">{tcxml}</hh:trackChanges><hh:trackChangeAuthors itemCnt="{max(len(authors), 1)}">{authxml}</hh:trackChangeAuthors>'
     if "<hh:trackChanges" not in header:
         if "</hh:refList>" not in header:

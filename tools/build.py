@@ -11,7 +11,7 @@ APP = sys.argv[1] if len(sys.argv) > 1 else "/home/claude/hwpai_v9/app"
 CHUNK = 6291491
 
 # 1) py 소스
-extra = {"hwpai/explain.py"}
+extra = {"hwpai/explain.py", "hwpai/hwp3.py", "hwpai/hml.py", "hwpai/hml1.py"}
 for dirpath, _, files in os.walk(os.path.join(W, "py", "hwpai")):
     for f in files:
         if f.endswith(".py"):
@@ -23,6 +23,16 @@ for rel in extra:
     src = os.path.join(APP, rel)
     if os.path.isfile(src):
         shutil.copyfile(src, os.path.join(W, "py", rel))
+
+# 1-2) 자료 파일(글자 부호 표·글꼴 표) — 일꾼은 py 묶음을 글로만 쓰므로 base64 로 담은 모듈을 만들고 webbridge 가 풀어 쓴다
+DATA = ("hwp3_hangul_map.bin", "old_font_catalog.json", "fontmap_ko.json")
+with open(os.path.join(W, "py", "hwpai_webdata.py"), "w", encoding="utf-8") as f:
+    f.write('"""자동 생성(tools/build.py) — hwpai 패키지 자료 파일(base64)"""\nFILES = {\n')
+    for n in DATA:
+        src = os.path.join(APP, "hwpai", n)
+        if os.path.isfile(src):
+            f.write(f"    {n!r}: {base64.b64encode(open(src, 'rb').read()).decode()!r},\n")
+    f.write("}\n")
 
 # 2) 엔진
 for n in ("rhwp.js", "rhwp_bg.wasm", "package.json"):

@@ -206,6 +206,13 @@ def plain_text(doc: Document, with_hf: bool = False) -> str:
     return "\n".join(out)
 
 
+def scan_text(doc: Document) -> str:
+    """개인정보 점검용 글 — AI 로 나가는 출력(to_markdown·to_chunks·구조 JSON)에 실리는 글을 빠짐없이 담는다:
+    본문·표·각주·글상자 + 머리말·꼬리말 + 표 캡션."""
+    caps = [t.caption for t in walk_tables(doc.blocks) if t.caption]
+    return plain_text(doc, with_hf=True) + ("\n" + "\n".join(caps) if caps else "")
+
+
 # ---------- 파일로 저장 ----------
 def write_outputs(doc: Document, outdir: str, name: str = "본문") -> dict:
     os.makedirs(outdir, exist_ok=True)

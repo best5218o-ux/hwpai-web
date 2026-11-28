@@ -105,7 +105,7 @@ def check(path: str) -> dict:
                 if _ln(h.tag) != "head":
                     err.append("header.xml 의 루트가 head 가 아님")
                 sc = h.get("secCnt")
-                if sc is not None and secs and int(sc) != len(secs):
+                if sc is not None and secs and (not sc.isdigit() or int(sc) != len(secs)):
                     err.append(f"head@secCnt({sc}) 와 구역 파일 수({len(secs)}) 가 다름")
                 refl = next((c for c in h if _ln(c.tag) == "refList"), None)
                 if refl is None:

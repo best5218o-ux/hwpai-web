@@ -19,7 +19,24 @@ _gate = None
 _scan_cache: dict = {}
 
 
+def _install_data():
+    """hwpai 패키지 자료 파일(글자 부호 표·글꼴 표)을 패키지 폴더에 푼다 — 데스크톱과 같은 자리에서 읽게."""
+    import base64
+    import hwpai
+    try:
+        import hwpai_webdata
+    except ImportError:
+        return
+    d = os.path.dirname(hwpai.__file__)
+    for n, b in hwpai_webdata.FILES.items():
+        p = os.path.join(d, n)
+        if not os.path.exists(p):
+            with open(p, "wb") as f:
+                f.write(base64.b64decode(b))
+
+
 def _setup_modules():
+    _install_data()
     from hwpai import batch, engines, sens
 
     class WebEngine(engines.Engine):
@@ -28,11 +45,38 @@ def _setup_modules():
         def __init__(self):
             self.version = _cfg.get("engine_version", "?")
 
-        def convert(self, src, dst, timeout=120.0, password=None, **kw):
+        def _once(self, src, dst, password):
             import js
+            return js.hwpaiConvert(src, dst, password or None).to_py()
+
+        def convert(self, src, dst, timeout=120.0, password=None, **kw):
             t0 = time.perf_counter()
-            r = js.hwpaiConvert(src, dst, password or None)
-            r = r.to_py()
+            # 0.9.2: 옛 형식(HWP 1.x·2.x → 3.0 으로 올림, HML 판 표기·HWPML 1.x)·끊긴 HWP 3.0 — 데스크톱 엔진 래퍼와 같은 앞처리
+            up, upnote = (None, None)
+            if src:
+                up, upnote = engines._upconvert_old(src)
+                if upnote and not up:
+                    return {"ok": False, "kind": "engine_error", "error": upnote, "ms": 0}
+            try:
+                r = self._once(up or src, dst, password)
+            finally:
+                if up:
+                    engines._rm(up)
+            if not r.get("ok") and src and not up and r.get("kind") != "crash":
+                up, upnote = engines._salvage_v3(src)
+                if up:
+                    try:
+                        r2 = self._once(up, dst, password)
+                    finally:
+                        engines._rm(up)
+                    if r2.get("ok"):
+                        r = r2
+                    else:
+                        upnote = None
+                else:
+                    upnote = None
+            if upnote and r.get("ok"):
+                r["notes"] = list(r.get("notes") or []) + [upnote]
             if r.get("ok") and src:
                 try:   # 데스크톱 엔진 래퍼와 같은 뒤처리(C86·C88·C90·C92·C93)
                     from hwpai import postfix
