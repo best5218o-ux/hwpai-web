@@ -8,7 +8,7 @@ import base64, gzip, hashlib, json, os, shutil, sys
 
 W = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APP = sys.argv[1] if len(sys.argv) > 1 else "/home/claude/hwpai_v9/app"
-CHUNK = 6291491
+CHUNK = 6291456  # base64 4글자 단위의 배수 — 조각마다 따로 atob 하므로 4의 배수가 아니면 깨진다
 
 # 1) py 소스
 extra = {"hwpai/explain.py", "hwpai/hwp3.py", "hwpai/hml.py", "hwpai/hml1.py"}
